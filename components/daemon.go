@@ -183,7 +183,7 @@ func Daemon() *defkit.ComponentDefinition {
 			defkit.StringList("hostnames").Required(),
 		)
 
-	return defkit.NewComponent("daemon-new.2").
+	return defkit.NewComponent("daemon-new").
 		Description("Describes daemonset services in Kubernetes.").
 		Workload("apps/v1", "DaemonSet").
 		CustomStatus(defkit.DaemonSetStatus().Build()).

@@ -30,7 +30,7 @@ var _ = Describe("Task Component", func() {
 	Describe("Task()", func() {
 		It("should create a task component definition", func() {
 			comp := components.Task()
-			Expect(comp.Name()).To(Equal("task-new"))
+			Expect(comp.GetName()).To(Equal("task-new"))
 			Expect(comp.GetDescription()).To(ContainSubstring("completion"))
 		})
 

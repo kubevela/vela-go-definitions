@@ -1,0 +1,65 @@
+/*
+Copyright 2025 The KubeVela Authors.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
+package traits
+
+import (
+	"github.com/oam-dev/kubevela/pkg/definition/defkit"
+)
+
+// SecurityContext creates the securitycontext trait definition.
+// This trait adds security context to the container spec.
+// Uses the PatchContainer fluent API pattern with Groups for nested fields.
+func SecurityContext() *defkit.TraitDefinition {
+	return defkit.NewTrait("securitycontext").
+		Description("Adds security context to the container spec in path 'spec.template.spec.containers.[].securityContext'.").
+		AppliesTo("deployments.apps", "statefulsets.apps", "daemonsets.apps", "jobs.batch").
+		PodDisruptive(true).
+		Template(func(tpl *defkit.Template) {
+			tpl.UsePatchContainer(defkit.PatchContainerConfig{
+				ContainerNameParam:   "containerName",
+				DefaultToContextName: true,
+				AllowMultiple:        true,
+				ContainersParam:      "containers",
+				Groups: []defkit.PatchContainerGroup{
+					{
+						TargetField: "securityContext",
+						Fields: []defkit.PatchContainerField{
+							{ParamName: "allowPrivilegeEscalation", TargetField: "allowPrivilegeEscalation", ParamType: "bool", ParamDefault: "false"},
+							{ParamName: "readOnlyRootFilesystem", TargetField: "readOnlyRootFilesystem", ParamType: "bool", ParamDefault: "false"},
+							{ParamName: "privileged", TargetField: "privileged", ParamType: "bool", ParamDefault: "false"},
+							{ParamName: "runAsNonRoot", TargetField: "runAsNonRoot", ParamType: "bool", ParamDefault: "true"},
+							{ParamName: "runAsUser", TargetField: "runAsUser", ParamType: "int", Condition: "!= _|_"},
+							{ParamName: "runAsGroup", TargetField: "runAsGroup", ParamType: "int", Condition: "!= _|_"},
+						},
+						SubGroups: []defkit.PatchContainerGroup{
+							{
+								TargetField: "capabilities",
+								Fields: []defkit.PatchContainerField{
+									{ParamName: "addCapabilities", TargetField: "add", ParamType: "[...string]", Condition: "!= _|_"},
+									{ParamName: "dropCapabilities", TargetField: "drop", ParamType: "[...string]", Condition: "!= _|_"},
+								},
+							},
+						},
+					},
+				},
+			})
+		})
+}
+
+func init() {
+	defkit.Register(SecurityContext())
+}

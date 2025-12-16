@@ -85,7 +85,7 @@ func Task() *defkit.ComponentDefinition {
 	labels := defkit.Object("labels").Description("Specify the labels in the workload")
 	annotations := defkit.Object("annotations").Description("Specify the annotations in the workload")
 
-	return defkit.NewComponent("task-new.2").
+	return defkit.NewComponent("task-new").
 		Description("Describes jobs that run code or a script to completion.").
 		Workload("batch/v1", "Job").
 		HealthPolicy(defkit.JobHealth().Build()).
@@ -151,3 +151,4 @@ func taskTemplate(tpl *defkit.Template) {
 
 	tpl.Output(job)
 }
+

@@ -146,7 +146,7 @@ func CronTask() *defkit.ComponentDefinition {
 		WithSchemaRef("HealthProbe").
 		Description("Instructions for assessing whether the container is in a suitable state to serve traffic.")
 
-	return defkit.NewComponent("cron-task-new.2").
+	return defkit.NewComponent("cron-task-new").
 		Description("Describes cron jobs that run code or a script to completion.").
 		AutodetectWorkload().
 		Helper("HealthProbe", HealthProbeParam()).

@@ -30,7 +30,7 @@ var _ = Describe("CronTask Component", func() {
 	Describe("CronTask()", func() {
 		It("should create a cron-task component definition", func() {
 			comp := components.CronTask()
-			Expect(comp.Name()).To(Equal("cron-task-new"))
+			Expect(comp.GetName()).To(Equal("cron-task-new"))
 			Expect(comp.GetDescription()).To(ContainSubstring("cron"))
 		})
 

@@ -30,7 +30,7 @@ var _ = Describe("StatefulSet Component", func() {
 	Describe("StatefulSet()", func() {
 		It("should create a statefulset component definition", func() {
 			comp := components.StatefulSet()
-			Expect(comp.Name()).To(Equal("statefulset-new"))
+			Expect(comp.GetName()).To(Equal("statefulset-new"))
 			Expect(comp.GetDescription()).To(ContainSubstring("stateful"))
 		})
 

@@ -63,7 +63,7 @@ func Worker() *defkit.ComponentDefinition {
 	livenessProbe := defkit.Object("livenessProbe").Description("Instructions for assessing whether the container is alive")
 	readinessProbe := defkit.Object("readinessProbe").Description("Instructions for assessing whether the container is in a suitable state to serve traffic")
 
-	return defkit.NewComponent("worker-new.2").
+	return defkit.NewComponent("worker-new").
 		Description("Describes long-running, scalable, containerized services that running at backend. They do NOT have network endpoint to receive external network traffic.").
 		Workload("apps/v1", "Deployment").
 		CustomStatus(defkit.DeploymentStatus().Build()).
@@ -118,3 +118,4 @@ func workerTemplate(tpl *defkit.Template) {
 
 	tpl.Output(deployment)
 }
+

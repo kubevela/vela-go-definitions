@@ -30,7 +30,7 @@ var _ = Describe("Worker Component", func() {
 	Describe("Worker()", func() {
 		It("should create a worker component definition", func() {
 			comp := components.Worker()
-			Expect(comp.Name()).To(Equal("worker-new"))
+			Expect(comp.GetName()).To(Equal("worker-new"))
 			Expect(comp.GetDescription()).To(ContainSubstring("backend"))
 		})
 

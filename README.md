@@ -11,7 +11,7 @@ This module contains Go-based KubeVela X-Definitions that can be applied to any 
 - **components/** - ComponentDefinitions for workload types
 - **traits/** - TraitDefinitions for operational behaviors
 - **policies/** - PolicyDefinitions for application policies
-- **workflows/** - WorkflowStepDefinitions for delivery workflows
+- **workflowsteps/** - WorkflowStepDefinitions for delivery workflows
 
 ## Usage
 
@@ -48,9 +48,10 @@ vela def apply-module github.com/anoop2811/vela-definitions --dry-run
 ## Adding New Definitions
 
 1. Create a new Go file in the appropriate directory
-2. Use the defkit package to define your component/trait/policy/workflow-step
-3. Run `go mod tidy` to update dependencies
-4. Validate with `vela def validate-module .`
+2. Add an init() function that registers your definition
+3. Use the defkit package fluent API to define your component/trait/policy/workflow-step
+4. Run `go mod tidy` to update dependencies
+5. Validate with `vela def validate-module .`
 
 Example component definition:
 
@@ -60,18 +61,32 @@ package components
 import "github.com/oam-dev/kubevela/pkg/definition/defkit"
 
 func init() {
-    defkit.Register(MyComponent)
+    defkit.Register(MyComponent())
 }
 
 func MyComponent() *defkit.ComponentDefinition {
-    image := defkit.Param("image", "Container image").Required().String()
+    image := defkit.String("image").Required().Description("Container image")
+    replicas := defkit.Int("replicas").Default(1).Description("Number of replicas")
 
-    return defkit.Component("my-component", "1.0.0").
+    return defkit.NewComponent("my-component").
         Description("My custom component").
-        WithParameter(image).
-        Output(defkit.K8sResource("deployment", "apps/v1", "Deployment").
-            Set("metadata.name", defkit.Context("name")).
-            Set("spec.template.spec.containers[0].image", image))
+        Workload("apps/v1", "Deployment").
+        Params(image, replicas).
+        Template(myComponentTemplate)
+}
+
+func myComponentTemplate(tpl *defkit.Template) {
+    vela := defkit.VelaCtx()
+    image := defkit.String("image")
+    replicas := defkit.Int("replicas")
+
+    deployment := defkit.NewResource("apps/v1", "Deployment").
+        Set("spec.replicas", replicas).
+        Set("spec.selector.matchLabels[app.oam.dev/component]", vela.Name()).
+        Set("spec.template.spec.containers[0].name", vela.Name()).
+        Set("spec.template.spec.containers[0].image", image)
+
+    tpl.Output(deployment)
 }
 ```
 

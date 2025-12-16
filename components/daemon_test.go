@@ -30,7 +30,7 @@ var _ = Describe("Daemon Component", func() {
 	Describe("Daemon()", func() {
 		It("should create a daemon component definition", func() {
 			comp := components.Daemon()
-			Expect(comp.Name()).To(Equal("daemon-new"))
+			Expect(comp.GetName()).To(Equal("daemon-new"))
 			Expect(comp.GetDescription()).To(ContainSubstring("daemonset"))
 		})
 

@@ -124,7 +124,7 @@ var _ = Describe("CUE Comparison Tests", func() {
 		})
 
 		It("should have the same component name", func() {
-			Expect(goComponent.Name()).To(Equal("webservice-new"))
+			Expect(goComponent.GetName()).To(Equal("webservice-new"))
 		})
 
 		It("should have the same workload type", func() {
@@ -204,7 +204,7 @@ var _ = Describe("CUE Comparison Tests", func() {
 		})
 
 		It("should have the same component name", func() {
-			Expect(goComponent.Name()).To(Equal("worker-new"))
+			Expect(goComponent.GetName()).To(Equal("worker-new"))
 		})
 
 		It("should have the same workload type", func() {
@@ -249,7 +249,7 @@ var _ = Describe("CUE Comparison Tests", func() {
 		})
 
 		It("should have the same component name", func() {
-			Expect(goComponent.Name()).To(Equal("task-new"))
+			Expect(goComponent.GetName()).To(Equal("task-new"))
 		})
 
 		It("should have Job workload type", func() {
@@ -285,7 +285,7 @@ var _ = Describe("CUE Comparison Tests", func() {
 		})
 
 		It("should have the same component name", func() {
-			Expect(goComponent.Name()).To(Equal("cron-task-new"))
+			Expect(goComponent.GetName()).To(Equal("cron-task-new"))
 		})
 
 		It("should have autodetect workload type", func() {
@@ -327,7 +327,7 @@ var _ = Describe("CUE Comparison Tests", func() {
 		})
 
 		It("should have the same component name", func() {
-			Expect(goComponent.Name()).To(Equal("statefulset-new"))
+			Expect(goComponent.GetName()).To(Equal("statefulset-new"))
 		})
 
 		It("should have StatefulSet workload type", func() {
@@ -373,7 +373,7 @@ var _ = Describe("CUE Comparison Tests", func() {
 		})
 
 		It("should have the same component name", func() {
-			Expect(goComponent.Name()).To(Equal("daemon-new"))
+			Expect(goComponent.GetName()).To(Equal("daemon-new"))
 		})
 
 		It("should have DaemonSet workload type", func() {
