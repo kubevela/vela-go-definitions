@@ -31,10 +31,10 @@ import (
 	"github.com/oam-dev/kubevela/pkg/definition/defkit"
 
 	// Import packages to trigger init() registration
-	_ "github.com/anoop2811/vela-definitions/components"
-	_ "github.com/anoop2811/vela-definitions/traits"
-	_ "github.com/anoop2811/vela-definitions/policies"
-	_ "github.com/anoop2811/vela-definitions/workflowsteps"
+	_ "github.com/oam-dev/vela-go-definitions/components"
+	_ "github.com/oam-dev/vela-go-definitions/traits"
+	_ "github.com/oam-dev/vela-go-definitions/policies"
+	_ "github.com/oam-dev/vela-go-definitions/workflowsteps"
 )
 
 func main() {

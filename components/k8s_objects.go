@@ -23,36 +23,16 @@ import (
 // K8sObjects creates the k8s-objects component definition.
 // K8s-objects allow users to specify raw K8s objects in properties.
 func K8sObjects() *defkit.ComponentDefinition {
+	objects := defkit.Array("objects").Required().WithSchema("[...{}]")
+
 	return defkit.NewComponent("k8s-objects").
 		Description("K8s-objects allow users to specify raw K8s objects in properties").
 		AutodetectWorkload().
-		RawCUE(`"k8s-objects": {
-	type: "component"
-	annotations: {}
-	labels: {}
-	description: "K8s-objects allow users to specify raw K8s objects in properties"
-	attributes: workload: type: "autodetects.core.oam.dev"
-}
-template: {
-	output: {
-		if len(parameter.objects) > 0 {
-			parameter.objects[0]
-		}
-		...
-	}
-
-	outputs: {
-		for i, v in parameter.objects {
-			if i > 0 {
-				"objects-\(i)": v
-			}
-		}
-	}
-	parameter: {
-		objects: [...{}]
-	}
-}
-`)
+		Params(objects).
+		Template(func(tpl *defkit.Template) {
+			tpl.OutputPassthrough(objects, 0)
+			tpl.OutputsForEach(objects, "objects-", 1)
+		})
 }
 
 func init() {

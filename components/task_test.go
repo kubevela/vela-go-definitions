@@ -21,7 +21,7 @@ import (
 	. "github.com/onsi/gomega"
 
 	"github.com/oam-dev/kubevela/pkg/definition/defkit"
-	"github.com/oam-dev/kubevela/pkg/definition/defkit/components"
+	"github.com/oam-dev/vela-go-definitions/components"
 	. "github.com/oam-dev/kubevela/pkg/definition/defkit/testing/matchers"
 )
 

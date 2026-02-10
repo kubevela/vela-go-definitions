@@ -20,7 +20,7 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	"github.com/anoop2811/vela-definitions/components"
+	"github.com/oam-dev/vela-go-definitions/components"
 
 	"github.com/oam-dev/kubevela/pkg/definition/defkit"
 	. "github.com/oam-dev/kubevela/pkg/definition/defkit/testing/matchers"
