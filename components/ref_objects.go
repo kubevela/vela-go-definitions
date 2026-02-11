@@ -23,44 +23,103 @@ import (
 // RefObjects creates the ref-objects component definition.
 // Ref-objects allow users to specify ref objects to use. Notice that this component type have special handle logic.
 func RefObjects() *defkit.ComponentDefinition {
-	// Define the K8sObject helper struct (open to allow extra fields)
-	k8sObjectHelper := defkit.Struct("K8sObject").Open().Fields(
-		defkit.Field("resource", defkit.ParamTypeString).Description("The resource type for the Kubernetes objects"),
-		defkit.Field("group", defkit.ParamTypeString).Description("The group name for the Kubernetes objects"),
-		defkit.Field("name", defkit.ParamTypeString).Description("If specified, fetch the Kubernetes objects with the name, exclusive to labelSelector"),
-		defkit.Field("namespace", defkit.ParamTypeString).Description("If specified, fetch the Kubernetes objects from the namespace. Otherwise, fetch from the application's namespace."),
-		defkit.Field("cluster", defkit.ParamTypeString).Description("If specified, fetch the Kubernetes objects from the cluster. Otherwise, fetch from the local cluster."),
-		defkit.Field("labelSelector", defkit.ParamTypeString).WithSchema("[string]: string").Description("If specified, fetch the Kubernetes objects according to the label selector, exclusive to name"),
-	)
-
-	// Parameters
-	objects := defkit.Array("objects").WithSchemaRef("K8sObject").Description("If specified, application will fetch native Kubernetes objects according to the object description")
-	urls := defkit.StringList("urls").Description("If specified, the objects in the urls will be loaded.")
-
-	// Health policy: ResourceSwitch for Deployment vs default always-healthy
-	h := defkit.Health()
-	healthExpr := h.ResourceSwitch().
-		When("apps/v1", "Deployment", defkit.DeploymentHealthExpr()).
-		Default(h.Always())
-
-	// Custom status: ResourceSwitch for Deployment vs default empty
-	s := defkit.Status()
-	statusExpr := s.ResourceSwitch().
-		When("apps/v1", "Deployment", defkit.DeploymentStatusExpr()).
-		Default(s.Literal(""))
-
 	return defkit.NewComponent("ref-objects").
 		Description("Ref-objects allow users to specify ref objects to use. Notice that this component type have special handle logic.").
 		AutodetectWorkload().
-		Label("ui-hidden", "true").
-		HealthPolicyExpr(healthExpr).
-		CustomStatus(defkit.CustomStatusExpr(statusExpr)).
-		Helper("K8sObject", k8sObjectHelper).
-		Params(objects, urls).
-		Template(func(tpl *defkit.Template) {
-			tpl.OutputPassthrough(objects, 0)
-			tpl.OutputsForEach(objects, "objects-", 1)
-		})
+		RawCUE(`"ref-objects": {
+	type: "component"
+	annotations: {}
+	labels: {
+		"ui-hidden": "true"
+	}
+	description: "Ref-objects allow users to specify ref objects to use. Notice that this component type have special handle logic."
+	attributes: {
+		workload: type: "autodetects.core.oam.dev"
+		status: {
+			customStatus: #"""
+				if context.output.apiVersion == "apps/v1" && context.output.kind == "Deployment" {
+					ready: {
+						readyReplicas: *0 | int
+					} & {
+						if context.output.status.readyReplicas != _|_ {
+							readyReplicas: context.output.status.readyReplicas
+						}
+					}
+					message: "Ready:\(ready.readyReplicas)/\(context.output.spec.replicas)"
+				}
+				if context.output.apiVersion != "apps/v1" || context.output.kind != "Deployment" {
+					message: ""
+				}
+				"""#
+			healthPolicy: #"""
+				if context.output.apiVersion == "apps/v1" && context.output.kind == "Deployment" {
+					ready: {
+						updatedReplicas:    *0 | int
+						readyReplicas:      *0 | int
+						replicas:           *0 | int
+						observedGeneration: *0 | int
+					} & {
+						if context.output.status.updatedReplicas != _|_ {
+							updatedReplicas: context.output.status.updatedReplicas
+						}
+						if context.output.status.readyReplicas != _|_ {
+							readyReplicas: context.output.status.readyReplicas
+						}
+						if context.output.status.replicas != _|_ {
+							replicas: context.output.status.replicas
+						}
+						if context.output.status.observedGeneration != _|_ {
+							observedGeneration: context.output.status.observedGeneration
+						}
+					}
+					isHealth: (context.output.spec.replicas == ready.readyReplicas) && (context.output.spec.replicas == ready.updatedReplicas) && (context.output.spec.replicas == ready.replicas) && (ready.observedGeneration == context.output.metadata.generation || ready.observedGeneration > context.output.metadata.generation)
+				}
+				if context.output.apiVersion != "apps/v1" || context.output.kind != "Deployment" {
+					isHealth: true
+				}
+				"""#
+		}
+	}
+}
+template: {
+	#K8sObject: {
+		// +usage=The resource type for the Kubernetes objects
+		resource?: string
+		// +usage=The group name for the Kubernetes objects
+		group?: string
+		// +usage=If specified, fetch the Kubernetes objects with the name, exclusive to labelSelector
+		name?: string
+		// +usage=If specified, fetch the Kubernetes objects from the namespace. Otherwise, fetch from the application's namespace.
+		namespace?: string
+		// +usage=If specified, fetch the Kubernetes objects from the cluster. Otherwise, fetch from the local cluster.
+		cluster?: string
+		// +usage=If specified, fetch the Kubernetes objects according to the label selector, exclusive to name
+		labelSelector?: [string]: string
+		...
+	}
+
+	output: {
+		if len(parameter.objects) > 0 {
+			parameter.objects[0]
+		}
+		...
+	}
+
+	outputs: {
+		for i, v in parameter.objects {
+			if i > 0 {
+				"objects-\(i)": v
+			}
+		}
+	}
+	parameter: {
+		// +usage=If specified, application will fetch native Kubernetes objects according to the object description
+		objects?: [...#K8sObject]
+		// +usage=If specified, the objects in the urls will be loaded.
+		urls?: [...string]
+	}
+}
+`)
 }
 
 func init() {
