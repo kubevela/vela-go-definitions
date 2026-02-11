@@ -32,12 +32,12 @@ func ServiceAccount() *defkit.TraitDefinition {
 
 	// Helper type #Privileges
 	privilegesHelper := defkit.Struct("Privileges").Fields(
-		defkit.Field("verbs", defkit.ParamTypeArray).Required().Description("Specify the verbs to be allowed for the resource"),
-		defkit.Field("apiGroups", defkit.ParamTypeArray).Optional().Description("Specify the apiGroups of the resource"),
-		defkit.Field("resources", defkit.ParamTypeArray).Optional().Description("Specify the resources to be allowed"),
-		defkit.Field("resourceNames", defkit.ParamTypeArray).Optional().Description("Specify the resourceNames to be allowed"),
-		defkit.Field("nonResourceURLs", defkit.ParamTypeArray).Optional().Description("Specify the resource url to be allowed"),
-		defkit.Field("scope", defkit.ParamTypeString).Default("namespace").Description("Specify the scope of the privileges, default to be namespace scope"),
+		defkit.Field("verbs", defkit.ParamTypeArray).ArrayOf(defkit.ParamTypeString).Required().Description("Specify the verbs to be allowed for the resource"),
+		defkit.Field("apiGroups", defkit.ParamTypeArray).ArrayOf(defkit.ParamTypeString).Optional().Description("Specify the apiGroups of the resource"),
+		defkit.Field("resources", defkit.ParamTypeArray).ArrayOf(defkit.ParamTypeString).Optional().Description("Specify the resources to be allowed"),
+		defkit.Field("resourceNames", defkit.ParamTypeArray).ArrayOf(defkit.ParamTypeString).Optional().Description("Specify the resourceNames to be allowed"),
+		defkit.Field("nonResourceURLs", defkit.ParamTypeArray).ArrayOf(defkit.ParamTypeString).Optional().Description("Specify the resource url to be allowed"),
+		defkit.Field("scope", defkit.ParamTypeString).Default("namespace").Enum("namespace", "cluster").Description("Specify the scope of the privileges, default to be namespace scope"),
 	)
 
 	// Interpolated name for cluster-scoped resources: "\(context.namespace):\(parameter.name)"
