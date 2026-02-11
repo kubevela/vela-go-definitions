@@ -9,7 +9,6 @@ require (
 	github.com/stretchr/testify v1.10.0
 )
 
-replace github.com/oam-dev/kubevela => ../kubevela
 
 require (
 	cuelang.org/go v0.14.1 // indirect
