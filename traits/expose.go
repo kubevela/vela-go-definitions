@@ -22,12 +22,25 @@ import (
 
 // Expose creates the expose trait definition.
 // This trait exposes ports to enable web traffic for components.
-// Uses RawCUE for the template content as it requires:
-// - Custom status with complex conditional logic
-// - Health policy checking LoadBalancer status
-// - List comprehensions with strconv/strings imports
-// - Dynamic port name generation based on protocol
+//
+// The template outputs use SetRawOutputsBlock because the service resource has
+// mutually exclusive conditional blocks (selector, ports) that can't be expressed
+// in the fluent field tree model. Parameters are still defined fluently.
 func Expose() *defkit.TraitDefinition {
+	// Parameters
+	port := defkit.Array("port").Of(defkit.ParamTypeInt).Optional().Description("Deprecated, the old way to specify the exposion ports")
+
+	ports := defkit.Array("ports").Optional().WithFields(
+		defkit.Int("port").Required().Description("Number of port to expose on the pod's IP address"),
+		defkit.String("name").Optional().Description("Name of the port"),
+		defkit.String("protocol").Default("TCP").Enum("TCP", "UDP", "SCTP").Description("Protocol for port. Must be UDP, TCP, or SCTP"),
+		defkit.Int("nodePort").Optional().Description("exposed node port. Only Valid when exposeType is NodePort"),
+	).Description("Specify portsyou want customer traffic sent to")
+
+	annotations := defkit.Map("annotations").Of(defkit.ParamTypeString).Description("Specify the annotations of the exposed service")
+	matchLabels := defkit.Map("matchLabels").Of(defkit.ParamTypeString).Optional()
+	serviceType := defkit.String("type").Default("ClusterIP").Enum("ClusterIP", "NodePort", "LoadBalancer", "ExternalName").Description(`Specify what kind of Service you want. options: "ClusterIP","NodePort","LoadBalancer","ExternalName"`)
+
 	return defkit.NewTrait("expose").
 		Description("Expose port to enable web traffic for your component.").
 		AppliesTo("deployments.apps", "statefulsets.apps").
@@ -59,7 +72,9 @@ if service.spec.type == "LoadBalancer" {
 if service.spec.type != "LoadBalancer" {
 	isHealth: true
 }`).
-		RawCUE(`outputs: service: {
+		Params(port, ports, annotations, matchLabels, serviceType).
+		Template(func(tpl *defkit.Template) {
+			tpl.SetRawOutputsBlock(`outputs: service: {
 	apiVersion: "v1"
 	kind:       "Service"
 	metadata: name:        context.name
@@ -107,32 +122,8 @@ if service.spec.type != "LoadBalancer" {
 		}
 		type: parameter.type
 	}
-}
-
-parameter: {
-	// +usage=Deprecated, the old way to specify the exposion ports
-	port?: [...int]
-
-	// +usage=Specify portsyou want customer traffic sent to
-	ports?: [...{
-		// +usage=Number of port to expose on the pod's IP address
-		port: int
-		// +usage=Name of the port
-		name?: string
-		// +usage=Protocol for port. Must be UDP, TCP, or SCTP
-		protocol: *"TCP" | "UDP" | "SCTP"
-		// +usage=exposed node port. Only Valid when exposeType is NodePort
-		nodePort?: int
-	}]
-
-	// +usage=Specify the annotations of the exposed service
-	annotations: [string]: string
-
-	matchLabels?: [string]: string
-
-	// +usage=Specify what kind of Service you want. options: "ClusterIP","NodePort","LoadBalancer","ExternalName"
-	type: *"ClusterIP" | "NodePort" | "LoadBalancer" | "ExternalName"
 }`)
+		})
 }
 
 func init() {

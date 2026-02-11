@@ -22,13 +22,26 @@ import (
 
 // Gateway creates the gateway trait definition.
 // This trait enables public web traffic for the component using Ingress.
-// Uses RawCUE for the template content as it requires:
-// - Custom status with complex conditional logic for LoadBalancer IP
-// - Health policy checking ingress status
-// - Cluster version check for API version selection
-// - Let bindings and dynamic output names
-// - Conditional Service creation based on existingServiceName
+//
+// The template uses SetRawHeaderBlock and SetRawOutputsBlock because the template
+// requires conditional let bindings, dynamic output names (parenthesized expressions),
+// map iteration (for k,v in map), and conditional blocks wrapping entire outputs —
+// features that can't be expressed in the fluent field tree model.
+// Parameters are still defined fluently.
 func Gateway() *defkit.TraitDefinition {
+	// Parameters
+	domain := defkit.String("domain").Optional().Description("Specify the domain you want to expose")
+	http := defkit.Map("http").Of(defkit.ParamTypeInt).Description("Specify the mapping relationship between the http path and the workload port")
+	class := defkit.String("class").Default("nginx").Description("Specify the class of ingress to use")
+	classInSpec := defkit.Bool("classInSpec").Default(false).Description("Set ingress class in '.spec.ingressClassName' instead of 'kubernetes.io/ingress.class' annotation.")
+	secretName := defkit.String("secretName").Optional().Description("Specify the secret name you want to quote to use tls.")
+	gatewayHost := defkit.String("gatewayHost").Optional().Description("Specify the host of the ingress gateway, which is used to generate the endpoints when the host is empty.")
+	name := defkit.String("name").Optional().Description("Specify a unique name for this gateway, required to support multiple gateway traits on a component")
+	pathType := defkit.String("pathType").Default("ImplementationSpecific").Enum("ImplementationSpecific", "Prefix", "Exact").Description(`Specify a pathType for the ingress rules, defaults to "ImplementationSpecific"`)
+	annotations := defkit.Map("annotations").Of(defkit.ParamTypeString).Optional().Description("Specify the annotations to be added to the ingress")
+	labels := defkit.Map("labels").Of(defkit.ParamTypeString).Optional().Description("Specify the labels to be added to the ingress")
+	existingServiceName := defkit.String("existingServiceName").Optional().Description("If specified, use an existing Service rather than creating one")
+
 	return defkit.NewTrait("gateway").
 		Description("Enable public web traffic for the component, the ingress API matches K8s v1.20+.").
 		AppliesTo("deployments.apps", "statefulsets.apps").
@@ -80,8 +93,9 @@ if igs != _|_ {
 let ingressMetaName = context.name + nameSuffix
 let igstat  = len([for i in context.outputs if (i.kind == "Ingress") && (i.metadata.name == ingressMetaName) {i}]) > 0
 isHealth: igstat`).
-		RawCUE(`
-let nameSuffix = {
+		Params(domain, http, class, classInSpec, secretName, gatewayHost, name, pathType, annotations, labels, existingServiceName).
+		Template(func(tpl *defkit.Template) {
+			tpl.SetRawHeaderBlock(`let nameSuffix = {
 	if parameter.name != _|_ {"-" + parameter.name}
 	if parameter.name == _|_ {""}
 }
@@ -89,9 +103,9 @@ let nameSuffix = {
 let serviceMetaName = {
 	if (parameter.existingServiceName != _|_) {parameter.existingServiceName}
 	if (parameter.existingServiceName == _|_) {context.name + nameSuffix}
-}
+}`)
 
-if (parameter.existingServiceName == _|_) {
+			tpl.SetRawOutputsBlock(`if (parameter.existingServiceName == _|_) {
 	let serviceOutputName = "service" + nameSuffix
 	outputs: (serviceOutputName): {
 		apiVersion: "v1"
@@ -181,43 +195,8 @@ outputs: (ingressOutputName): {
 			]
 		}]
 	}
-}
-
-parameter: {
-	// +usage=Specify the domain you want to expose
-	domain?: string
-
-	// +usage=Specify the mapping relationship between the http path and the workload port
-	http: [string]: int
-
-	// +usage=Specify the class of ingress to use
-	class: *"nginx" | string
-
-	// +usage=Set ingress class in '.spec.ingressClassName' instead of 'kubernetes.io/ingress.class' annotation.
-	classInSpec: *false | bool
-
-	// +usage=Specify the secret name you want to quote to use tls.
-	secretName?: string
-
-	// +usage=Specify the host of the ingress gateway, which is used to generate the endpoints when the host is empty.
-	gatewayHost?: string
-
-	// +usage=Specify a unique name for this gateway, required to support multiple gateway traits on a component
-	name?: string
-
-	// +usage=Specify a pathType for the ingress rules, defaults to "ImplementationSpecific"
-	pathType: *"ImplementationSpecific" | "Prefix" | "Exact"
-
-	// +usage=Specify the annotations to be added to the ingress
-	annotations?: [string]: string
-
-	// +usage=Specify the labels to be added to the ingress
-	labels?: [string]: string
-
-	// +usage=If specified, use an existing Service rather than creating one
-	existingServiceName?: string
-}
-`)
+}`)
+		})
 }
 
 func init() {
