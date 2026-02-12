@@ -40,9 +40,9 @@ jobs:
       - name: Run Policy E2E Tests
         run: |
           echo "Running E2E tests for policy definitions..."
-          make test-e2e-policies VELA_CLI=kubevela-source/bin/vela
-        env:
-          TESTDATA_PATH: test/builtin-definition-example
+          make test-e2e-policies \
+            VELA_CLI=${{ github.workspace }}/kubevela-source/bin/vela \
+            TESTDATA_PATH=${{ github.workspace }}/test/builtin-definition-example
 
       - name: Summary
         if: always()

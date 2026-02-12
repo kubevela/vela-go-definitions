@@ -35,14 +35,39 @@ const (
 	PollInterval = 5 * time.Second
 )
 
+// getProjectRoot finds the project root by looking for go.mod
+func getProjectRoot() string {
+	// Start from current directory and walk up
+	dir, err := os.Getwd()
+	if err != nil {
+		return "."
+	}
+
+	for {
+		if _, err := os.Stat(filepath.Join(dir, "go.mod")); err == nil {
+			return dir
+		}
+		parent := filepath.Dir(dir)
+		if parent == dir {
+			// Reached root, return current directory
+			return "."
+		}
+		dir = parent
+	}
+}
+
 // getTestDataPath returns the path to the test data directory
 func getTestDataPath() string {
-	// Check if TESTDATA_PATH is set
+	// Check if TESTDATA_PATH is set as absolute path
 	if path := os.Getenv("TESTDATA_PATH"); path != "" {
-		return path
+		if filepath.IsAbs(path) {
+			return path
+		}
+		// If relative, make it relative to project root
+		return filepath.Join(getProjectRoot(), path)
 	}
 	// Default path relative to project root
-	return "test/builtin-definition-example"
+	return filepath.Join(getProjectRoot(), "test", "builtin-definition-example")
 }
 
 // getVelaCLI returns the path to the vela CLI
@@ -115,15 +140,6 @@ func waitForApplicationRunning(ctx context.Context, appName, namespace string) e
 			}
 		}
 	}
-}
-
-// deleteApplication deletes a KubeVela application by name
-func deleteApplication(ctx context.Context, appName, namespace string) error {
-	output, err := runCommand(ctx, "kubectl", "delete", "application", appName, "-n", namespace, "--ignore-not-found")
-	if err != nil {
-		GinkgoWriter.Printf("Warning: failed to delete application %s: %v\nOutput: %s\n", appName, err, output)
-	}
-	return nil
 }
 
 // deleteApplicationByFile deletes a KubeVela application using the YAML file
