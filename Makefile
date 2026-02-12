@@ -39,19 +39,19 @@ test-e2e-components:
 		$(GINKGO) -v --timeout=$(E2E_TIMEOUT) --label-filter="components" --procs=$(PROCS) ./test/e2e/...
 
 test-e2e-traits:
-	@echo "Running E2E tests for trait definitions..."
+	@echo "Running E2E tests for trait definitions in parallel ($(PROCS) processes)..."
 	TESTDATA_PATH=$(TESTDATA_PATH) \
-		$(GINKGO) -v --timeout=$(E2E_TIMEOUT) --label-filter="traits" ./test/e2e/...
+		$(GINKGO) -v --timeout=$(E2E_TIMEOUT) --label-filter="traits" --procs=$(PROCS) ./test/e2e/...
 
 test-e2e-policies:
-	@echo "Running E2E tests for policy definitions..."
+	@echo "Running E2E tests for policy definitions in parallel ($(PROCS) processes)..."
 	TESTDATA_PATH=$(TESTDATA_PATH) \
-		$(GINKGO) -v --timeout=$(E2E_TIMEOUT) --label-filter="policies" ./test/e2e/...
+		$(GINKGO) -v --timeout=$(E2E_TIMEOUT) --label-filter="policies" --procs=$(PROCS) ./test/e2e/...
 
 test-e2e-workflowsteps:
-	@echo "Running E2E tests for workflowstep definitions..."
+	@echo "Running E2E tests for workflowstep definitions in parallel ($(PROCS) processes)..."
 	TESTDATA_PATH=$(TESTDATA_PATH) \
-		$(GINKGO) -v --timeout=$(E2E_TIMEOUT) --label-filter="workflowsteps" ./test/e2e/...
+		$(GINKGO) -v --timeout=$(E2E_TIMEOUT) --label-filter="workflowsteps" --procs=$(PROCS) ./test/e2e/...
 
 ## Help
 help:
@@ -60,9 +60,9 @@ help:
 	@echo "  install-ginkgo         - Install Ginkgo CLI for running E2E tests"
 	@echo "  test-e2e               - Run all E2E tests"
 	@echo "  test-e2e-components    - Run E2E tests for component definitions (parallel)"
-	@echo "  test-e2e-traits        - Run E2E tests for trait definitions"
-	@echo "  test-e2e-policies      - Run E2E tests for policy definitions"
-	@echo "  test-e2e-workflowsteps - Run E2E tests for workflowstep definitions"
+	@echo "  test-e2e-traits        - Run E2E tests for trait definitions (parallel)"
+	@echo "  test-e2e-policies      - Run E2E tests for policy definitions (parallel)"
+	@echo "  test-e2e-workflowsteps - Run E2E tests for workflowstep definitions (parallel)"
 	@echo ""
 	@echo "Environment variables:"
 	@echo "  TESTDATA_PATH - Path to test data (default: test/builtin-definition-example)"
