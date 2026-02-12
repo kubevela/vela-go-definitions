@@ -58,6 +58,7 @@ runs:
           echo "No replace directive found for kubevela, using default"
           echo "repository=oam-dev/kubevela" >> $GITHUB_OUTPUT
           echo "ref=master" >> $GITHUB_OUTPUT
+          echo "is_commit=false" >> $GITHUB_OUTPUT
         else
           echo "Found replace directive: $REPLACE_LINE"
           
@@ -81,14 +82,39 @@ runs:
           
           echo "repository=$REPO" >> $GITHUB_OUTPUT
           echo "ref=$COMMIT_SHA" >> $GITHUB_OUTPUT
+          echo "is_commit=true" >> $GITHUB_OUTPUT
         fi
 
-    - name: Clone KubeVela repository from go.mod
-      uses: actions/checkout@v5
-      with:
-        repository: ${{ steps.extract-vela-info.outputs.repository }}
-        ref: ${{ steps.extract-vela-info.outputs.ref }}
-        path: kubevela-source
+    - name: Clone KubeVela repository and checkout commit
+      shell: bash
+      run: |
+        REPO="${{ steps.extract-vela-info.outputs.repository }}"
+        REF="${{ steps.extract-vela-info.outputs.ref }}"
+        IS_COMMIT="${{ steps.extract-vela-info.outputs.is_commit }}"
+        
+        echo "Cloning repository: $REPO"
+        echo "Target ref: $REF"
+        echo "Is commit SHA: $IS_COMMIT"
+        
+        # Initialize empty repo and add remote
+        mkdir -p kubevela-source
+        cd kubevela-source
+        git init
+        git remote add origin "https://github.com/${REPO}.git"
+        
+        if [ "$IS_COMMIT" = "true" ]; then
+          echo "Fetching specific commit: $REF"
+          # Fetch the specific commit directly
+          git fetch --depth 1 origin "$REF"
+          git checkout FETCH_HEAD
+        else
+          echo "Fetching branch: $REF"
+          git fetch --depth 1 origin "$REF"
+          git checkout FETCH_HEAD
+        fi
+        
+        echo "Checkout complete"
+        git log -1 --oneline
 
     - name: Verify cloned repository
       shell: bash
