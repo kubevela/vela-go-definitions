@@ -1,4 +1,4 @@
-name: Build Vela CLI
+name: Run Component definition test
 
 on:
   workflow_dispatch:
@@ -76,6 +76,39 @@ jobs:
             exit 1
           fi
 
+      - name: List installed definitions before cleanup
+        run: |
+          echo "Listing installed component definitions..."
+          kubectl get componentdefinitions -n vela-system
+
+      - name: Uninstall built-in definitions
+        run: |
+          echo "Uninstalling built-in component definitions..."
+          kubectl delete componentdefinitions --all -n vela-system || true
+          kubectl delete traitdefinitions --all -n vela-system || true
+          kubectl delete workflowstepdefinitions --all -n vela-system || true
+          kubectl delete policydefinitions --all -n vela-system || true
+          echo "Built-in definitions uninstalled"
+
+      - name: List definitions from vela-definitions module
+        run: |
+          echo "Listing definitions from vela-definitions module..."
+          kubevela-source/bin/vela def list-module vela-definitions
+
+      - name: Install definitions from defkit
+        run: |
+          echo "Installing definitions from vela-definitions module..."
+          kubevela-source/bin/vela def apply-module vela-definitions --conflict=overwrite
+          echo "Definitions installed successfully"
+
+      - name: Verify installed definitions
+        run: |
+          echo "Verifying installed definitions..."
+          kubectl get componentdefinitions -n vela-system
+          kubectl get traitdefinitions -n vela-system
+          kubectl get workflowstepdefinitions -n vela-system
+          kubectl get policydefinitions -n vela-system
+
       - name: Summary
         run: |
           echo "## Build Summary" >> $GITHUB_STEP_SUMMARY
@@ -84,5 +117,16 @@ jobs:
           echo "- **Branch:** ${{ github.event.inputs.branch }}" >> $GITHUB_STEP_SUMMARY
           echo "- **CLI Location:** kubevela-source/bin/vela" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "✅ Vela CLI built successfully and uploaded as artifact!" >> $GITHUB_STEP_SUMMARY
+          echo "### Actions Completed" >> $GITHUB_STEP_SUMMARY
+          echo "✅ Vela CLI built successfully" >> $GITHUB_STEP_SUMMARY
+          echo "✅ Built-in definitions uninstalled" >> $GITHUB_STEP_SUMMARY
+          echo "✅ Definitions from vela-definitions module installed" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Installed Definitions" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          kubectl get componentdefinitions -n vela-system --no-headers | wc -l | xargs -I {} echo "Component Definitions: {}" >> $GITHUB_STEP_SUMMARY
+          kubectl get traitdefinitions -n vela-system --no-headers | wc -l | xargs -I {} echo "Trait Definitions: {}" >> $GITHUB_STEP_SUMMARY
+          kubectl get workflowstepdefinitions -n vela-system --no-headers | wc -l | xargs -I {} echo "WorkflowStep Definitions: {}" >> $GITHUB_STEP_SUMMARY
+          kubectl get policydefinitions -n vela-system --no-headers | wc -l | xargs -I {} echo "Policy Definitions: {}" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
 
