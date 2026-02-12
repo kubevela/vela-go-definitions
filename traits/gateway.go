@@ -31,7 +31,7 @@ import (
 func Gateway() *defkit.TraitDefinition {
 	// Parameters
 	domain := defkit.String("domain").Optional().Description("Specify the domain you want to expose")
-	http := defkit.Map("http").Of(defkit.ParamTypeInt).Description("Specify the mapping relationship between the http path and the workload port")
+	http := defkit.Map("http").Of(defkit.ParamTypeInt).Required().Description("Specify the mapping relationship between the http path and the workload port")
 	class := defkit.String("class").Default("nginx").Description("Specify the class of ingress to use")
 	classInSpec := defkit.Bool("classInSpec").Default(false).Description("Set ingress class in '.spec.ingressClassName' instead of 'kubernetes.io/ingress.class' annotation.")
 	secretName := defkit.String("secretName").Optional().Description("Specify the secret name you want to quote to use tls.")

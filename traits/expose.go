@@ -37,7 +37,7 @@ func Expose() *defkit.TraitDefinition {
 		defkit.Int("nodePort").Optional().Description("exposed node port. Only Valid when exposeType is NodePort"),
 	).Description("Specify portsyou want customer traffic sent to")
 
-	annotations := defkit.Map("annotations").Of(defkit.ParamTypeString).Description("Specify the annotations of the exposed service")
+	annotations := defkit.Map("annotations").Of(defkit.ParamTypeString).Required().Description("Specify the annotations of the exposed service")
 	matchLabels := defkit.Map("matchLabels").Of(defkit.ParamTypeString).Optional()
 	serviceType := defkit.String("type").Default("ClusterIP").Enum("ClusterIP", "NodePort", "LoadBalancer", "ExternalName").Description(`Specify what kind of Service you want. options: "ClusterIP","NodePort","LoadBalancer","ExternalName"`)
 
