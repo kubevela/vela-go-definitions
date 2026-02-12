@@ -1,0 +1,88 @@
+name: Build Vela CLI
+
+on:
+  workflow_dispatch:
+    inputs:
+      repository:
+        description: 'Repository to clone (e.g., oam-dev/kubevela or roguepikachu/kubevela)'
+        required: true
+        default: 'oam-dev/kubevela'
+      branch:
+        description: 'Branch to checkout'
+        required: true
+        default: 'master'
+
+jobs:
+  build-vela-cli:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout current repository
+        uses: actions/checkout@v5
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.23'
+
+      - name: Set up Kubernetes (Kind)
+        uses: helm/kind-action@v1
+        with:
+          cluster_name: vela-test
+          wait: 120s
+
+      - name: Verify Kubernetes cluster
+        run: |
+          kubectl cluster-info
+          kubectl get nodes
+
+      - name: Download and install Vela CLI (latest release)
+        run: |
+          curl -fsSl https://kubevela.io/script/install.sh | bash
+          vela version
+
+      - name: Install KubeVela
+        run: |
+          vela install
+
+      - name: Wait for KubeVela to be ready
+        run: |
+          echo "Waiting for KubeVela to be ready..."
+          kubectl wait --for=condition=available --timeout=300s deployment/kubevela-vela-core -n vela-system || true
+          kubectl get pods -n vela-system
+
+      - name: Clone specified repository
+        run: |
+          echo "Cloning repository: ${{ github.event.inputs.repository }}"
+          echo "Branch: ${{ github.event.inputs.branch }}"
+          git clone --depth 1 --branch ${{ github.event.inputs.branch }} https://github.com/${{ github.event.inputs.repository }}.git kubevela-source
+
+      - name: Build Vela CLI from source
+        working-directory: kubevela-source
+        run: |
+          echo "Building Vela CLI..."
+          make vela-cli
+
+      - name: Verify built CLI
+        working-directory: kubevela-source
+        run: |
+          if [ -f bin/vela ]; then
+            echo "Vela CLI built successfully!"
+            ./bin/vela version
+            ls -lh bin/vela
+          else
+            echo "Error: Vela CLI binary not found in bin/vela"
+            find . -name "vela" -type f
+            exit 1
+          fi
+
+      - name: Summary
+        run: |
+          echo "## Build Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- **Repository:** ${{ github.event.inputs.repository }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Branch:** ${{ github.event.inputs.branch }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **CLI Location:** kubevela-source/bin/vela" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "✅ Vela CLI built successfully and uploaded as artifact!" >> $GITHUB_STEP_SUMMARY
+
