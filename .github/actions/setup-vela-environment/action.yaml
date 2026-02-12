@@ -92,12 +92,6 @@ runs:
           exit 1
         fi
 
-    - name: List installed definitions before cleanup
-      shell: bash
-      run: |
-        echo "Listing installed component definitions..."
-        kubectl get componentdefinitions -n vela-system
-
     - name: Uninstall built-in definitions
       shell: bash
       run: |
