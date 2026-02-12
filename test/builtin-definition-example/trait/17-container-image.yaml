@@ -1,0 +1,20 @@
+apiVersion: core.oam.dev/v1beta1
+kind: Application
+metadata:
+  name: container-image-example
+  namespace: default
+spec:
+  components:
+    - name: nginx-app
+      type: webservice
+      properties:
+        image: nginx:1.20
+        ports:
+          - port: 80
+            expose: true
+      traits:
+        - type: container-image
+          properties:
+            image: nginx:latest
+            imagePullPolicy: Always
+

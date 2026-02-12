@@ -1,0 +1,36 @@
+apiVersion: core.oam.dev/v1beta1
+kind: Application
+metadata:
+  name: command-example
+  namespace: default
+spec:
+  components:
+    - name: nginx-app
+      type: webservice
+      properties:
+        image: busybox:latest
+        ports:
+          - port: 8080
+            expose: true
+      traits:
+        - type: command
+          properties:
+            command:
+              - "/bin/sh"
+            args:
+              - "-c"
+              - |
+                echo "==================================="
+                echo "Hello World from Command Trait!"
+                echo "==================================="
+                echo "This command was set by the 'command' trait"
+                echo "Container started at: $(date)"
+                echo "Hostname: $(hostname)"
+                echo "==================================="
+                echo ""
+                echo "Keeping container running..."
+                while true; do
+                  echo "[$(date)] Container is running... Hello World!"
+                  sleep 30
+                done
+

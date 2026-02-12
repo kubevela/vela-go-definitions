@@ -1,0 +1,145 @@
+name: 'Setup KubeVela Environment'
+description: 'Sets up Kubernetes cluster, builds Vela CLI, installs KubeVela, and installs definitions from module'
+
+inputs:
+  repository:
+    description: 'KubeVela repository to clone'
+    required: true
+    default: 'oam-dev/kubevela'
+  branch:
+    description: 'Branch to checkout'
+    required: true
+    default: 'master'
+  go-version:
+    description: 'Go version to use'
+    required: false
+    default: '1.23'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: ${{ inputs.go-version }}
+
+    - name: Set up Kubernetes (Kind)
+      uses: helm/kind-action@v1
+      with:
+        cluster_name: vela-test
+        wait: 120s
+
+    - name: Verify Kubernetes cluster
+      shell: bash
+      run: |
+        kubectl cluster-info
+        kubectl get nodes
+
+    - name: Download and install Vela CLI (latest release)
+      shell: bash
+      run: |
+        curl -fsSl https://kubevela.io/script/install.sh | bash
+        vela version
+
+    - name: Install KubeVela
+      shell: bash
+      run: |
+        vela install
+
+    - name: Wait for KubeVela to be ready
+      shell: bash
+      run: |
+        echo "Waiting for KubeVela to be ready..."
+        kubectl wait --for=condition=available --timeout=300s deployment/kubevela-vela-core -n vela-system || true
+        kubectl get pods -n vela-system
+
+    - name: Clone specified repository
+      uses: actions/checkout@v5
+      with:
+        repository: ${{ inputs.repository }}
+        ref: ${{ inputs.branch }}
+        path: kubevela-source
+
+    - name: Verify cloned repository
+      shell: bash
+      working-directory: kubevela-source
+      run: |
+        echo "Repository: ${{ inputs.repository }}"
+        echo "Branch: ${{ inputs.branch }}"
+        echo "Current commit:"
+        git log -1 --oneline
+        echo "Working directory contents:"
+        ls -la
+
+    - name: Build Vela CLI from source
+      shell: bash
+      working-directory: kubevela-source
+      run: |
+        echo "Building Vela CLI..."
+        make vela-cli
+
+    - name: Verify built CLI
+      shell: bash
+      working-directory: kubevela-source
+      run: |
+        if [ -f bin/vela ]; then
+          echo "Vela CLI built successfully!"
+          ./bin/vela version
+          ls -lh bin/vela
+        else
+          echo "Error: Vela CLI binary not found in bin/vela"
+          find . -name "vela" -type f
+          exit 1
+        fi
+
+    - name: List installed definitions before cleanup
+      shell: bash
+      run: |
+        echo "Listing installed component definitions..."
+        kubectl get componentdefinitions -n vela-system
+
+    - name: Uninstall built-in definitions
+      shell: bash
+      run: |
+        echo "Uninstalling built-in component definitions..."
+        kubectl delete componentdefinitions --all -n vela-system || true
+        kubectl delete traitdefinitions --all -n vela-system || true
+        kubectl delete workflowstepdefinitions --all -n vela-system || true
+        kubectl delete policydefinitions --all -n vela-system || true
+        echo "Built-in definitions uninstalled"
+
+    - name: Prepare Go module dependencies
+      shell: bash
+      run: |
+        echo "Running go mod tidy..."
+        go mod tidy
+        echo "Go dependencies updated"
+
+    - name: List definitions from vela-definitions module
+      shell: bash
+      run: |
+        echo "Listing definitions from vela-definitions module..."
+        kubevela-source/bin/vela def list-module .
+
+    - name: Install definitions from defkit
+      shell: bash
+      run: |
+        echo "Installing definitions from vela-definitions module..."
+        kubevela-source/bin/vela def apply-module . --conflict=overwrite
+        echo "Definitions installed successfully"
+
+    - name: Verify installed definitions
+      shell: bash
+      run: |
+        echo "Verifying installed definitions..."
+        kubectl get componentdefinitions -n vela-system
+        kubectl get traitdefinitions -n vela-system
+        kubectl get workflowstepdefinitions -n vela-system
+        kubectl get policydefinitions -n vela-system
+
+    - name: Install Ginkgo
+      shell: bash
+      run: |
+        go install github.com/onsi/ginkgo/v2/ginkgo@latest
+        echo "$(go env GOPATH)/bin" >> $GITHUB_PATH
+

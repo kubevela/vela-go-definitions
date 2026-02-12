@@ -1,0 +1,39 @@
+apiVersion: core.oam.dev/v1beta1
+kind: Application
+metadata:
+  name: env-example
+  namespace: default
+spec:
+  components:
+    - name: nginx-app
+      type: webservice
+      properties:
+        image: busybox:latest
+        ports:
+          - port: 8080
+            expose: true
+        cmd:
+          - "/bin/sh"
+          - "-c"
+          - |
+            echo "=== Environment Variables Set by Trait ==="
+            echo "LOG_LEVEL: $LOG_LEVEL"
+            echo "ENVIRONMENT: $ENVIRONMENT"
+            echo "API_KEY: $API_KEY"
+            echo "APP_VERSION: $APP_VERSION"
+            echo "DATABASE_URL: $DATABASE_URL"
+            echo "=========================================="
+            # Keep container running and serve env vars on port 8080
+            while true; do
+              echo -e "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\n\r\nEnvironment Variables:\nLOG_LEVEL=$LOG_LEVEL\nENVIRONMENT=$ENVIRONMENT\nAPI_KEY=$API_KEY\nAPP_VERSION=$APP_VERSION\nDATABASE_URL=$DATABASE_URL" | nc -l -p 8080
+            done
+      traits:
+        - type: env
+          properties:
+            env:
+              LOG_LEVEL: "debug"
+              ENVIRONMENT: "production"
+              API_KEY: "secret-key-123"
+              APP_VERSION: "v1.2.3"
+              DATABASE_URL: "postgresql://localhost:5432/mydb"
+

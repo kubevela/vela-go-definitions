@@ -1,0 +1,21 @@
+apiVersion: core.oam.dev/v1beta1
+kind: Application
+metadata:
+  name: annotations-example
+  namespace: default
+spec:
+  components:
+    - name: nginx-app
+      type: webservice
+      properties:
+        image: nginx:latest
+        ports:
+          - port: 80
+            expose: true
+      traits:
+        - type: annotations
+          properties:
+            app.example.com/owner: "team-platform"
+            app.example.com/version: "v1.0"
+            prometheus.io/scrape: "true"
+

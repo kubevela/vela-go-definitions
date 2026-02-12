@@ -1,0 +1,63 @@
+name: Test Component Definitions
+
+on:
+  workflow_dispatch:
+    inputs:
+      repository:
+        description: 'KubeVela repository to clone'
+        required: true
+        default: 'oam-dev/kubevela'
+      branch:
+        description: 'Branch to checkout'
+        required: true
+        default: 'master'
+  workflow_call:
+    inputs:
+      repository:
+        description: 'KubeVela repository to clone'
+        required: true
+        type: string
+        default: 'oam-dev/kubevela'
+      branch:
+        description: 'Branch to checkout'
+        required: true
+        type: string
+        default: 'master'
+
+jobs:
+  test-components:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout current repository
+        uses: actions/checkout@v5
+
+      - name: Setup KubeVela Environment
+        uses: ./.github/actions/setup-vela-environment
+        with:
+          repository: ${{ github.event.inputs.repository }}
+          branch: ${{ github.event.inputs.branch }}
+
+      - name: Run Component E2E Tests
+        run: |
+          echo "Running E2E tests for component definitions..."
+          make test-e2e-components VELA_CLI=kubevela-source/bin/vela
+        env:
+          TESTDATA_PATH: test/builtin-definition-example
+
+      - name: Summary
+        if: always()
+        run: |
+          echo "## Component Definition Test Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- **Repository:** ${{ github.event.inputs.repository }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Branch:** ${{ github.event.inputs.branch }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Installed Definitions" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          kubectl get componentdefinitions -n vela-system --no-headers | wc -l | xargs -I {} echo "Component Definitions: {}" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Test Applications" >> $GITHUB_STEP_SUMMARY
+          echo "Tested applications from \`test/builtin-definition-example/components/\`:" >> $GITHUB_STEP_SUMMARY
+          ls -1 test/builtin-definition-example/components/*.yaml | xargs -I {} basename {} | while read f; do echo "- $f"; done >> $GITHUB_STEP_SUMMARY
+

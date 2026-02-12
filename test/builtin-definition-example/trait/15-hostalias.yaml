@@ -1,0 +1,23 @@
+apiVersion: core.oam.dev/v1beta1
+kind: Application
+metadata:
+  name: hostalias-example
+  namespace: default
+spec:
+  components:
+    - name: nginx-app
+      type: webservice
+      properties:
+        image: nginx:latest
+        ports:
+          - port: 80
+            expose: true
+      traits:
+        - type: hostalias
+          properties:
+            hostAliases:
+              - ip: "127.0.0.1"
+                hostnames:
+                  - "myapp.local"
+                  - "api.local"
+

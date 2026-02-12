@@ -1,0 +1,36 @@
+apiVersion: core.oam.dev/v1beta1
+kind: Application
+metadata:
+  name: another-app
+  namespace: gokarna
+spec:
+  components:
+  - name: express-server8
+    type: webservice
+    properties:
+      image: oamdev/hello-world
+      port: 8000
+---
+apiVersion: core.oam.dev/v1beta1
+kind: Application
+metadata:
+  name: first-vela-workflow
+  namespace: gokarna
+spec:
+  components:
+  - name: express-server
+    type: webservice
+    properties:
+      image: oamdev/hello-world
+      port: 8000
+  workflow:
+    steps:
+    - name: express-server
+      type: depends-on-app
+      properties:
+        name: another-app
+        namespace: gokarna
+    - name: webservice-apply
+      type: apply-component
+      properties:
+        component:: express-server

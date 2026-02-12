@@ -1,0 +1,16 @@
+apiVersion: core.oam.dev/v1beta1
+kind: Application
+metadata:
+  name: basic-topology
+  namespace: default
+spec:
+  components:
+    - name: nginx-basic
+      type: webservice
+      properties:
+        image: nginx
+  policies:
+    - name: topology-hangzhou-clusters
+      type: topology
+      properties:
+        clusters: ["local", "k3d-slave"]

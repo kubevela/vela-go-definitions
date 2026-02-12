@@ -1,0 +1,23 @@
+apiVersion: core.oam.dev/v1beta1
+kind: Application
+metadata:
+  name: garbage-collect-app
+spec:
+  components:
+    - name: hello-world-new
+      type: webservice
+      properties:
+        image: oamdev/hello-world
+      traits:
+        - type: expose
+          properties:
+            port: [8000]
+  policies:
+    - name: garbage-collect
+      type: garbage-collect
+      properties:
+        rules:
+          - selector:
+              traitTypes:
+                - expose
+            strategy: never

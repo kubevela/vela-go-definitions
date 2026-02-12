@@ -1,0 +1,82 @@
+apiVersion: core.oam.dev/v1beta1
+kind: Application
+metadata:
+  name: multi-trait-example
+  namespace: default
+spec:
+  components:
+    - name: nginx-app
+      type: webservice
+      properties:
+        image: nginx:latest
+        ports:
+          - port: 80
+            expose: true
+      traits:
+        # Add labels and annotations
+        - type: labels
+          properties:
+            environment: "production"
+            team: "platform"
+        - type: annotations
+          properties:
+            app.example.com/owner: "team-platform"
+            prometheus.io/scrape: "true"
+        # Scale to 3 replicas
+        - type: scaler
+          properties:
+            replicas: 3
+        # Add environment variables
+        - type: env
+          properties:
+            env:
+              LOG_LEVEL: "info"
+              ENVIRONMENT: "production"
+        # Set resource limits
+        - type: resource
+          properties:
+            requests:
+              cpu: "250m"
+              memory: "256Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+        # Add storage
+        - type: storage
+          properties:
+            emptyDir:
+              - name: cache
+                mountPath: /cache
+                medium: ""
+        # Configure lifecycle hooks
+        - type: lifecycle
+          properties:
+            postStart:
+              exec:
+                command:
+                  - "/bin/sh"
+                  - "-c"
+                  - "echo 'Started' > /tmp/started"
+        # Add init container
+        - type: init-container
+          properties:
+            name: setup
+            image: busybox:latest
+            imagePullPolicy: IfNotPresent
+            mountName: workdir
+            appMountPath: /app
+            initMountPath: /init
+            extraVolumeMounts: []
+            cmd:
+              - "sh"
+              - "-c"
+              - "echo 'Initializing...' && sleep 2"
+        # Configure update strategy
+        - type: k8s-update-strategy
+          properties:
+            strategy:
+              type: RollingUpdate
+              rollingUpdate:
+                maxSurge: 1
+                maxUnavailable: 0
+
