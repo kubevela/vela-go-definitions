@@ -26,6 +26,10 @@ import (
 	"time"
 
 	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
+	"sigs.k8s.io/yaml"
+
+	"github.com/oam-dev/kubevela/apis/core.oam.dev/v1beta1"
 )
 
 const (
@@ -114,32 +118,26 @@ func getApplicationStatus(ctx context.Context, appName, namespace string) (strin
 func waitForApplicationRunning(ctx context.Context, appName, namespace string) error {
 	GinkgoWriter.Printf("Waiting for application %s/%s to be running...\n", namespace, appName)
 
-	timeout := time.After(AppRunningTimeout)
-	ticker := time.NewTicker(PollInterval)
-	defer ticker.Stop()
-
-	for {
-		select {
-		case <-ctx.Done():
-			return ctx.Err()
-		case <-timeout:
-			status, _ := getApplicationStatus(ctx, appName, namespace)
-			return fmt.Errorf("timeout waiting for application %s to be running (current status: %s)", appName, status)
-		case <-ticker.C:
-			status, err := getApplicationStatus(ctx, appName, namespace)
-			if err != nil {
-				GinkgoWriter.Printf("Error getting status: %v\n", err)
-				continue
-			}
-			GinkgoWriter.Printf("Application %s status: %s\n", appName, status)
-			if strings.Contains(strings.ToLower(status), "running") {
-				return nil
-			}
-			if strings.Contains(strings.ToLower(status), "failed") || strings.Contains(strings.ToLower(status), "error") {
-				return fmt.Errorf("application %s failed with status: %s", appName, status)
-			}
+	// Use Ginkgo's Eventually for cleaner polling
+	Eventually(func() string {
+		status, err := getApplicationStatus(ctx, appName, namespace)
+		if err != nil {
+			GinkgoWriter.Printf("Error getting status: %v\n", err)
+			return ""
 		}
+		GinkgoWriter.Printf("Application %s status: %s\n", appName, status)
+		return strings.ToLower(status)
+	}, AppRunningTimeout, PollInterval).Should(ContainSubstring("running"),
+		fmt.Sprintf("Application %s should reach running state", appName))
+
+	// Check if application failed
+	status, _ := getApplicationStatus(ctx, appName, namespace)
+	statusLower := strings.ToLower(status)
+	if strings.Contains(statusLower, "failed") || strings.Contains(statusLower, "error") {
+		return fmt.Errorf("application %s failed with status: %s", appName, status)
 	}
+
+	return nil
 }
 
 // deleteApplicationByFile deletes a KubeVela application using the YAML file
@@ -156,68 +154,37 @@ func deleteApplicationByFile(ctx context.Context, filePath string) error {
 func extractAppNameFromFile(filePath string) (string, string, error) {
 	content, err := os.ReadFile(filePath)
 	if err != nil {
-		// Fallback: use filename as name
-		base := filepath.Base(filePath)
-		name := strings.TrimSuffix(base, filepath.Ext(base))
-		return name, "default", nil
+		return "", "", fmt.Errorf("failed to read file %s: %w", filePath, err)
 	}
 
-	var name, namespace string
-
-	// Split by document separator and find Application
+	// Split by document separator for multi-document YAML files
 	docs := strings.Split(string(content), "---")
+
 	for _, doc := range docs {
-		if strings.Contains(doc, "kind: Application") {
-			// Extract name and namespace from this document
-			lines := strings.Split(doc, "\n")
-			inMetadata := false
-			for _, line := range lines {
-				trimmed := strings.TrimSpace(line)
+		doc = strings.TrimSpace(doc)
+		if doc == "" {
+			continue
+		}
 
-				if trimmed == "metadata:" {
-					inMetadata = true
-					continue
-				}
+		// Try to unmarshal as Application
+		var app v1beta1.Application
+		if err := yaml.Unmarshal([]byte(doc), &app); err != nil {
+			// Not a valid Application, skip
+			continue
+		}
 
-				// Check if we've exited metadata section (non-indented line that's not empty)
-				if inMetadata && len(line) > 0 && line[0] != ' ' && line[0] != '\t' && trimmed != "" && !strings.HasPrefix(trimmed, "name:") && !strings.HasPrefix(trimmed, "namespace:") {
-					inMetadata = false
-				}
-
-				if inMetadata {
-					if strings.HasPrefix(trimmed, "name:") && name == "" {
-						name = strings.TrimSpace(strings.TrimPrefix(trimmed, "name:"))
-					}
-					if strings.HasPrefix(trimmed, "namespace:") && namespace == "" {
-						namespace = strings.TrimSpace(strings.TrimPrefix(trimmed, "namespace:"))
-					}
-				}
-
-				// Found both, no need to continue
-				if name != "" && namespace != "" {
-					break
-				}
+		// Check if this is actually an Application kind
+		if app.Kind == "Application" && app.Name != "" {
+			namespace := app.Namespace
+			if namespace == "" {
+				namespace = "default"
 			}
-
-			// Found Application document, stop looking
-			if name != "" {
-				break
-			}
+			return app.Name, namespace, nil
 		}
 	}
 
-	// Fallback for name
-	if name == "" {
-		base := filepath.Base(filePath)
-		name = strings.TrimSuffix(base, filepath.Ext(base))
-	}
-
-	// Fallback for namespace
-	if namespace == "" {
-		namespace = "default"
-	}
-
-	return name, namespace, nil
+	// No Application found - this is an error
+	return "", "", fmt.Errorf("no Application resource found in file %s", filePath)
 }
 
 // listYAMLFiles lists all YAML files in a directory
