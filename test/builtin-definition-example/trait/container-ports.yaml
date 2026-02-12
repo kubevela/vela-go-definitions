@@ -7,10 +7,8 @@ spec:
     - name: container-ports
       type: webservice
       properties:
-        cpu: "0.5"
         exposeType: ClusterIP
-        image: busybox
-        memory: 1024Mi
+        image: nginx:latest
         ports:
           - expose: false
             port: 80
@@ -21,8 +19,6 @@ spec:
       traits:
         - type: container-ports
           properties:
-            # you can use container-ports to control multiple containers by filling `containers`
-            # NOTE: in containers, you must set the container name for each container
             containers:
               - containerName: container-ports
                 ports:
