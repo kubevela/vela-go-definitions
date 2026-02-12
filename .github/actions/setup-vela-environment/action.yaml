@@ -1,15 +1,7 @@
 name: 'Setup KubeVela Environment'
-description: 'Sets up Kubernetes cluster, builds Vela CLI, installs KubeVela, and installs definitions from module'
+description: 'Sets up Kubernetes cluster, builds Vela CLI from go.mod replace directive, installs KubeVela, and installs definitions from module'
 
 inputs:
-  repository:
-    description: 'KubeVela repository to clone'
-    required: true
-    default: 'oam-dev/kubevela'
-  branch:
-    description: 'Branch to checkout'
-    required: true
-    default: 'master'
   go-version:
     description: 'Go version to use'
     required: false
@@ -53,19 +45,57 @@ runs:
         kubectl wait --for=condition=available --timeout=300s deployment/kubevela-vela-core -n vela-system || true
         kubectl get pods -n vela-system
 
-    - name: Clone specified repository
+    - name: Extract KubeVela repository info from go.mod
+      id: extract-vela-info
+      shell: bash
+      run: |
+        echo "Extracting KubeVela replace directive from go.mod..."
+        
+        # Extract the replace line for github.com/oam-dev/kubevela
+        REPLACE_LINE=$(grep "replace github.com/oam-dev/kubevela =>" go.mod || true)
+        
+        if [ -z "$REPLACE_LINE" ]; then
+          echo "No replace directive found for kubevela, using default"
+          echo "repository=oam-dev/kubevela" >> $GITHUB_OUTPUT
+          echo "ref=master" >> $GITHUB_OUTPUT
+        else
+          echo "Found replace directive: $REPLACE_LINE"
+          
+          # Extract the replacement module path and version
+          # Format: replace github.com/oam-dev/kubevela => github.com/user/repo v0.0.0-YYYYMMDDHHMMSS-commitsha
+          REPLACEMENT=$(echo "$REPLACE_LINE" | sed 's/.*=> //')
+          
+          # Extract repository (github.com/user/repo -> user/repo)
+          REPO=$(echo "$REPLACEMENT" | awk '{print $1}' | sed 's|github.com/||')
+          
+          # Extract version string
+          VERSION=$(echo "$REPLACEMENT" | awk '{print $2}')
+          
+          # Extract commit SHA from pseudo-version (v0.0.0-YYYYMMDDHHMMSS-commitsha)
+          # The commit SHA is the last part after the last hyphen
+          COMMIT_SHA=$(echo "$VERSION" | sed 's/.*-//')
+          
+          echo "Extracted repository: $REPO"
+          echo "Extracted version: $VERSION"
+          echo "Extracted commit SHA: $COMMIT_SHA"
+          
+          echo "repository=$REPO" >> $GITHUB_OUTPUT
+          echo "ref=$COMMIT_SHA" >> $GITHUB_OUTPUT
+        fi
+
+    - name: Clone KubeVela repository from go.mod
       uses: actions/checkout@v5
       with:
-        repository: ${{ inputs.repository }}
-        ref: ${{ inputs.branch }}
+        repository: ${{ steps.extract-vela-info.outputs.repository }}
+        ref: ${{ steps.extract-vela-info.outputs.ref }}
         path: kubevela-source
 
     - name: Verify cloned repository
       shell: bash
       working-directory: kubevela-source
       run: |
-        echo "Repository: ${{ inputs.repository }}"
-        echo "Branch: ${{ inputs.branch }}"
+        echo "Repository: ${{ steps.extract-vela-info.outputs.repository }}"
+        echo "Ref: ${{ steps.extract-vela-info.outputs.ref }}"
         echo "Current commit:"
         git log -1 --oneline
         echo "Working directory contents:"
