@@ -13,9 +13,8 @@ on:
         default: 'master'
 
 jobs:
-  build-vela-cli:
+  run-component-def-test:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout current repository
         uses: actions/checkout@v5
@@ -55,10 +54,35 @@ jobs:
         run: |
           echo "Cloning repository: ${{ github.event.inputs.repository }}"
           echo "Branch: ${{ github.event.inputs.branch }}"
+          
+          # Clone the repository
           git clone https://github.com/${{ github.event.inputs.repository }}.git kubevela-source
           cd kubevela-source
+          
+          # Fetch all branches
+          echo "Fetching all branches..."
           git fetch --all
-          git checkout ${{ github.event.inputs.branch }}
+          
+          # List available branches
+          echo "Available branches:"
+          git branch -r | head -20
+          
+          # Check if the branch exists
+          if git show-ref --verify --quiet refs/remotes/origin/${{ github.event.inputs.branch }}; then
+            echo "Branch ${{ github.event.inputs.branch }} found, checking out..."
+            git checkout ${{ github.event.inputs.branch }}
+          else
+            echo "❌ Error: Branch '${{ github.event.inputs.branch }}' not found in repository"
+            echo "Available branches matching pattern:"
+            git branch -r | grep -i "${{ github.event.inputs.branch }}" || echo "No matching branches found"
+            echo ""
+            echo "All available branches:"
+            git branch -r
+            exit 1
+          fi
+          
+          # Show current commit
+          echo "Current commit:"
           git log -1 --oneline
 
       - name: Build Vela CLI from source
