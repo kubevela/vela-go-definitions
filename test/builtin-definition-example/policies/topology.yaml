@@ -13,4 +13,4 @@ spec:
     - name: topology-hangzhou-clusters
       type: topology
       properties:
-        clusters: ["local", "k3d-slave"]
+        clusters: ["local"]

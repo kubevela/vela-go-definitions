@@ -1,3 +1,25 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: busybox
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: busybox
+  template:
+    metadata:
+      labels:
+        app: busybox
+    spec:
+      containers:
+        - name: busybox
+          image: busybox
+          command: ["sleep", "1000000"]
+
+---
+
 apiVersion: core.oam.dev/v1beta1
 kind: Application
 metadata:
@@ -5,12 +27,11 @@ metadata:
 spec:
   components:
     - name: busybox
-      type: worker
+      type: ref-objects
       properties:
-        image: busybox
-        cmd:
-          - sleep
-          - '1000000'
+        objects:
+          - resource: deployments
+            name: busybox
   policies:
     - type: read-only
       name: read-only
