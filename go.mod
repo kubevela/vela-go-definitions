@@ -3,12 +3,18 @@ module github.com/oam-dev/vela-go-definitions
 go 1.23.8
 
 require (
-	github.com/oam-dev/kubevela v1.10.5-0.20260212142756-1396884a444d
+	github.com/oam-dev/kubevela v0.0.0
 	github.com/onsi/ginkgo/v2 v2.23.3
 	github.com/onsi/gomega v1.36.2
 	github.com/stretchr/testify v1.10.0
+	k8s.io/api v0.31.10
+	k8s.io/apimachinery v0.31.10
+	k8s.io/client-go v0.31.10
+	sigs.k8s.io/controller-runtime v0.19.7
 	sigs.k8s.io/yaml v1.4.0
 )
+
+replace github.com/oam-dev/kubevela => /Users/viskumar/Open_Source/kubevela
 
 require (
 	cuelang.org/go v0.14.1 // indirect
@@ -106,10 +112,7 @@ require (
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
-	k8s.io/api v0.31.10 // indirect
-	k8s.io/apimachinery v0.31.10 // indirect
 	k8s.io/apiserver v0.31.10 // indirect
-	k8s.io/client-go v0.31.10 // indirect
 	k8s.io/component-base v0.31.10 // indirect
 	k8s.io/klog v1.0.0 // indirect
 	k8s.io/klog/v2 v2.130.1 // indirect
@@ -119,7 +122,6 @@ require (
 	sigs.k8s.io/apiserver-network-proxy v0.31.4 // indirect
 	sigs.k8s.io/apiserver-network-proxy/konnectivity-client v0.31.3 // indirect
 	sigs.k8s.io/apiserver-runtime v1.1.2-0.20250117204231-9282f514a674 // indirect
-	sigs.k8s.io/controller-runtime v0.19.7 // indirect
 	sigs.k8s.io/json v0.0.0-20221116044647-bc3834ca7abd // indirect
 	sigs.k8s.io/randfill v1.0.0 // indirect
 	sigs.k8s.io/structured-merge-diff/v4 v4.6.0 // indirect

@@ -2,7 +2,14 @@ name: Test Component Definitions
 
 on:
   workflow_dispatch:
-  workflow_call:
+  push:
+    paths:
+      - 'go.mod'
+      - 'go.sum'
+  pull_request:
+    paths:
+      - 'go.mod'
+      - 'go.sum'
 
 jobs:
   test-components:
