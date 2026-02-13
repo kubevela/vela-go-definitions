@@ -71,7 +71,7 @@ func Affinity() *defkit.TraitDefinition {
 		Template(func(tpl *defkit.Template) {
 			// Pod Affinity - required
 			tpl.Patch().
-				SetIf(podAffinity.IsSet(),
+				SetIf(defkit.ParamPath("podAffinity.required").IsSet(),
 					"spec.template.spec.affinity.podAffinity.requiredDuringSchedulingIgnoredDuringExecution",
 					defkit.From(defkit.ParamPath("podAffinity.required")).Map(defkit.FieldMap{
 						"labelSelector":     defkit.F("labelSelector"),
@@ -82,7 +82,7 @@ func Affinity() *defkit.TraitDefinition {
 
 			// Pod Affinity - preferred
 			tpl.Patch().
-				SetIf(podAffinity.IsSet(),
+				SetIf(defkit.ParamPath("podAffinity.preferred").IsSet(),
 					"spec.template.spec.affinity.podAffinity.preferredDuringSchedulingIgnoredDuringExecution",
 					defkit.From(defkit.ParamPath("podAffinity.preferred")).Map(defkit.FieldMap{
 						"weight":          defkit.F("weight"),
@@ -91,7 +91,7 @@ func Affinity() *defkit.TraitDefinition {
 
 			// Pod Anti-Affinity - required
 			tpl.Patch().
-				SetIf(podAntiAffinity.IsSet(),
+				SetIf(defkit.ParamPath("podAntiAffinity.required").IsSet(),
 					"spec.template.spec.affinity.podAntiAffinity.requiredDuringSchedulingIgnoredDuringExecution",
 					defkit.From(defkit.ParamPath("podAntiAffinity.required")).Map(defkit.FieldMap{
 						"labelSelector":     defkit.F("labelSelector"),
@@ -102,7 +102,7 @@ func Affinity() *defkit.TraitDefinition {
 
 			// Pod Anti-Affinity - preferred
 			tpl.Patch().
-				SetIf(podAntiAffinity.IsSet(),
+				SetIf(defkit.ParamPath("podAntiAffinity.preferred").IsSet(),
 					"spec.template.spec.affinity.podAntiAffinity.preferredDuringSchedulingIgnoredDuringExecution",
 					defkit.From(defkit.ParamPath("podAntiAffinity.preferred")).Map(defkit.FieldMap{
 						"weight":          defkit.F("weight"),
@@ -111,7 +111,7 @@ func Affinity() *defkit.TraitDefinition {
 
 			// Node Affinity - required
 			tpl.Patch().
-				SetIf(nodeAffinity.IsSet(),
+				SetIf(defkit.ParamPath("nodeAffinity.required.nodeSelectorTerms").IsSet(),
 					"spec.template.spec.affinity.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms",
 					defkit.From(defkit.ParamPath("nodeAffinity.required.nodeSelectorTerms")).Map(defkit.FieldMap{
 						"matchExpressions": defkit.F("matchExpressions"),
@@ -120,7 +120,7 @@ func Affinity() *defkit.TraitDefinition {
 
 			// Node Affinity - preferred
 			tpl.Patch().
-				SetIf(nodeAffinity.IsSet(),
+				SetIf(defkit.ParamPath("nodeAffinity.preferred").IsSet(),
 					"spec.template.spec.affinity.nodeAffinity.preferredDuringSchedulingIgnoredDuringExecution",
 					defkit.From(defkit.ParamPath("nodeAffinity.preferred")).Map(defkit.FieldMap{
 						"weight":     defkit.F("weight"),

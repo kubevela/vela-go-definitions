@@ -14,7 +14,7 @@ require (
 	sigs.k8s.io/yaml v1.4.0
 )
 
-replace github.com/oam-dev/kubevela => github.com/vishal210893/kubevela v0.0.0-20260213074735-df22516bfebc
+replace github.com/oam-dev/kubevela => github.com/vishal210893/kubevela v0.0.0-20260213094700-44c872986dcf
 
 require (
 	cuelang.org/go v0.14.1 // indirect
