@@ -90,6 +90,43 @@ func myComponentTemplate(tpl *defkit.Template) {
 }
 ```
 
+## Testing
+
+This module includes a comprehensive E2E test automation framework that validates all definitions against a live KubeVela cluster.
+
+### Quick Start
+
+```bash
+# Install Ginkgo CLI
+make install-ginkgo
+
+# Run all E2E tests
+make test-e2e
+
+# Run specific test categories
+make test-e2e-components    # Component definitions
+make test-e2e-traits        # Trait definitions
+make test-e2e-policies      # Policy definitions
+make test-e2e-workflowsteps # Workflow step definitions
+```
+
+### Configuration
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `PROCS` | 4 | Number of parallel test processes |
+| `E2E_TIMEOUT` | 30m | Test timeout duration |
+| `TESTDATA_PATH` | `test/builtin-definition-example` | Path to test data |
+
+### CI/CD
+
+GitHub Actions workflows automatically run E2E tests on:
+- Push to `go.mod` or `go.sum`
+- Pull requests modifying `go.mod` or `go.sum`
+- Manual workflow dispatch
+
+For detailed documentation, see [E2E Test Automation Guide](docs/E2E_TEST_AUTOMATION.md).
+
 ## Version
 
 Version is automatically derived from git tags. Use semantic versioning tags (e.g., v1.0.0) to set the module version.
