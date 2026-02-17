@@ -30,16 +30,17 @@ func Annotations() *defkit.TraitDefinition {
 		Param(defkit.DynamicMap().ValueTypeUnion("string | null")).
 		Template(func(tpl *defkit.Template) {
 			tpl.PatchStrategy("jsonMergePatch")
+			tpl.AddLetBinding("annotationsContent", defkit.ForEachMap())
 			// Always spread annotations to workload metadata
 			tpl.Patch().
-				ForEach(defkit.Parameter(), "metadata.annotations")
+				Set("metadata.annotations", defkit.LetVariable("annotationsContent"))
 			// Conditionally spread annotations to pod template metadata (if spec.template exists)
 			tpl.Patch().
 				If(defkit.And(
 					defkit.ContextOutput().HasPath("spec"),
 					defkit.ContextOutput().HasPath("spec.template"),
 				)).
-				ForEach(defkit.Parameter(), "spec.template.metadata.annotations").
+				Set("spec.template.metadata.annotations", defkit.LetVariable("annotationsContent")).
 				EndIf()
 			// Conditionally spread annotations to jobTemplate metadata (if spec.jobTemplate exists)
 			tpl.Patch().
@@ -47,7 +48,7 @@ func Annotations() *defkit.TraitDefinition {
 					defkit.ContextOutput().HasPath("spec"),
 					defkit.ContextOutput().HasPath("spec.jobTemplate"),
 				)).
-				ForEach(defkit.Parameter(), "spec.jobTemplate.metadata.annotations").
+				Set("spec.jobTemplate.metadata.annotations", defkit.LetVariable("annotationsContent")).
 				EndIf()
 			// Conditionally spread annotations to jobTemplate pod template (CronJob case)
 			tpl.Patch().
@@ -57,7 +58,7 @@ func Annotations() *defkit.TraitDefinition {
 					defkit.ContextOutput().HasPath("spec.jobTemplate.spec"),
 					defkit.ContextOutput().HasPath("spec.jobTemplate.spec.template"),
 				)).
-				ForEach(defkit.Parameter(), "spec.jobTemplate.spec.template.metadata.annotations").
+				Set("spec.jobTemplate.spec.template.metadata.annotations", defkit.LetVariable("annotationsContent")).
 				EndIf()
 		})
 }
