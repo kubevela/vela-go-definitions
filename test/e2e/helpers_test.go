@@ -21,6 +21,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 	"time"
@@ -369,4 +370,52 @@ func hasPrerequisiteResources(filePath string) bool {
 	}
 
 	return false
+}
+
+// getAppFailureDiagnostics gathers detailed diagnostic information when an application fails.
+// This includes application status, workflow step details, vela status output, and kubectl describe output.
+func getAppFailureDiagnostics(ctx context.Context, appName, namespace string) string {
+	currentApp := &v1beta1.Application{}
+	if err := k8sClient.Get(ctx, types.NamespacedName{Namespace: namespace, Name: appName}, currentApp); err != nil {
+		return fmt.Sprintf("Failed to get app for diagnostics: %v", err)
+	}
+
+	var diagInfo strings.Builder
+	diagInfo.WriteString(fmt.Sprintf("\n=== Application %s/%s Failed ===\n", namespace, appName))
+	diagInfo.WriteString(fmt.Sprintf("Phase: %s\n", currentApp.Status.Phase))
+
+	// Workflow status details
+	if currentApp.Status.Workflow != nil {
+		diagInfo.WriteString(fmt.Sprintf("Workflow Mode: %s\n", currentApp.Status.Workflow.Mode))
+		diagInfo.WriteString(fmt.Sprintf("Workflow Finished: %v\n", currentApp.Status.Workflow.Finished))
+		diagInfo.WriteString(fmt.Sprintf("Workflow Terminated: %v\n", currentApp.Status.Workflow.Terminated))
+		diagInfo.WriteString(fmt.Sprintf("Workflow Suspended: %v\n", currentApp.Status.Workflow.Suspend))
+		diagInfo.WriteString(fmt.Sprintf("Workflow Message: %s\n", currentApp.Status.Workflow.Message))
+
+		diagInfo.WriteString("\n--- Workflow Steps ---\n")
+		for _, step := range currentApp.Status.Workflow.Steps {
+			diagInfo.WriteString(fmt.Sprintf("  Step: %s (type: %s)\n", step.Name, step.Type))
+			diagInfo.WriteString(fmt.Sprintf("    Phase: %s\n", step.Phase))
+			diagInfo.WriteString(fmt.Sprintf("    Message: %s\n", step.Message))
+			diagInfo.WriteString(fmt.Sprintf("    Reason: %s\n", step.Reason))
+		}
+	}
+
+	// Run vela status command
+	cmd := exec.Command("vela", "status", appName, "-n", namespace)
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		diagInfo.WriteString(fmt.Sprintf("\nvela status error: %v\n", err))
+	}
+	diagInfo.WriteString(fmt.Sprintf("\n--- vela status output ---\n%s\n", string(output)))
+
+	// Describe application via kubectl
+	descCmd := exec.Command("kubectl", "describe", "app", appName, "-n", namespace)
+	descOutput, err := descCmd.CombinedOutput()
+	if err != nil {
+		diagInfo.WriteString(fmt.Sprintf("\nkubectl describe error: %v\n", err))
+	}
+	diagInfo.WriteString(fmt.Sprintf("\n--- kubectl describe app ---\n%s\n", string(descOutput)))
+
+	return diagInfo.String()
 }

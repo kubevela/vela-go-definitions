@@ -12,10 +12,10 @@ TESTDATA_PATH ?= test/builtin-definition-example
 
 
 # Timeout for E2E tests
-E2E_TIMEOUT ?= 30m
+E2E_TIMEOUT ?= 10m
 
 # Number of parallel processes for Ginkgo (can be overridden)
-PROCS ?= 40
+PROCS ?= 10
 
 .PHONY: tidy install-ginkgo test-e2e test-e2e-components test-e2e-traits test-e2e-policies test-e2e-workflowsteps cleanup-e2e-namespaces force-cleanup-e2e-namespaces help
 

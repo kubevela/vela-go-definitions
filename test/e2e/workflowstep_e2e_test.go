@@ -67,6 +67,21 @@ var _ = Describe("WorkflowStep Definition E2E Tests", Label("workflowsteps"), fu
 					// Update namespace references inside component properties (e.g., ref-objects)
 					updateAppNamespaceReferences(app, uniqueNs)
 
+					// Track test success for cleanup diagnostics
+					testPassed := false
+
+					// DeferCleanup runs even on suite timeout - print diagnostics if test didn't pass
+					DeferCleanup(func() {
+						if !testPassed {
+							GinkgoWriter.Printf("\n⚠️ Test did not complete successfully, gathering diagnostics...\n")
+							GinkgoWriter.Printf("%s\n", getAppFailureDiagnostics(ctx, app.Name, uniqueNs))
+						}
+						// Clean up namespace after test
+						GinkgoWriter.Printf("Deleting namespace %s...\n", uniqueNs)
+						ns := &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: uniqueNs}}
+						_ = k8sClient.Delete(ctx, ns)
+					})
+
 					GinkgoWriter.Printf("Creating namespace %s...\n", uniqueNs)
 					ns := &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: uniqueNs}}
 					err = k8sClient.Create(ctx, ns)
@@ -105,11 +120,8 @@ var _ = Describe("WorkflowStep Definition E2E Tests", Label("workflowsteps"), fu
 						g.Expect(string(currentApp.Status.Phase)).Should(Equal("running"))
 					}, AppRunningTimeout, PollInterval).Should(Succeed())
 
+					testPassed = true
 					GinkgoWriter.Printf("✅ %s passed\n", filepath.Base(file))
-
-					// Clean up namespace after test
-					GinkgoWriter.Printf("Deleting namespace %s...\n", uniqueNs)
-					_ = k8sClient.Delete(ctx, ns)
 				})
 			}
 		})
