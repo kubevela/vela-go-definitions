@@ -27,26 +27,26 @@ func Affinity() *defkit.TraitDefinition {
 	podAffinity := defkit.Map("podAffinity").Description("Specify the pod affinity scheduling rules").WithFields(
 		defkit.Array("required").Description("Specify the required during scheduling ignored during execution").WithSchemaRef("podAffinityTerm"),
 		defkit.Array("preferred").Description("Specify the preferred during scheduling ignored during execution").WithFields(
-			defkit.Int("weight").Description("Specify weight associated with matching the corresponding podAffinityTerm").Required(),
-			defkit.Map("podAffinityTerm").Description("Specify a set of pods").WithSchemaRef("podAffinityTerm"),
+			defkit.Int("weight").Description("Specify weight associated with matching the corresponding podAffinityTerm").Required().Min(1).Max(100),
+			defkit.Map("podAffinityTerm").Description("Specify a set of pods").WithSchemaRef("podAffinityTerm").Required(),
 		),
 	)
 
 	podAntiAffinity := defkit.Map("podAntiAffinity").Description("Specify the pod anti-affinity scheduling rules").WithFields(
 		defkit.Array("required").Description("Specify the required during scheduling ignored during execution").WithSchemaRef("podAffinityTerm"),
 		defkit.Array("preferred").Description("Specify the preferred during scheduling ignored during execution").WithFields(
-			defkit.Int("weight").Description("Specify weight associated with matching the corresponding podAffinityTerm").Required(),
-			defkit.Map("podAffinityTerm").Description("Specify a set of pods").WithSchemaRef("podAffinityTerm"),
+			defkit.Int("weight").Description("Specify weight associated with matching the corresponding podAffinityTerm").Required().Min(1).Max(100),
+			defkit.Map("podAffinityTerm").Description("Specify a set of pods").WithSchemaRef("podAffinityTerm").Required(),
 		),
 	)
 
 	nodeAffinity := defkit.Map("nodeAffinity").Description("Specify the node affinity scheduling rules for the pod").WithFields(
 		defkit.Map("required").Description("Specify the required during scheduling ignored during execution").WithFields(
-			defkit.Array("nodeSelectorTerms").Description("Specify a list of node selector").WithSchemaRef("nodeSelectorTerm"),
+			defkit.Array("nodeSelectorTerms").Description("Specify a list of node selector").WithSchemaRef("nodeSelectorTerm").Required(),
 		),
 		defkit.Array("preferred").Description("Specify the preferred during scheduling ignored during execution").WithFields(
-			defkit.Int("weight").Description("Specify weight associated with matching the corresponding nodeSelector").Required(),
-			defkit.Map("preference").Description("Specify a node selector").WithSchemaRef("nodeSelectorTerm"),
+			defkit.Int("weight").Description("Specify weight associated with matching the corresponding nodeSelector").Required().Min(1).Max(100),
+			defkit.Map("preference").Description("Specify a node selector").WithSchemaRef("nodeSelectorTerm").Required(),
 		),
 	)
 
@@ -69,89 +69,83 @@ func Affinity() *defkit.TraitDefinition {
 		Helper("nodeSelector", nodeSelectorHelper()).
 		Helper("nodeSelectorTerm", nodeSelectorTermHelper()).
 		Template(func(tpl *defkit.Template) {
-			// Pod Affinity - required
+			// Pod Affinity
 			tpl.Patch().
-				SetIf(podAffinity.IsSet(),
+				If(podAffinity.IsSet()).
+				SetIf(podAffinity.Field("required").IsSet(),
 					"spec.template.spec.affinity.podAffinity.requiredDuringSchedulingIgnoredDuringExecution",
 					defkit.From(defkit.ParamPath("podAffinity.required")).Map(defkit.FieldMap{
-						"labelSelector":     defkit.F("labelSelector"),
-						"namespaces":        defkit.F("namespaces"),
+						"labelSelector":     defkit.Optional("labelSelector"),
+						"namespaces":        defkit.Optional("namespaces"),
 						"topologyKey":       defkit.F("topologyKey"),
-						"namespaceSelector": defkit.F("namespaceSelector"),
-					}))
-
-			// Pod Affinity - preferred
-			tpl.Patch().
-				SetIf(podAffinity.IsSet(),
+						"namespaceSelector": defkit.Optional("namespaceSelector"),
+					})).
+				SetIf(podAffinity.Field("preferred").IsSet(),
 					"spec.template.spec.affinity.podAffinity.preferredDuringSchedulingIgnoredDuringExecution",
 					defkit.From(defkit.ParamPath("podAffinity.preferred")).Map(defkit.FieldMap{
 						"weight":          defkit.F("weight"),
 						"podAffinityTerm": defkit.F("podAffinityTerm"),
-					}))
+					})).
+				EndIf()
 
-			// Pod Anti-Affinity - required
+			// Pod Anti-Affinity
 			tpl.Patch().
-				SetIf(podAntiAffinity.IsSet(),
+				If(podAntiAffinity.IsSet()).
+				SetIf(podAntiAffinity.Field("required").IsSet(),
 					"spec.template.spec.affinity.podAntiAffinity.requiredDuringSchedulingIgnoredDuringExecution",
 					defkit.From(defkit.ParamPath("podAntiAffinity.required")).Map(defkit.FieldMap{
-						"labelSelector":     defkit.F("labelSelector"),
-						"namespaces":        defkit.F("namespaces"),
+						"labelSelector":     defkit.Optional("labelSelector"),
+						"namespaces":        defkit.Optional("namespaces"),
 						"topologyKey":       defkit.F("topologyKey"),
-						"namespaceSelector": defkit.F("namespaceSelector"),
-					}))
-
-			// Pod Anti-Affinity - preferred
-			tpl.Patch().
-				SetIf(podAntiAffinity.IsSet(),
+						"namespaceSelector": defkit.Optional("namespaceSelector"),
+					})).
+				SetIf(podAntiAffinity.Field("preferred").IsSet(),
 					"spec.template.spec.affinity.podAntiAffinity.preferredDuringSchedulingIgnoredDuringExecution",
 					defkit.From(defkit.ParamPath("podAntiAffinity.preferred")).Map(defkit.FieldMap{
 						"weight":          defkit.F("weight"),
 						"podAffinityTerm": defkit.F("podAffinityTerm"),
-					}))
+					})).
+				EndIf()
 
-			// Node Affinity - required
+			// Node Affinity
 			tpl.Patch().
-				SetIf(nodeAffinity.IsSet(),
+				If(nodeAffinity.IsSet()).
+				SetIf(nodeAffinity.Field("required").IsSet(),
 					"spec.template.spec.affinity.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms",
 					defkit.From(defkit.ParamPath("nodeAffinity.required.nodeSelectorTerms")).Map(defkit.FieldMap{
-						"matchExpressions": defkit.F("matchExpressions"),
-						"matchFields":      defkit.F("matchFields"),
-					}))
-
-			// Node Affinity - preferred
-			tpl.Patch().
-				SetIf(nodeAffinity.IsSet(),
+						"matchExpressions": defkit.Optional("matchExpressions"),
+						"matchFields":      defkit.Optional("matchFields"),
+					})).
+				SetIf(nodeAffinity.Field("preferred").IsSet(),
 					"spec.template.spec.affinity.nodeAffinity.preferredDuringSchedulingIgnoredDuringExecution",
 					defkit.From(defkit.ParamPath("nodeAffinity.preferred")).Map(defkit.FieldMap{
 						"weight":     defkit.F("weight"),
 						"preference": defkit.F("preference"),
-					}))
+					})).
+				EndIf()
 
 			// Tolerations
 			tpl.Patch().
 				SetIf(tolerations.IsSet(), "spec.template.spec.tolerations",
 					defkit.From(tolerations).Map(defkit.FieldMap{
-						"key":               defkit.F("key"),
+						"key":               defkit.Optional("key"),
 						"operator":          defkit.F("operator"),
-						"value":             defkit.F("value"),
-						"effect":            defkit.F("effect"),
-						"tolerationSeconds": defkit.F("tolerationSeconds"),
+						"value":             defkit.Optional("value"),
+						"effect":            defkit.Optional("effect"),
+						"tolerationSeconds": defkit.Optional("tolerationSeconds"),
 					}))
 		})
 }
 
 // labelSelectorHelper returns the #labelSelector helper definition schema.
 func labelSelectorHelper() defkit.Param {
-	return defkit.Struct("labelSelector").Fields(
-		defkit.Field("matchLabels", defkit.ParamTypeMap).
-			Description("A map of {key,value} pairs"),
-		defkit.Field("matchExpressions", defkit.ParamTypeArray).
-			Description("A list of label selector requirements").
-			Nested(defkit.Struct("matchExpression").Fields(
-				defkit.Field("key", defkit.ParamTypeString).Required(),
-				defkit.Field("operator", defkit.ParamTypeString).Default("In").Enum("In", "NotIn", "Exists", "DoesNotExist"),
-				defkit.Field("values", defkit.ParamTypeArray),
-			)),
+	return defkit.Map("labelSelector").WithFields(
+		defkit.StringKeyMap("matchLabels").Description("A map of {key,value} pairs"),
+		defkit.Array("matchExpressions").Description("A list of label selector requirements").WithFields(
+			defkit.String("key").Required(),
+			defkit.String("operator").Default("In").Enum("In", "NotIn", "Exists", "DoesNotExist"),
+			defkit.Array("values").Of(defkit.ParamTypeString),
+		),
 	)
 }
 
@@ -159,7 +153,7 @@ func labelSelectorHelper() defkit.Param {
 func podAffinityTermHelper() defkit.Param {
 	return defkit.Struct("podAffinityTerm").Fields(
 		defkit.Field("labelSelector", defkit.ParamTypeStruct).WithSchemaRef("labelSelector"),
-		defkit.Field("namespaces", defkit.ParamTypeArray),
+		defkit.Field("namespaces", defkit.ParamTypeArray).ArrayOf(defkit.ParamTypeString),
 		defkit.Field("topologyKey", defkit.ParamTypeString).Required(),
 		defkit.Field("namespaceSelector", defkit.ParamTypeStruct).WithSchemaRef("labelSelector"),
 	)
@@ -170,7 +164,7 @@ func nodeSelectorHelper() defkit.Param {
 	return defkit.Struct("nodeSelector").Fields(
 		defkit.Field("key", defkit.ParamTypeString).Required(),
 		defkit.Field("operator", defkit.ParamTypeString).Default("In").Enum("In", "NotIn", "Exists", "DoesNotExist", "Gt", "Lt"),
-		defkit.Field("values", defkit.ParamTypeArray),
+		defkit.Field("values", defkit.ParamTypeArray).ArrayOf(defkit.ParamTypeString),
 	)
 }
 
