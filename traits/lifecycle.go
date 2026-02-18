@@ -35,46 +35,43 @@ func Lifecycle() *defkit.TraitDefinition {
 		Helper("Port", portHelper()).
 		Helper("LifeCycleHandler", lifecycleHandlerHelper()).
 		Template(func(tpl *defkit.Template) {
-			// Build the lifecycle patch for containers
-			// This patches ALL containers with the same lifecycle hooks
 			lifecycleObj := defkit.NewArrayElement().
 				SetIf(postStart.IsSet(), "lifecycle.postStart", postStart).
 				SetIf(preStop.IsSet(), "lifecycle.preStop", preStop)
 
 			tpl.Patch().
-				PatchKey("spec.template.spec.containers", "name", lifecycleObj)
+				SpreadAll("spec.template.spec.containers", lifecycleObj)
 		})
 }
 
 // portHelper returns the #Port helper definition schema.
 func portHelper() defkit.Param {
-	return defkit.Struct("Port").Fields(
-		defkit.Field("port", defkit.ParamTypeInt).Description("Port number, must be >= 1 and <= 65535"),
-	)
+	return defkit.Int("Port").Min(1).Max(65535)
 }
 
 // lifecycleHandlerHelper returns the #LifeCycleHandler helper definition schema.
 func lifecycleHandlerHelper() defkit.Param {
 	return defkit.Struct("LifeCycleHandler").Fields(
 		defkit.Field("exec", defkit.ParamTypeStruct).
-			Description("Exec specifies the action to take.").
 			Nested(defkit.Struct("exec").Fields(
-				defkit.Field("command", defkit.ParamTypeArray).Description("Command is the command line to execute."),
+				defkit.Field("command", defkit.ParamTypeArray).ArrayOf(defkit.ParamTypeString).Required(),
 			)),
 		defkit.Field("httpGet", defkit.ParamTypeStruct).
-			Description("HTTPGet specifies the http request to perform.").
 			Nested(defkit.Struct("httpGet").Fields(
-				defkit.Field("path", defkit.ParamTypeString).Description("Path to access on the HTTP server."),
-				defkit.Field("port", defkit.ParamTypeInt).Description("Port to access on the container.").Required(),
-				defkit.Field("host", defkit.ParamTypeString).Description("Host name to connect to."),
+				defkit.Field("path", defkit.ParamTypeString),
+				defkit.Field("port", defkit.ParamTypeInt).WithSchemaRef("Port").Required(),
+				defkit.Field("host", defkit.ParamTypeString),
 				defkit.Field("scheme", defkit.ParamTypeString).Default("HTTP").Enum("HTTP", "HTTPS"),
-				defkit.Field("httpHeaders", defkit.ParamTypeArray).Description("Custom headers to set in the request."),
+				defkit.Field("httpHeaders", defkit.ParamTypeArray).
+					Nested(defkit.Struct("httpHeaders").Fields(
+						defkit.Field("name", defkit.ParamTypeString).Required(),
+						defkit.Field("value", defkit.ParamTypeString).Required(),
+					)),
 			)),
 		defkit.Field("tcpSocket", defkit.ParamTypeStruct).
-			Description("TCPSocket specifies an action involving a TCP port.").
 			Nested(defkit.Struct("tcpSocket").Fields(
-				defkit.Field("port", defkit.ParamTypeInt).Description("Port to connect to.").Required(),
-				defkit.Field("host", defkit.ParamTypeString).Description("Host name to connect to."),
+				defkit.Field("port", defkit.ParamTypeInt).WithSchemaRef("Port").Required(),
+				defkit.Field("host", defkit.ParamTypeString),
 			)),
 	)
 }
