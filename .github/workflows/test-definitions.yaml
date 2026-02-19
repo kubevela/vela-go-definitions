@@ -1,0 +1,137 @@
+name: Test Definitions
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'go.mod'
+      - 'go.sum'
+  pull_request:
+    paths:
+      - 'go.mod'
+      - 'go.sum'
+
+jobs:
+  test-components:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout current repository
+        uses: actions/checkout@v5
+
+      - name: Setup KubeVela Environment
+        uses: ./.github/actions/setup-vela-environment
+
+      - name: Run Component E2E Tests
+        run: |
+          echo "Running E2E tests for component definitions..."
+          make test-e2e-components \
+            TESTDATA_PATH=${{ github.workspace }}/test/builtin-definition-example
+
+      - name: Summary
+        if: always()
+        run: |
+          echo "## Component Definition Test Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- **KubeVela Source:** Extracted from go.mod replace directive" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Installed Definitions" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          kubectl get componentdefinitions -n vela-system --no-headers | wc -l | xargs -I {} echo "Component Definitions: {}" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Test Applications" >> $GITHUB_STEP_SUMMARY
+          echo "Tested applications from \`test/builtin-definition-example/components/\`:" >> $GITHUB_STEP_SUMMARY
+          ls -1 test/builtin-definition-example/components/*.yaml | xargs -I {} basename {} | while read f; do echo "- $f"; done >> $GITHUB_STEP_SUMMARY
+
+  test-traits:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout current repository
+        uses: actions/checkout@v5
+
+      - name: Setup KubeVela Environment
+        uses: ./.github/actions/setup-vela-environment
+
+      - name: Run Trait E2E Tests
+        run: |
+          echo "Running E2E tests for trait definitions..."
+          make test-e2e-traits \
+            TESTDATA_PATH=${{ github.workspace }}/test/builtin-definition-example
+
+      - name: Summary
+        if: always()
+        run: |
+          echo "## Trait Definition Test Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- **KubeVela Source:** Extracted from go.mod replace directive" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Installed Definitions" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          kubectl get traitdefinitions -n vela-system --no-headers | wc -l | xargs -I {} echo "Trait Definitions: {}" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Test Applications" >> $GITHUB_STEP_SUMMARY
+          echo "Tested applications from \`test/builtin-definition-example/trait/\`:" >> $GITHUB_STEP_SUMMARY
+          ls -1 test/builtin-definition-example/trait/*.yaml | xargs -I {} basename {} | while read f; do echo "- $f"; done >> $GITHUB_STEP_SUMMARY
+
+  test-policies:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout current repository
+        uses: actions/checkout@v5
+
+      - name: Setup KubeVela Environment
+        uses: ./.github/actions/setup-vela-environment
+
+      - name: Run Policy E2E Tests
+        run: |
+          echo "Running E2E tests for policy definitions..."
+          make test-e2e-policies \
+            TESTDATA_PATH=${{ github.workspace }}/test/builtin-definition-example
+
+      - name: Summary
+        if: always()
+        run: |
+          echo "## Policy Definition Test Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- **KubeVela Source:** Extracted from go.mod replace directive" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Installed Definitions" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          kubectl get policydefinitions -n vela-system --no-headers | wc -l | xargs -I {} echo "Policy Definitions: {}" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Test Applications" >> $GITHUB_STEP_SUMMARY
+          echo "Tested applications from \`test/builtin-definition-example/policies/\`:" >> $GITHUB_STEP_SUMMARY
+          ls -1 test/builtin-definition-example/policies/*.yaml | xargs -I {} basename {} | while read f; do echo "- $f"; done >> $GITHUB_STEP_SUMMARY
+
+  test-workflowsteps:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout current repository
+        uses: actions/checkout@v5
+
+      - name: Setup KubeVela Environment
+        uses: ./.github/actions/setup-vela-environment
+
+      - name: Run WorkflowStep E2E Tests
+        run: |
+          echo "Running E2E tests for workflowstep definitions..."
+          make test-e2e-workflowsteps \
+            TESTDATA_PATH=${{ github.workspace }}/test/builtin-definition-example
+
+      - name: Summary
+        if: always()
+        run: |
+          echo "## WorkflowStep Definition Test Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- **KubeVela Source:** Extracted from go.mod replace directive" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Installed Definitions" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          kubectl get workflowstepdefinitions -n vela-system --no-headers | wc -l | xargs -I {} echo "WorkflowStep Definitions: {}" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Test Applications" >> $GITHUB_STEP_SUMMARY
+          echo "Tested applications from \`test/builtin-definition-example/workflowsteps/\`:" >> $GITHUB_STEP_SUMMARY
+          ls -1 test/builtin-definition-example/workflowsteps/*.yaml | xargs -I {} basename {} | while read f; do echo "- $f"; done >> $GITHUB_STEP_SUMMARY
