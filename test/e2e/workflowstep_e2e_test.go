@@ -32,6 +32,21 @@ import (
 	"github.com/oam-dev/kubevela/apis/core.oam.dev/v1beta1"
 )
 
+// skipWorkflowStepTests lists test files that require external infrastructure
+// (cloud providers, terraform, Prometheus, container registries, webhook endpoints)
+// and cannot run in a standard CI environment.
+var skipWorkflowStepTests = map[string]string{
+	"deploy-cloud-resource.yaml":    "requires alibaba-rds component and multi-cluster setup",
+	"share-cloud-resource.yaml":     "requires alibaba-rds component and multi-cluster setup",
+	"generate-jdbc-connection.yaml":  "requires alibaba-rds component",
+	"notification.yaml":             "requires external notification endpoints (DingTalk, Slack, email)",
+	"webhook.yaml":                  "requires a reachable webhook endpoint",
+	"apply-terraform-config.yaml":   "requires Alibaba Cloud credentials and terraform provider",
+	"apply-terraform-provider.yaml": "requires Alibaba Cloud credentials",
+	"check-metrics.yaml":            "requires Prometheus server in cluster",
+	"build-push-image.yaml":         "requires Docker registry credentials and git token",
+}
+
 var _ = Describe("WorkflowStep Definition E2E Tests", Label("workflowsteps"), func() {
 	ctx := context.Background()
 
@@ -55,6 +70,10 @@ var _ = Describe("WorkflowStep Definition E2E Tests", Label("workflowsteps"), fu
 				file := file
 
 				It(fmt.Sprintf("should run %s", filepath.Base(file)), func() {
+					if reason, ok := skipWorkflowStepTests[filepath.Base(file)]; ok {
+						Skip(fmt.Sprintf("Skipping: %s", reason))
+					}
+
 					app, err := readAppFromFile(file)
 					Expect(err).NotTo(HaveOccurred(), "Failed to read application from %s", file)
 
