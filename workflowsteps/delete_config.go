@@ -23,33 +23,27 @@ import (
 // DeleteConfig creates the delete-config workflow step definition.
 // This step deletes a config.
 func DeleteConfig() *defkit.WorkflowStepDefinition {
+	name := defkit.String("name").
+		Required().
+		Description("Specify the name of the config.")
+	namespace := defkit.Object("namespace").
+		Required().
+		Description("Specify the namespace of the config.").
+		WithSchema("*context.namespace | string")
+
 	return defkit.NewWorkflowStep("delete-config").
 		Description("Delete a config").
-		RawCUE(`import (
-	"vela/config"
-)
-
-"delete-config": {
-	type: "workflow-step"
-	annotations: {
-		"category": "Config Management"
-	}
-	labels: {}
-	description: "Delete a config"
-}
-template: {
-	deploy: config.#DeleteConfig & {
-		$params: parameter
-	}
-	parameter: {
-		//+usage=Specify the name of the config.
-		name: string
-
-		//+usage=Specify the namespace of the config.
-		namespace: *context.namespace | string
-	}
-}
-`)
+		Category("Config Management").
+		WithImports("vela/config").
+		Params(name, namespace).
+		Template(func(tpl *defkit.WorkflowStepTemplate) {
+			tpl.Builtin("deploy", "config.#DeleteConfig").
+				WithParams(map[string]defkit.Value{
+					"name":      name,
+					"namespace": namespace,
+				}).
+				Build()
+		})
 }
 
 func init() {

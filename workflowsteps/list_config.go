@@ -23,32 +23,27 @@ import (
 // ListConfig creates the list-config workflow step definition.
 // This step lists the configs.
 func ListConfig() *defkit.WorkflowStepDefinition {
+	template := defkit.String("template").
+		Required().
+		Description("Specify the template of the config.")
+	namespace := defkit.Object("namespace").
+		Required().
+		Description("Specify the namespace of the config.").
+		WithSchema("*context.namespace | string")
+
 	return defkit.NewWorkflowStep("list-config").
 		Description("List the configs").
-		RawCUE(`import (
-	"vela/config"
-)
-
-"list-config": {
-	type: "workflow-step"
-	annotations: {
-		"category": "Config Management"
-	}
-	labels: {}
-	description: "List the configs"
-}
-template: {
-	output: config.#ListConfig & {
-		$params: parameter
-	}
-	parameter: {
-		//+usage=Specify the template of the config.
-		template: string
-		//+usage=Specify the namespace of the config.
-		namespace: *context.namespace | string
-	}
-}
-`)
+		Category("Config Management").
+		WithImports("vela/config").
+		Params(template, namespace).
+		Template(func(tpl *defkit.WorkflowStepTemplate) {
+			tpl.Builtin("output", "config.#ListConfig").
+				WithParams(map[string]defkit.Value{
+					"template":  template,
+					"namespace": namespace,
+				}).
+				Build()
+		})
 }
 
 func init() {

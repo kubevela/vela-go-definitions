@@ -1,0 +1,32 @@
+apiVersion: core.oam.dev/v1beta1
+kind: Application
+metadata:
+  name: my-worker-app
+  namespace: default
+spec:
+  components:
+    - name: backend-worker
+      type: worker
+      properties:
+        image: nginx:latest
+        cpu: "0.5"
+        memory: "512Mi"
+        env:
+          - name: LOG_LEVEL
+            value: "info"
+        cmd:
+          - "/bin/sh"
+          - "-c"
+          - "while true; do echo 'Processing...'; sleep 30; done"
+        livenessProbe:
+          exec:
+            command:
+              - cat
+              - /tmp/healthy
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        volumeMounts:
+          emptyDir:
+            - name: cache
+              mountPath: /cache
+              medium: ""

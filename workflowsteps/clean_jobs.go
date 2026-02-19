@@ -23,77 +23,62 @@ import (
 // CleanJobs creates the clean-jobs workflow step definition.
 // This step cleans applied jobs in the cluster.
 func CleanJobs() *defkit.WorkflowStepDefinition {
+	vela := defkit.VelaCtx()
+
+	labelselector := defkit.Object("labelselector")
+	namespace := defkit.Object("namespace").
+		Required().
+		WithSchema("*context.namespace | string")
+
+	jobValue := defkit.NewArrayElement().
+		Set("apiVersion", defkit.Lit("batch/v1")).
+		Set("kind", defkit.Lit("Job")).
+		Set("metadata", defkit.NewArrayElement().
+			Set("name", vela.Name()).
+			Set("namespace", namespace),
+		)
+	jobFilter := defkit.NewArrayElement().
+		Set("namespace", namespace).
+		SetIf(labelselector.IsSet(), "matchingLabels", labelselector).
+		SetIf(defkit.ParamNotSet("labelselector"), "matchingLabels",
+			defkit.NewArrayElement().
+				Set("\"workflow.oam.dev/name\"", vela.Name()),
+		)
+
+	podValue := defkit.NewArrayElement().
+		Set("apiVersion", defkit.Lit("v1")).
+		Set("kind", defkit.Lit("pod")).
+		Set("metadata", defkit.NewArrayElement().
+			Set("name", vela.Name()).
+			Set("namespace", namespace),
+		)
+	podFilter := defkit.NewArrayElement().
+		Set("namespace", namespace).
+		SetIf(labelselector.IsSet(), "matchingLabels", labelselector).
+		SetIf(defkit.ParamNotSet("labelselector"), "matchingLabels",
+			defkit.NewArrayElement().
+				Set("\"workflow.oam.dev/name\"", vela.Name()),
+		)
+
 	return defkit.NewWorkflowStep("clean-jobs").
 		Description("clean applied jobs in the cluster").
-		RawCUE(`import (
-	"vela/kube"
-)
-
-"clean-jobs": {
-	type: "workflow-step"
-	annotations: {}
-	labels: {}
-	annotations: {
-		"category": "Resource Management"
-	}
-	description: "clean applied jobs in the cluster"
-}
-template: {
-
-	parameter: {
-		labelselector?: {...}
-		namespace: *context.namespace | string
-	}
-
-	cleanJobs: kube.#Delete & {
-		$params: {
-			value: {
-				apiVersion: "batch/v1"
-				kind:       "Job"
-				metadata: {
-					name:      context.name
-					namespace: parameter.namespace
-				}
-			}
-			filter: {
-				namespace: parameter.namespace
-				if parameter.labelselector != _|_ {
-					matchingLabels: parameter.labelselector
-				}
-				if parameter.labelselector == _|_ {
-					matchingLabels: {
-						"workflow.oam.dev/name": context.name
-					}
-				}
-			}
-		}
-	}
-
-	cleanPods: kube.#Delete & {
-		$params: {
-			value: {
-				apiVersion: "v1"
-				kind:       "pod"
-				metadata: {
-					name:      context.name
-					namespace: parameter.namespace
-				}
-			}
-			filter: {
-				namespace: parameter.namespace
-				if parameter.labelselector != _|_ {
-					matchingLabels: parameter.labelselector
-				}
-				if parameter.labelselector == _|_ {
-					matchingLabels: {
-						"workflow.oam.dev/name": context.name
-					}
-				}
-			}
-		}
-	}
-}
-`)
+		Category("Resource Management").
+		WithImports("vela/kube").
+		Params(labelselector, namespace).
+		Template(func(tpl *defkit.WorkflowStepTemplate) {
+			tpl.Builtin("cleanJobs", "kube.#Delete").
+				WithParams(map[string]defkit.Value{
+					"value":  jobValue,
+					"filter": jobFilter,
+				}).
+				Build()
+			tpl.Builtin("cleanPods", "kube.#Delete").
+				WithParams(map[string]defkit.Value{
+					"value":  podValue,
+					"filter": podFilter,
+				}).
+				Build()
+		})
 }
 
 func init() {

@@ -23,92 +23,90 @@ import (
 // ExportService creates the export-service workflow step definition.
 // This step exports service to clusters specified by topology.
 func ExportService() *defkit.WorkflowStepDefinition {
+	name := defkit.String("name").
+		Description("Specify the name of the export destination")
+	namespace := defkit.String("namespace").
+		Description("Specify the namespace of the export destination")
+	ip := defkit.String("ip").
+		Required().
+		Description("Specify the ip to be export")
+	port := defkit.Int("port").
+		Required().
+		Description("Specify the port to be used in service")
+	targetPort := defkit.Int("targetPort").
+		Required().
+		Description("Specify the port to be export")
+	topology := defkit.String("topology").
+		Description("Specify the topology to export")
+
+	meta := defkit.NewArrayElement().
+		Set("name", defkit.Reference("*context.name | string")).
+		Set("namespace", defkit.Reference("*context.namespace | string")).
+		SetIf(name.IsSet(), "name", name).
+		SetIf(namespace.IsSet(), "namespace", namespace)
+
+	serviceObject := defkit.NewArrayElement().
+		Set("apiVersion", defkit.Lit("v1")).
+		Set("kind", defkit.Lit("Service")).
+		Set("metadata", defkit.Reference("meta")).
+		Set("spec", defkit.NewArrayElement().
+			Set("type", defkit.Lit("ClusterIP")).
+			Set("ports", defkit.NewArray().Item(
+				defkit.NewArrayElement().
+					Set("protocol", defkit.Lit("TCP")).
+					Set("port", port).
+					Set("targetPort", targetPort),
+			)),
+		)
+
+	endpointsObject := defkit.NewArrayElement().
+		Set("apiVersion", defkit.Lit("v1")).
+		Set("kind", defkit.Lit("Endpoints")).
+		Set("metadata", defkit.Reference("meta")).
+		Set("subsets", defkit.NewArray().Item(
+			defkit.NewArrayElement().
+				Set("addresses", defkit.NewArray().Item(
+					defkit.NewArrayElement().
+						Set("ip", ip),
+				)).
+				Set("ports", defkit.NewArray().Item(
+					defkit.NewArrayElement().
+						Set("port", targetPort),
+				)),
+		))
+
+	objects := defkit.NewArray().
+		Item(serviceObject).
+		Item(endpointsObject)
+
 	return defkit.NewWorkflowStep("export-service").
 		Description("Export service to clusters specified by topology.").
-		RawCUE(`import (
-	"vela/op"
-	"vela/kube"
-)
-
-"export-service": {
-	type: "workflow-step"
-	annotations: {
-		"category": "Application Delivery"
+		Category("Application Delivery").
+		Scope("Application").
+		WithImports("vela/op", "vela/kube").
+		Params(name, namespace, ip, port, targetPort, topology).
+		Template(func(tpl *defkit.WorkflowStepTemplate) {
+			tpl.Set("meta", meta)
+			tpl.Set("objects", objects)
+			tpl.Set("getPlacements", defkit.Reference(`op.#GetPlacementsFromTopologyPolicies & {
+	policies: *[] | [...string]
+	if parameter.topology != _|_ {
+		policies: [parameter.topology]
 	}
-	labels: {
-		"scope": "Application"
-	}
-	description: "Export service to clusters specified by topology."
-}
-template: {
-	meta: {
-		name:      *context.name | string
-		namespace: *context.namespace | string
-		if parameter.name != _|_ {
-			name: parameter.name
-		}
-		if parameter.namespace != _|_ {
-			namespace: parameter.namespace
-		}
-	}
-	objects: [{
-		apiVersion: "v1"
-		kind:       "Service"
-		metadata:   meta
-		spec: {
-			type: "ClusterIP"
-			ports: [{
-				protocol:   "TCP"
-				port:       parameter.port
-				targetPort: parameter.targetPort
-			}]
-		}
-	}, {
-		apiVersion: "v1"
-		kind:       "Endpoints"
-		metadata:   meta
-		subsets: [{
-			addresses: [{ip: parameter.ip}]
-			ports: [{port: parameter.targetPort}]
-		}]
-	}]
-
-	getPlacements: op.#GetPlacementsFromTopologyPolicies & {
-		policies: *[] | [...string]
-		if parameter.topology != _|_ {
-			policies: [parameter.topology]
-		}
-	}
-
-	apply: {
-		for p in getPlacements.placements {
-			for o in objects {
-				"\(p.cluster)-\(o.kind)": kube.#Apply & {
-					$params: {
-						value:   o
-						cluster: p.cluster
-					}
+}`))
+			tpl.Set("apply", defkit.Reference(`{
+	for p in getPlacements.placements {
+		for o in objects {
+			"\(p.cluster)-\(o.kind)": kube.#Apply & {
+				$params: {
+					value:   o
+					cluster: p.cluster
 				}
 			}
 		}
 	}
-
-	parameter: {
-		// +usage=Specify the name of the export destination
-		name?: string
-		// +usage=Specify the namespace of the export destination
-		namespace?: string
-		// +usage=Specify the ip to be export
-		ip: string
-		// +usage=Specify the port to be used in service
-		port: int
-		// +usage=Specify the port to be export
-		targetPort: int
-		// +usage=Specify the topology to export
-		topology?: string
-	}
-}
-`)
+}`))
+		})
 }
 
 func init() {

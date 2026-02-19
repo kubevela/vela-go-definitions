@@ -1,0 +1,29 @@
+apiVersion: core.oam.dev/v1beta1
+kind: Application
+metadata:
+  name: init-container-example
+  namespace: default
+spec:
+  components:
+    - name: nginx-app
+      type: webservice
+      properties:
+        image: nginx:latest
+        ports:
+          - port: 80
+            expose: true
+      traits:
+        - type: init-container
+          properties:
+            name: setup
+            image: busybox:latest
+            imagePullPolicy: IfNotPresent
+            mountName: workdir
+            appMountPath: /app
+            initMountPath: /init
+            extraVolumeMounts: []
+            cmd:
+              - "sh"
+              - "-c"
+              - "echo 'Initializing...' && sleep 5"
+

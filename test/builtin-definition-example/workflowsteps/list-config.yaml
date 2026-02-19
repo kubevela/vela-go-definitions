@@ -1,0 +1,88 @@
+# ============================================================================
+# LIST-CONFIG WORKFLOW STEP EXAMPLE
+# ============================================================================
+#
+# WHAT DOES list-config DO?
+# -------------------------
+# The list-config workflow step retrieves a list of configurations from
+# KubeVela's config management system. It queries configs based on a
+# template name and namespace.
+#
+# PARAMETERS:
+# -----------
+# | Parameter  | Required | Description                                     |
+# |------------|----------|-------------------------------------------------|
+# | template   | Yes      | The config template name to filter by           |
+# | namespace  | No       | Namespace to search (default: context namespace)|
+#
+# OUTPUT:
+# -------
+# Returns: output.configs - A list of configs matching the template
+#
+# ============================================================================
+# HOW TO TEST THIS EXAMPLE:
+# ============================================================================
+#
+# Step 1: Apply the ConfigMaps and Application:
+#   kubectl apply -f list-config.yaml
+#
+# Step 2: Check application status:
+#   vela status list-config-example
+#
+# Step 3: Clean up (optional):
+#   vela delete list-config-example
+#   kubectl delete configmap test-db-1 test-db-2
+#
+# ============================================================================
+
+# First, create test ConfigMaps that will be listed
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: test-db-1
+  namespace: default
+  labels:
+    config.oam.dev/type: my-db-template
+data:
+  host: "db1.example.com"
+  port: "3306"
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: test-db-2
+  namespace: default
+  labels:
+    config.oam.dev/type: my-db-template
+data:
+  host: "db2.example.com"
+  port: "5432"
+
+---
+apiVersion: core.oam.dev/v1beta1
+kind: Application
+metadata:
+  name: list-config-example
+  namespace: default
+spec:
+  components: []
+
+  workflow:
+    steps:
+      # Step 1: List all configs with template "my-db-template"
+      - name: list-configs
+        type: list-config
+        properties:
+          template: my-db-template
+          namespace: default
+        outputs:
+          - name: found-configs
+            valueFrom: "output.configs"
+
+      # Step 2: Print result to verify
+      - name: print-result
+        type: print-message-in-status
+        properties:
+          message: "Configs listed successfully"

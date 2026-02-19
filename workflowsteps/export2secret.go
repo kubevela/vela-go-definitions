@@ -23,89 +23,77 @@ import (
 // Export2Secret creates the export2secret workflow step definition.
 // This step exports data to Kubernetes Secret in your workflow.
 func Export2Secret() *defkit.WorkflowStepDefinition {
+	vela := defkit.VelaCtx()
+
+	secretName := defkit.String("secretName").
+		Required().
+		Description("Specify the name of the secret")
+	namespace := defkit.String("namespace").
+		Description("Specify the namespace of the secret")
+	secretType := defkit.String("type").
+		Description("Specify the type of the secret")
+	data := defkit.Object("data").
+		Required().
+		Description("Specify the data of secret").
+		WithSchema("{}")
+	cluster := defkit.String("cluster").
+		Default("").
+		Description("Specify the cluster of the secret")
+	kind := defkit.String("kind").
+		Default("generic").
+		Enum("docker-registry", "generic").
+		Description("Specify the kind of the secret")
+	dockerRegistry := defkit.Struct("dockerRegistry").
+		Description("Specify the docker data").
+		Fields(
+			defkit.Field("username", defkit.ParamTypeString).
+				Required().
+				Description("Specify the username of the docker registry"),
+			defkit.Field("password", defkit.ParamTypeString).
+				Required().
+				Description("Specify the password of the docker registry"),
+			defkit.Field("server", defkit.ParamTypeString).
+				Default("https://index.docker.io/v1/").
+				Description("Specify the server of the docker registry"),
+		)
+
+	baseSecretValue := defkit.NewArrayElement().
+		Set("apiVersion", defkit.Lit("v1")).
+		Set("kind", defkit.Lit("Secret")).
+		Set("metadata", defkit.NewArrayElement().
+			Set("name", secretName).
+			Set("namespace", vela.Namespace()).
+			SetIf(namespace.IsSet(), "namespace", namespace),
+		).
+		Set("stringData", data).
+		SetIf(defkit.And(secretType.NotSet(), kind.Eq("docker-registry")), "type", defkit.Lit("kubernetes.io/dockerconfigjson")).
+		SetIf(secretType.IsSet(), "type", secretType)
+
+	dockerStringData := defkit.NewArrayElement().
+		Set(`".dockerconfigjson"`, defkit.Reference(`json.Marshal({auths: "\(parameter.dockerRegistry.server)": {username: parameter.dockerRegistry.username, password: parameter.dockerRegistry.password, auth: base64.Encode(null, "\(parameter.dockerRegistry.username):\(parameter.dockerRegistry.password)")}})`))
+	dockerSecretOverlay := defkit.NewArrayElement().
+		Set("stringData", dockerStringData)
+	dockerRegistryMode := defkit.And(kind.Eq("docker-registry"), dockerRegistry.IsSet())
+
 	return defkit.NewWorkflowStep("export2secret").
 		Description("Export data to Kubernetes Secret in your workflow.").
-		RawCUE(`import (
-	"vela/kube"
-	"encoding/base64"
-	"encoding/json"
-)
+		Category("Resource Management").
+		WithImports("vela/kube", "encoding/base64", "encoding/json").
+		Params(secretName, namespace, secretType, data, cluster, kind, dockerRegistry).
+		Template(func(tpl *defkit.WorkflowStepTemplate) {
+			tpl.Builtin("apply", "kube.#Apply").
+				WithParams(map[string]defkit.Value{
+					"value":   baseSecretValue,
+					"cluster": cluster,
+				}).
+				Build()
 
-"export2secret": {
-	type: "workflow-step"
-	annotations: {
-		"category": "Resource Management"
-	}
-	description: "Export data to Kubernetes Secret in your workflow."
-}
-template: {
-	secret: {
-		data: *parameter.data | {}
-		if parameter.kind == "docker-registry" && parameter.dockerRegistry != _|_ {
-			registryData: {
-				auths: {
-					"\(parameter.dockerRegistry.server)": {
-						username: parameter.dockerRegistry.username
-						password: parameter.dockerRegistry.password
-						auth:     base64.Encode(null, "\(parameter.dockerRegistry.username):\(parameter.dockerRegistry.password)")
-					}
-				}
-			}
-			data: {
-				".dockerconfigjson": json.Marshal(registryData)
-			}
-		}
-		apply: kube.#Apply & {
-			$params: {
-				value: {
-					apiVersion: "v1"
-					kind:       "Secret"
-					if parameter.type == _|_ && parameter.kind == "docker-registry" {
-						type: "kubernetes.io/dockerconfigjson"
-					}
-					if parameter.type != _|_ {
-						type: parameter.type
-					}
-					metadata: {
-						name: parameter.secretName
-						if parameter.namespace != _|_ {
-							namespace: parameter.namespace
-						}
-						if parameter.namespace == _|_ {
-							namespace: context.namespace
-						}
-					}
-					stringData: data
-				}
-				cluster: parameter.cluster
-			}
-		}
-	}
-	parameter: {
-		// +usage=Specify the name of the secret
-		secretName: string
-		// +usage=Specify the namespace of the secret
-		namespace?: string
-		// +usage=Specify the type of the secret
-		type?: string
-		// +usage=Specify the data of secret
-		data: {}
-		// +usage=Specify the cluster of the secret
-		cluster: *"" | string
-		// +usage=Specify the kind of the secret
-		kind: *"generic" | "docker-registry"
-		// +usage=Specify the docker data
-		dockerRegistry?: {
-			// +usage=Specify the username of the docker registry
-			username: string
-			// +usage=Specify the password of the docker registry
-			password: string
-			// +usage=Specify the server of the docker registry
-			server: *"https://index.docker.io/v1/" | string
-		}
-	}
-}
-`)
+			tpl.Builtin("apply", "kube.#Apply").
+				WithParams(map[string]defkit.Value{
+					"value": dockerSecretOverlay,
+				}).
+				If(dockerRegistryMode)
+		})
 }
 
 func init() {

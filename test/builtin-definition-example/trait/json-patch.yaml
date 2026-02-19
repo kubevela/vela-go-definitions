@@ -1,0 +1,25 @@
+apiVersion: core.oam.dev/v1beta1
+kind: Application
+metadata:
+  name: json-patch-example
+  namespace: default
+spec:
+  components:
+    - name: nginx-app
+      type: webservice
+      properties:
+        image: nginx:latest
+        ports:
+          - port: 80
+            expose: true
+      traits:
+        - type: json-patch
+          properties:
+            operations:
+              - op: add
+                path: /spec/template/metadata/labels/patched
+                value: "true"
+              - op: replace
+                path: /spec/replicas
+                value: 2
+

@@ -1,0 +1,40 @@
+# Simple example: Export static data to a ConfigMap
+# This creates a ConfigMap named "my-app-config" with database connection info
+apiVersion: core.oam.dev/v1beta1
+kind: Application
+metadata:
+  name: export-data-simple-example
+spec:
+  components:
+    - type: webservice
+      name: my-app
+      properties:
+        image: nginx:latest
+
+  policies:
+    - type: topology
+      name: local
+      properties:
+        clusters: ["local"]
+
+  workflow:
+    steps:
+      # Step 1: Deploy the application
+      - type: deploy
+        name: deploy
+        properties:
+          policies: ["local"]
+
+      # Step 2: Export configuration data to a ConfigMap
+      - type: export-data
+        name: export-db-config
+        properties:
+          name: my-app-config           # Name of the ConfigMap to create
+          namespace: default            # Namespace where ConfigMap will be created
+          kind: ConfigMap               # Can be "ConfigMap" or "Secret"
+          topology: local               # Target cluster(s) defined in topology policy
+          data:
+            DATABASE_HOST: "mysql.default.svc.cluster.local"
+            DATABASE_PORT: "3306"
+            DATABASE_NAME: "myapp"
+

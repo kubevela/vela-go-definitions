@@ -1,0 +1,51 @@
+apiVersion: core.oam.dev/v1beta1
+kind: Application
+metadata:
+  name: export-service-nodeport-example
+spec:
+  components:
+    - type: webservice
+      name: my-api
+      properties:
+        image: nginx:latest
+      traits:
+        - type: expose
+          properties:
+            port: [80]
+            type: NodePort          # Uses NodePort instead of LoadBalancer
+
+  policies:
+    - type: topology
+      name: local
+      properties:
+        clusters: ["local"]
+
+  workflow:
+    steps:
+      - type: deploy
+        name: deploy-to-local
+        properties:
+          policies: ["local"]
+
+      # collect-service-endpoints also works with NodePort
+      # It will return the node IP and nodePort
+      - type: collect-service-endpoints
+        name: get-endpoint
+        outputs:
+          - name: host
+            valueFrom: value.endpoint.host
+          - name: port
+            valueFrom: value.endpoint.port
+
+      - type: export-service
+        name: export-to-worker
+        properties:
+          name: my-api
+          topology: local
+        inputs:
+          - from: host
+            parameterKey: ip
+          - from: port
+            parameterKey: port
+          - from: port
+            parameterKey: targetPort

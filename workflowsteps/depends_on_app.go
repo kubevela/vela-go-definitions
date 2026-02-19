@@ -23,73 +23,59 @@ import (
 // DependsOnApp creates the depends-on-app workflow step definition.
 // This step waits for the specified Application to complete.
 func DependsOnApp() *defkit.WorkflowStepDefinition {
+	name := defkit.String("name").
+		Required().
+		Description("Specify the name of the dependent Application")
+	namespace := defkit.String("namespace").
+		Required().
+		Description("Specify the namespace of the dependent Application")
+
+	appObject := defkit.NewArrayElement().
+		Set("apiVersion", defkit.Lit("core.oam.dev/v1beta1")).
+		Set("kind", defkit.Lit("Application")).
+		Set("metadata", defkit.NewArrayElement().
+			Set("name", name).
+			Set("namespace", namespace),
+		)
+
+	condDependsOnErr := defkit.Ne(defkit.Reference("dependsOn.$returns.err"), defkit.Reference("_|_"))
+	condDependsOnOK := defkit.Eq(defkit.Reference("dependsOn.$returns.err"), defkit.Reference("_|_"))
+
+	load := defkit.NewArrayElement().
+		SetIf(condDependsOnErr, "configMap", defkit.Reference(`kube.#Read & {
+	$params: value: {
+		apiVersion: "v1"
+		kind:       "ConfigMap"
+		metadata: {
+			name:      parameter.name
+			namespace: parameter.namespace
+		}
+	}
+}`)).
+		SetIf(condDependsOnErr, "template", defkit.Reference(`configMap.$returns.value.data["application"]`)).
+		SetIf(condDependsOnErr, "apply", defkit.Reference(`kube.#Apply & {
+	$params: value: yaml.Unmarshal(template)
+}`)).
+		SetIf(condDependsOnErr, "wait", defkit.Reference(`builtin.#ConditionalWait & {
+	$params: continue: apply.$returns.value.status.status == "running"
+}`)).
+		SetIf(condDependsOnOK, "wait", defkit.Reference(`builtin.#ConditionalWait & {
+	$params: continue: dependsOn.$returns.value.status.status == "running"
+}`))
+
 	return defkit.NewWorkflowStep("depends-on-app").
 		Description("Wait for the specified Application to complete.").
-		RawCUE(`import (
-	"vela/kube"
-	"vela/builtin"
-	"encoding/yaml"
-)
-
-"depends-on-app": {
-	type: "workflow-step"
-	annotations: {
-		"category": "Application Delivery"
-	}
-	labels: {}
-	description: "Wait for the specified Application to complete."
-}
-
-template: {
-	dependsOn: kube.#Read & {
-		$params: {
-			value: {
-				apiVersion: "core.oam.dev/v1beta1"
-				kind:       "Application"
-				metadata: {
-					name:      parameter.name
-					namespace: parameter.namespace
-				}
-			}
-		}
-	}
-	load: {
-		if dependsOn.$returns.err != _|_ {
-			configMap: kube.#Read & {
-				$params: {
-					value: {
-						apiVersion: "v1"
-						kind:       "ConfigMap"
-						metadata: {
-							name:      parameter.name
-							namespace: parameter.namespace
-						}
-					}
-				}
-			}
-			template: configMap.$returns.value.data["application"]
-			apply: kube.#Apply & {
-				$params: value: yaml.Unmarshal(template)
-			}
-			wait: builtin.#ConditionalWait & {
-				$params: continue: apply.$returns.value.status.status == "running"
-			}
-		}
-
-		if dependsOn.$returns.err == _|_ {
-			wait: builtin.#ConditionalWait & {
-				$params: continue: dependsOn.$returns.value.status.status == "running"
-			}
-		}
-	}
-	parameter: {
-		// +usage=Specify the name of the dependent Application
-		name: string
-		// +usage=Specify the namespace of the dependent Application
-		namespace: string
-	}
-}
-`)
+		Category("Application Delivery").
+		WithImports("vela/kube", "vela/builtin", "encoding/yaml").
+		Params(name, namespace).
+		Template(func(tpl *defkit.WorkflowStepTemplate) {
+			tpl.Builtin("dependsOn", "kube.#Read").
+				WithParams(map[string]defkit.Value{
+					"value": appObject,
+				}).
+				Build()
+			tpl.Set("load", load)
+		})
 }
 
 func init() {

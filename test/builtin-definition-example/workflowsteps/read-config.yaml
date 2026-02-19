@@ -1,0 +1,42 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: my-app-config
+  labels:
+    config.oam.dev/catalog: velacore-config
+    config.oam.dev/type: ""
+type: Opaque
+stringData:
+  input-properties: |
+    {"database_host":"mysql.default.svc.cluster.local","database_port":"3306","cache_enabled":"true"}
+
+---
+apiVersion: core.oam.dev/v1beta1
+kind: Application
+metadata:
+  name: read-config-example
+spec:
+  components:
+    - name: export2config-demo-server
+      type: webservice
+      properties:
+        image: oamdev/hello-world
+        port: 8000
+
+  workflow:
+    steps:
+      # Step 1: Read the config by name (uses app's namespace by default)
+      - name: read-app-config
+        type: read-config
+        properties:
+          name: my-app-config
+        outputs:
+          - name: db-host
+            valueFrom: "output.config.database_host"
+
+      # Step 2: Print the config to verify
+      - name: print-config
+        type: print-message-in-status
+        inputs:
+          - from: db-host
+            parameterKey: message

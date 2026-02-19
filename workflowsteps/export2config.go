@@ -23,51 +23,44 @@ import (
 // Export2Config creates the export2config workflow step definition.
 // This step exports data to specified Kubernetes ConfigMap in your workflow.
 func Export2Config() *defkit.WorkflowStepDefinition {
+	vela := defkit.VelaCtx()
+
+	configName := defkit.String("configName").
+		Required().
+		Description("Specify the name of the config map")
+	namespace := defkit.String("namespace").
+		Description("Specify the namespace of the config map")
+	data := defkit.Object("data").
+		Required().
+		Description("Specify the data of config map").
+		WithSchema("{}")
+	cluster := defkit.String("cluster").
+		Default("").
+		Description("Specify the cluster of the config map")
+
+	configMapValue := defkit.NewArrayElement().
+		Set("apiVersion", defkit.Lit("v1")).
+		Set("kind", defkit.Lit("ConfigMap")).
+		Set("metadata", defkit.NewArrayElement().
+			Set("name", configName).
+			Set("namespace", vela.Namespace()).
+			SetIf(namespace.IsSet(), "namespace", namespace),
+		).
+		Set("data", data)
+
 	return defkit.NewWorkflowStep("export2config").
 		Description("Export data to specified Kubernetes ConfigMap in your workflow.").
-		RawCUE(`import (
-	"vela/kube"
-)
-
-"export2config": {
-	type: "workflow-step"
-	annotations: {
-		"category": "Resource Management"
-	}
-	description: "Export data to specified Kubernetes ConfigMap in your workflow."
-}
-template: {
-	apply: kube.#Apply & {
-		$params: {
-			value: {
-				apiVersion: "v1"
-				kind:       "ConfigMap"
-				metadata: {
-					name: parameter.configName
-					if parameter.namespace != _|_ {
-						namespace: parameter.namespace
-					}
-					if parameter.namespace == _|_ {
-						namespace: context.namespace
-					}
-				}
-				data: parameter.data
-			}
-			cluster: parameter.cluster
-		}
-	}
-	parameter: {
-		// +usage=Specify the name of the config map
-		configName: string
-		// +usage=Specify the namespace of the config map
-		namespace?: string
-		// +usage=Specify the data of config map
-		data: {}
-		// +usage=Specify the cluster of the config map
-		cluster: *"" | string
-	}
-}
-`)
+		Category("Resource Management").
+		WithImports("vela/kube").
+		Params(configName, namespace, data, cluster).
+		Template(func(tpl *defkit.WorkflowStepTemplate) {
+			tpl.Builtin("apply", "kube.#Apply").
+				WithParams(map[string]defkit.Value{
+					"value":   configMapValue,
+					"cluster": cluster,
+				}).
+				Build()
+		})
 }
 
 func init() {

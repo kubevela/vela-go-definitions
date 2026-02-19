@@ -1,0 +1,21 @@
+apiVersion: core.oam.dev/v1beta1
+kind: Application
+metadata:
+  name: deploy-workflowstep
+spec:
+  components:
+    - name: nginx-deploy-workflowstep
+      type: webservice
+      properties:
+        image: nginx
+  policies:
+    - name: topology-local
+      type: topology
+      properties:
+        clusters: ["local"]
+  workflow:
+    steps:
+      - type: deploy
+        name: deploy-local
+        properties:
+          policies: ["topology-local"]

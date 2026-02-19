@@ -1,0 +1,48 @@
+apiVersion: core.oam.dev/v1beta1
+kind: Application
+metadata:
+  name: nocalhost-example
+  namespace: default
+spec:
+  components:
+    - name: nginx-app
+      type: webservice
+      properties:
+        image: nginx:latest
+        ports:
+          - port: 80
+            expose: true
+      traits:
+        - type: nocalhost
+          properties:
+            port: 8080
+            serviceType: deployment
+            gitUrl: https://github.com/example/repo.git
+            image: go
+            shell: bash
+            workDir: /app
+            resources:
+              limits:
+                memory: "1Gi"
+                cpu: "1"
+              requests:
+                memory: "512Mi"
+                cpu: "0.5"
+            command:
+              run:
+                - sh
+                - run.sh
+              debug:
+                - sh
+                - debug.sh
+            debug:
+              remoteDebugPort: 9009
+            hotReload: true
+            sync:
+              type: sendReceive
+              filePattern:
+                - ./
+              ignoreFilePattern:
+                - .git
+                - .idea
+

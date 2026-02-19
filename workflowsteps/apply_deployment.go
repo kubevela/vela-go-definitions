@@ -23,66 +23,65 @@ import (
 // ApplyDeployment creates the apply-deployment workflow step definition.
 // This step applies deployment with specified image and cmd.
 func ApplyDeployment() *defkit.WorkflowStepDefinition {
+	vela := defkit.VelaCtx()
+	stepName := defkit.Reference("context.stepName")
+	stepLabel := defkit.Interpolation(vela.Name(), defkit.Lit("-"), stepName)
+
+	image := defkit.String("image").Required()
+	replicas := defkit.Int("replicas").Default(1)
+	cluster := defkit.String("cluster").Default("")
+	cmd := defkit.StringList("cmd")
+
+	deployment := defkit.NewArrayElement().
+		Set("apiVersion", defkit.Lit("apps/v1")).
+		Set("kind", defkit.Lit("Deployment")).
+		Set("metadata", defkit.NewArrayElement().
+			Set("name", stepName).
+			Set("namespace", vela.Namespace()),
+		).
+		Set("spec", defkit.NewArrayElement().
+			Set("selector", defkit.NewArrayElement().
+				Set("matchLabels", defkit.NewArrayElement().
+					Set("\"workflow.oam.dev/step-name\"", stepLabel),
+				),
+			).
+			Set("replicas", replicas).
+			Set("template", defkit.NewArrayElement().
+				Set("metadata", defkit.NewArrayElement().
+					Set("labels", defkit.NewArrayElement().
+						Set("\"workflow.oam.dev/step-name\"", stepLabel),
+					),
+				).
+				Set("spec", defkit.NewArrayElement().
+					Set("containers", defkit.NewArray().Item(
+						defkit.NewArrayElement().
+							Set("name", stepName).
+							Set("image", image).
+							SetIf(defkit.PathExists(`parameter["cmd"]`), "command", cmd),
+					)),
+				),
+			),
+		)
+
 	return defkit.NewWorkflowStep("apply-deployment").
 		Description("Apply deployment with specified image and cmd.").
-		RawCUE(`import (
-	"strconv"
-	"strings"
-	"vela/kube"
-	"vela/builtin"
-)
+		Category("Resource Management").
+		WithImports("vela/kube", "vela/builtin").
+		Params(image, replicas, cluster, cmd).
+		Template(func(tpl *defkit.WorkflowStepTemplate) {
+			tpl.Builtin("output", "kube.#Apply").
+				WithParams(map[string]defkit.Value{
+					"cluster": cluster,
+					"value":   deployment,
+				}).
+				Build()
 
-"apply-deployment": {
-	alias: ""
-	annotations: {}
-	attributes: {}
-	description: "Apply deployment with specified image and cmd."
-	annotations: {
-		"category": "Resource Management"
-	}
-	labels: {}
-	type: "workflow-step"
-}
-
-template: {
-	output: kube.#Apply & {
-		$params: {
-			cluster: parameter.cluster
-			value: {
-				apiVersion: "apps/v1"
-				kind:       "Deployment"
-				metadata: {
-					name:      context.stepName
-					namespace: context.namespace
-				}
-				spec: {
-					selector: matchLabels: "workflow.oam.dev/step-name": "\(context.name)-\(context.stepName)"
-					replicas: parameter.replicas
-					template: {
-						metadata: labels: "workflow.oam.dev/step-name": "\(context.name)-\(context.stepName)"
-						spec: containers: [{
-							name:  context.stepName
-							image: parameter.image
-							if parameter["cmd"] != _|_ {
-								command: parameter.cmd
-							}
-						}]
-					}
-				}
-			}
-		}
-	}
-	wait: builtin.#ConditionalWait & {
-		$params: continue: output.$returns.value.status.readyReplicas == parameter.replicas
-	}
-	parameter: {
-		image:    string
-		replicas: *1 | int
-		cluster:  *"" | string
-		cmd?: [...string]
-	}
-}
-`)
+			tpl.Builtin("wait", "builtin.#ConditionalWait").
+				WithParams(map[string]defkit.Value{
+					"continue": defkit.Reference("apply.$returns.value.status.readyReplicas == parameter.replicas"),
+				}).
+				Build()
+		})
 }
 
 func init() {

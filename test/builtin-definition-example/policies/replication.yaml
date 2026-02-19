@@ -1,0 +1,178 @@
+apiVersion: core.oam.dev/v1beta1
+kind: ComponentDefinition
+metadata:
+  annotations:
+    definition.oam.dev/description: Webservice, but can be replicated
+  name: replica-webservice
+  namespace: vela-system
+spec:
+  workload:
+    type: autodetects.core.oam.dev
+  schematic:
+    cue:
+      template: |
+        output: {
+        	apiVersion: "apps/v1"
+        	kind:       "Deployment"
+        	metadata: {
+        		if context.replicaKey != _|_ {
+        			name: context.name + "-" + context.replicaKey
+        		}
+        		if context.replicaKey == _|_ {
+        			name: context.name
+        		}
+        	}
+        	spec: {
+        		replicas: parameter.replicas
+        		selector: matchLabels: {
+        			"app.oam.dev/component": context.name
+        			if context.replicaKey != _|_ {
+        				"app.oam.dev/replicaKey": context.replicaKey
+        			}
+        		}
+
+        		template: {
+        			metadata: {
+        				labels: {
+        					if parameter.labels != _|_ {
+        						parameter.labels
+        					}
+        					if parameter.addRevisionLabel {
+        						"app.oam.dev/revision": context.revision
+        					}
+        					"app.oam.dev/name":      context.appName
+        					"app.oam.dev/component": context.name
+        					if context.replicaKey != _|_ {
+        						"app.oam.dev/replicaKey": context.replicaKey
+        					}
+
+        				}
+        				if parameter.annotations != _|_ {
+        					annotations: parameter.annotations
+        				}
+        			}
+        			spec: {
+        				containers: [{
+        					name:  context.name
+        					image: parameter.image
+        					if parameter.cmd != _|_ {
+        						command: parameter.cmd
+        					}
+        					if parameter.env != _|_ {
+        						env: parameter.env
+        					}
+        					if parameter.cpu != _|_ {
+        						resources: {
+        							limits: cpu:   parameter.cpu
+        							requests: cpu: parameter.cpu
+        						}
+        					}
+        					if parameter.memory != _|_ {
+        						resources: {
+        							limits: memory:   parameter.memory
+        							requests: memory: parameter.memory
+        						}
+        					}
+        					ports: [ for v in parameter.ports {
+        						containerPort: v.port
+        						protocol:      v.protocol
+        						if v.name != _|_ {
+        							name: v.name
+        						}
+        					}]
+        				}]
+        			}
+        		}
+        	}
+        }
+        
+        exposePorts: [ for v in parameter.ports if v.expose == true {
+        	port:       v.port
+        	targetPort: v.port
+        	protocol:   v.protocol
+        	if v.name != _|_ {
+        		name: v.name
+        	}
+        }]
+        
+        parameter: {
+        	image: string
+        	replicas: *1 | int
+        	ports: [...{
+        		port:     int
+        		protocol: *"TCP" | string
+        		expose:   *false | bool
+        		name?:    string
+        	}]
+        	cmd?: [...string]
+        	env?: [...{
+        		name:   string
+        		value?: string
+        	}]
+        	cpu?:    string
+        	memory?: string
+        	labels?: [string]: string
+        	annotations?: [string]: string
+        	addRevisionLabel: *false | bool
+        	exposeType:       *"ClusterIP" | "NodePort" | "LoadBalancer"
+        }
+        outputs: {
+        	if len(exposePorts) != 0 {
+        		webserviceExpose: {
+        			apiVersion: "v1"
+        			kind:       "Service"
+        			metadata: {
+        				if context.replicaKey != _|_ {
+        					name: context.name + "-" + context.replicaKey
+        				}
+        				if context.replicaKey == _|_ {
+        					name: context.name
+        				}
+        			}
+        			spec: {
+        				selector: {
+        					"app.oam.dev/component": context.name
+        					if context.replicaKey != _|_ {
+        						"app.oam.dev/replicaKey": context.replicaKey
+        					}
+        				}
+        				ports: exposePorts
+        				type:  parameter.exposeType
+        			}
+        		}
+        	}
+        }
+---
+apiVersion: core.oam.dev/v1beta1
+kind: Application
+metadata:
+  name: app-replication-policy
+spec:
+  components:
+    - name: hello-rep
+      type: replica-webservice
+      properties:
+        image: crccheck/hello-world
+        ports:
+          - port: 80
+            expose: true
+  policies:
+    - name: comp-to-replicate
+      type: override
+      properties:
+        selector: [ "hello-rep" ]
+    - name: target-default
+      type: topology
+      properties:
+        clusters: [ "local" ]
+    - name: replication-default
+      type: replication
+      properties:
+        keys: ["beijing","hangzhou"]
+        selector: ["hello-rep"]
+  workflow:
+    steps:
+      - name: deploy-with-rep
+        type: deploy
+        properties:
+          policies: ["comp-to-replicate","target-default","replication-default"]

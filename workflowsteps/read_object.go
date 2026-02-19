@@ -23,47 +23,43 @@ import (
 // ReadObject creates the read-object workflow step definition.
 // This step reads Kubernetes objects from cluster for your workflow steps.
 func ReadObject() *defkit.WorkflowStepDefinition {
+	apiVersion := defkit.String("apiVersion").
+		Default("core.oam.dev/v1beta1").
+		Description("Specify the apiVersion of the object, defaults to 'core.oam.dev/v1beta1'")
+	kind := defkit.String("kind").
+		Default("Application").
+		Description("Specify the kind of the object, defaults to Application")
+	name := defkit.String("name").
+		Required().
+		Description("Specify the name of the object")
+	namespace := defkit.String("namespace").
+		Default("default").
+		Description("The namespace of the resource you want to read")
+	cluster := defkit.String("cluster").
+		Default("").
+		Description("The cluster you want to apply the resource to, default is the current control plane cluster")
+
+	objectValue := defkit.NewArrayElement().
+		Set("apiVersion", apiVersion).
+		Set("kind", kind).
+		Set("metadata", defkit.NewArrayElement().
+			Set("name", name).
+			Set("namespace", namespace),
+		)
+
 	return defkit.NewWorkflowStep("read-object").
 		Description("Read Kubernetes objects from cluster for your workflow steps").
-		RawCUE(`import (
-	"vela/kube"
-)
-
-"read-object": {
-	type: "workflow-step"
-	annotations: {
-		"category": "Resource Management"
-	}
-	description: "Read Kubernetes objects from cluster for your workflow steps"
-}
-template: {
-	output: kube.#Read & {
-		$params: {
-			cluster: parameter.cluster
-			value: {
-				apiVersion: parameter.apiVersion
-				kind:       parameter.kind
-				metadata: {
-					name:      parameter.name
-					namespace: parameter.namespace
-				}
-			}
-		}
-	}
-	parameter: {
-		// +usage=Specify the apiVersion of the object, defaults to 'core.oam.dev/v1beta1'
-		apiVersion: *"core.oam.dev/v1beta1" | string
-		// +usage=Specify the kind of the object, defaults to Application
-		kind: *"Application" | string
-		// +usage=Specify the name of the object
-		name: string
-		// +usage=The namespace of the resource you want to read
-		namespace: *"default" | string
-		// +usage=The cluster you want to apply the resource to, default is the current control plane cluster
-		cluster: *"" | string
-	}
-}
-`)
+		Category("Resource Management").
+		WithImports("vela/kube").
+		Params(apiVersion, kind, name, namespace, cluster).
+		Template(func(tpl *defkit.WorkflowStepTemplate) {
+			tpl.Builtin("output", "kube.#Read").
+				WithParams(map[string]defkit.Value{
+					"cluster": cluster,
+					"value":   objectValue,
+				}).
+				Build()
+		})
 }
 
 func init() {
