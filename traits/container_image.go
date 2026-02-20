@@ -30,15 +30,15 @@ func ContainerImage() *defkit.TraitDefinition {
 		PodDisruptive(true).
 		Template(func(tpl *defkit.Template) {
 			tpl.UsePatchContainer(defkit.PatchContainerConfig{
-				ContainerNameParam:   "containerName",
-				DefaultToContextName: true,
-				AllowMultiple:        true,
-				ContainersParam:      "containers",
+				ContainerNameParam:    "containerName",
+				DefaultToContextName:  true,
+				AllowMultiple:         true,
+				ContainersParam:       "containers",
 				ContainersDescription: "Specify the container image for multiple containers",
-				PatchFields: []defkit.PatchContainerField{
-					{ParamName: "image", TargetField: "image", PatchStrategy: "retainKeys", Description: "Specify the image of the container"},
-					{ParamName: "imagePullPolicy", TargetField: "imagePullPolicy", PatchStrategy: "retainKeys", Condition: "!= \"\"", Description: "Specify the image pull policy of the container"},
-				},
+				PatchFields: defkit.PatchFields(
+					defkit.PatchField("image").Strategy("retainKeys").Description("Specify the image of the container"),
+					defkit.PatchField("imagePullPolicy").Strategy("retainKeys").NotEmpty().Description("Specify the image pull policy of the container"),
+				),
 			})
 		})
 }

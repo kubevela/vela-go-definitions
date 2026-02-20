@@ -37,21 +37,21 @@ func SecurityContext() *defkit.TraitDefinition {
 				Groups: []defkit.PatchContainerGroup{
 					{
 						TargetField: "securityContext",
-						Fields: []defkit.PatchContainerField{
-							{ParamName: "allowPrivilegeEscalation", TargetField: "allowPrivilegeEscalation", ParamType: "bool", ParamDefault: "false"},
-							{ParamName: "readOnlyRootFilesystem", TargetField: "readOnlyRootFilesystem", ParamType: "bool", ParamDefault: "false"},
-							{ParamName: "privileged", TargetField: "privileged", ParamType: "bool", ParamDefault: "false"},
-							{ParamName: "runAsNonRoot", TargetField: "runAsNonRoot", ParamType: "bool", ParamDefault: "true"},
-							{ParamName: "runAsUser", TargetField: "runAsUser", ParamType: "int", Condition: "!= _|_"},
-							{ParamName: "runAsGroup", TargetField: "runAsGroup", ParamType: "int", Condition: "!= _|_"},
-						},
+						Fields: defkit.PatchFields(
+							defkit.PatchField("allowPrivilegeEscalation").Bool().Default("false"),
+							defkit.PatchField("readOnlyRootFilesystem").Bool().Default("false"),
+							defkit.PatchField("privileged").Bool().Default("false"),
+							defkit.PatchField("runAsNonRoot").Bool().Default("true"),
+							defkit.PatchField("runAsUser").Int().IsSet(),
+							defkit.PatchField("runAsGroup").Int().IsSet(),
+						),
 						SubGroups: []defkit.PatchContainerGroup{
 							{
 								TargetField: "capabilities",
-								Fields: []defkit.PatchContainerField{
-									{ParamName: "addCapabilities", TargetField: "add", ParamType: "[...string]", Condition: "!= _|_"},
-									{ParamName: "dropCapabilities", TargetField: "drop", ParamType: "[...string]", Condition: "!= _|_"},
-								},
+								Fields: defkit.PatchFields(
+									defkit.PatchField("addCapabilities").Target("add").StringArray().IsSet(),
+									defkit.PatchField("dropCapabilities").Target("drop").StringArray().IsSet(),
+								),
 							},
 						},
 					},

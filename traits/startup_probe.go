@@ -89,18 +89,18 @@ tcpSocket?: {
 				Groups: []defkit.PatchContainerGroup{
 					{
 						TargetField: "startupProbe",
-						Fields: []defkit.PatchContainerField{
-							{ParamName: "exec", TargetField: "exec", Condition: "!= _|_"},
-							{ParamName: "httpGet", TargetField: "httpGet", Condition: "!= _|_"},
-							{ParamName: "grpc", TargetField: "grpc", Condition: "!= _|_"},
-							{ParamName: "tcpSocket", TargetField: "tcpSocket", Condition: "!= _|_"},
-							{ParamName: "initialDelaySeconds", TargetField: "initialDelaySeconds", Condition: "!= _|_"},
-							{ParamName: "periodSeconds", TargetField: "periodSeconds", Condition: "!= _|_"},
-							{ParamName: "timeoutSeconds", TargetField: "timeoutSeconds", Condition: "!= _|_"},
-							{ParamName: "successThreshold", TargetField: "successThreshold", Condition: "!= _|_"},
-							{ParamName: "failureThreshold", TargetField: "failureThreshold", Condition: "!= _|_"},
-							{ParamName: "terminationGracePeriodSeconds", TargetField: "terminationGracePeriodSeconds", Condition: "!= _|_"},
-						},
+						Fields: defkit.PatchFields(
+							defkit.PatchField("exec").IsSet(),
+							defkit.PatchField("httpGet").IsSet(),
+							defkit.PatchField("grpc").IsSet(),
+							defkit.PatchField("tcpSocket").IsSet(),
+							defkit.PatchField("initialDelaySeconds").Int().IsSet().Default("0"),
+							defkit.PatchField("periodSeconds").Int().IsSet().Default("10"),
+							defkit.PatchField("timeoutSeconds").Int().IsSet().Default("1"),
+							defkit.PatchField("successThreshold").Int().IsSet().Default("1"),
+							defkit.PatchField("failureThreshold").Int().IsSet().Default("3"),
+							defkit.PatchField("terminationGracePeriodSeconds").Int().IsSet(),
+						),
 					},
 				},
 			})
