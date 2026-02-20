@@ -22,32 +22,53 @@ import (
 
 // Command creates the command trait definition.
 // This trait adds command on K8s pod for your workload.
-// Uses PatchContainer fluent API pattern with CustomPatchContainerBlock for complex merge logic:
-// - Container lookup from context.output with error handling
-// - Complex arg merging logic (addArgs, delArgs, replace)
-// - CUE struct unification with list comprehensions
+// Uses PatchContainer fluent API with PatchFields for standard parts (#PatchParams, _params mapping,
+// parameter block) and CustomPatchContainerBlock for the complex args merge logic that can't be
+// expressed through simple PatchFields.
 func Command() *defkit.TraitDefinition {
 	return defkit.NewTrait("command").
 		Description("Add command on K8s pod for your workload which follows the pod spec in path 'spec.template'").
 		AppliesTo("deployments.apps", "statefulsets.apps", "daemonsets.apps", "jobs.batch").
 		Template(func(tpl *defkit.Template) {
 			tpl.UsePatchContainer(defkit.PatchContainerConfig{
-				ContainerNameParam:   "containerName",
-				DefaultToContextName: true,
-				AllowMultiple:        true,
-				ContainersParam:      "containers",
-				// Custom params for complex command/args merge logic
-				CustomParamsBlock: `// +usage=Specify the name of the target container, if not set, use the component name
-containerName: *"" | string
-// +usage=Specify the command to use in the target container, if not set, it will not be changed
-command: *null | [...string]
-// +usage=Specify the args to use in the target container, if set, it will override existing args
-args: *null | [...string]
-// +usage=Specify the args to add in the target container, existing args will be kept, cannot be used with ` + "`args`" + `
-addArgs: *null | [...string]
-// +usage=Specify the existing args to delete in the target container, cannot be used with ` + "`args`" + `
-delArgs: *null | [...string]`,
-				// Custom PatchContainer body for complex merge logic
+				ContainerNameParam:    "containerName",
+				DefaultToContextName:  true,
+				AllowMultiple:         true,
+				ContainersParam:       "containers",
+				ContainersDescription: "Specify the commands for multiple containers",
+				PatchStrategy:         "open",
+				PatchFields: []defkit.PatchContainerField{
+					{
+						ParamName:    "command",
+						TargetField:  "command",
+						ParamType:    "[...string]",
+						ParamDefault: "null",
+						Description:  "Specify the command to use in the target container, if not set, it will not be changed",
+					},
+					{
+						ParamName:    "args",
+						TargetField:  "args",
+						ParamType:    "[...string]",
+						ParamDefault: "null",
+						Description:  "Specify the args to use in the target container, if set, it will override existing args",
+					},
+					{
+						ParamName:    "addArgs",
+						TargetField:  "addArgs",
+						ParamType:    "[...string]",
+						ParamDefault: "null",
+						Description:  "Specify the args to add in the target container, existing args will be kept, cannot be used with `args`",
+					},
+					{
+						ParamName:    "delArgs",
+						TargetField:  "delArgs",
+						ParamType:    "[...string]",
+						ParamDefault: "null",
+						Description:  "Specify the existing args to delete in the target container, cannot be used with `args`",
+					},
+				},
+				// Custom PatchContainer body for complex args merge logic
+				// (addArgs/delArgs with list comprehensions, intermediate hidden fields, array concatenation)
 				CustomPatchContainerBlock: `_params:         #PatchParams
 name:            _params.containerName
 _baseContainers: context.output.spec.template.spec.containers
@@ -94,40 +115,6 @@ if len(_matchContainers_) > 0 {
 	// +patchStrategy=replace
 	args: [for a in _args if _delArgs[a] == _|_ {a}] + [for a in _addArgs if _delArgs[a] == _|_ && _argsMap[a] == _|_ {a}]
 }`,
-				// Custom patch block for standard PatchContainer invocation
-				CustomPatchBlock: `if parameter.containers == _|_ {
-	// +patchKey=name
-	containers: [{
-		PatchContainer & {_params: {
-			if parameter.containerName == "" {
-				containerName: context.name
-			}
-			if parameter.containerName != "" {
-				containerName: parameter.containerName
-			}
-			command: parameter.command
-			args:    parameter.args
-			addArgs: parameter.addArgs
-			delArgs: parameter.delArgs
-		}}
-	}]
-}
-if parameter.containers != _|_ {
-	// +patchKey=name
-	containers: [for c in parameter.containers {
-		if c.containerName == "" {
-			err: "container name must be set for containers"
-		}
-		if c.containerName != "" {
-			PatchContainer & {_params: c}
-		}
-	}]
-}`,
-				// Custom parameter block
-				CustomParameterBlock: `*#PatchParams | close({
-	// +usage=Specify the commands for multiple containers
-	containers: [...#PatchParams]
-})`,
 			})
 		})
 }

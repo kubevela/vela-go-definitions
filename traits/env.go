@@ -22,30 +22,44 @@ import (
 
 // Env creates the env trait definition.
 // This trait adds environment variables to containers in K8s pods.
-// Uses PatchContainer fluent API pattern with CustomPatchContainerBlock for complex merge logic:
-// - Container lookup from context.output with error handling
-// - Complex env merging logic (replace, unset, merge)
-// - CUE struct unification with list comprehensions
+// Uses PatchContainer fluent API with PatchFields for standard parts (#PatchParams, _params mapping,
+// parameter block) and CustomPatchContainerBlock for the complex env merge logic that can't be
+// expressed through simple PatchFields.
 func Env() *defkit.TraitDefinition {
 	return defkit.NewTrait("env").
 		Description("Add env on K8s pod for your workload which follows the pod spec in path 'spec.template'").
 		AppliesTo("deployments.apps", "statefulsets.apps", "daemonsets.apps", "jobs.batch").
 		Template(func(tpl *defkit.Template) {
 			tpl.UsePatchContainer(defkit.PatchContainerConfig{
-				ContainerNameParam:   "containerName",
-				DefaultToContextName: true,
-				AllowMultiple:        true,
-				ContainersParam:      "containers",
-				// Custom params for env merge logic
-				CustomParamsBlock: `// +usage=Specify the name of the target container, if not set, use the component name
-containerName: *"" | string
-// +usage=Specify if replacing the whole environment settings for the container
-replace: *false | bool
-// +usage=Specify the  environment variables to merge, if key already existing, override its value
-env: [string]: string
-// +usage=Specify which existing environment variables to unset
-unset: *[] | [...string]`,
+				ContainerNameParam:    "containerName",
+				DefaultToContextName:  true,
+				AllowMultiple:         true,
+				ContainersParam:       "containers",
+				ContainersDescription: "Specify the environment variables for multiple containers",
+				PatchFields: []defkit.PatchContainerField{
+					{
+						ParamName:    "replace",
+						TargetField:  "replace",
+						ParamType:    "bool",
+						ParamDefault: "false",
+						Description:  "Specify if replacing the whole environment settings for the container",
+					},
+					{
+						ParamName:   "env",
+						TargetField: "env",
+						ParamType:   "[string]: string",
+						Description: "Specify the  environment variables to merge, if key already existing, override its value",
+					},
+					{
+						ParamName:    "unset",
+						TargetField:  "unset",
+						ParamType:    "[...string]",
+						ParamDefault: "[]",
+						Description:  "Specify which existing environment variables to unset",
+					},
+				},
 				// Custom PatchContainer body for complex env merge logic
+				// (replace/unset/merge with valueFrom preservation, list comprehensions)
 				CustomPatchContainerBlock: `_params: #PatchParams
 name:    _params.containerName
 _delKeys: {for k in _params.unset {(k): ""}}
@@ -87,39 +101,6 @@ if len(_matchContainers_) > 0 {
 		}]
 	}
 }`,
-				// Custom patch block for standard PatchContainer invocation
-				CustomPatchBlock: `if parameter.containers == _|_ {
-	// +patchKey=name
-	containers: [{
-		PatchContainer & {_params: {
-			if parameter.containerName == "" {
-				containerName: context.name
-			}
-			if parameter.containerName != "" {
-				containerName: parameter.containerName
-			}
-			replace: parameter.replace
-			env:     parameter.env
-			unset:   parameter.unset
-		}}
-	}]
-}
-if parameter.containers != _|_ {
-	// +patchKey=name
-	containers: [for c in parameter.containers {
-		if c.containerName == "" {
-			err: "containerName must be set for containers"
-		}
-		if c.containerName != "" {
-			PatchContainer & {_params: c}
-		}
-	}]
-}`,
-				// Custom parameter block
-				CustomParameterBlock: `*#PatchParams | close({
-	// +usage=Specify the environment variables for multiple containers
-	containers: [...#PatchParams]
-})`,
 			})
 		})
 }

@@ -33,7 +33,7 @@ func TestScalerTrait(t *testing.T) {
 
 	// Verify key elements are present
 	assert.Contains(t, cue, `type: "trait"`)
-	assert.Contains(t, cue, `podDisruptive: false`)
+	assert.NotContains(t, cue, `podDisruptive:`, "podDisruptive: false should not be emitted (it's the default)")
 	assert.Contains(t, cue, `"deployments.apps"`)
 	assert.Contains(t, cue, `"statefulsets.apps"`)
 	assert.Contains(t, cue, `replicas:`)
@@ -118,11 +118,9 @@ func TestContainerImageTrait(t *testing.T) {
 	assert.Contains(t, cue, "imagePullPolicy: parameter.imagePullPolicy",
 		"imagePullPolicy should be mapped unconditionally in _params")
 
-	// Fix 3: parameter block should not have * before #PatchParams
-	assert.Contains(t, cue, "parameter: #PatchParams | close({",
-		"parameter should reference #PatchParams without star")
-	assert.NotContains(t, cue, "parameter: *#PatchParams",
-		"parameter should NOT have * before #PatchParams")
+	// Fix 3: parameter block should have * before #PatchParams (marks single-container as default)
+	assert.Contains(t, cue, "parameter: *#PatchParams | close({",
+		"parameter should reference *#PatchParams with star default marker")
 
 	// Fix 4: no trailing parameter: {}
 	assert.Equal(t, 1, strings.Count(cue, "parameter:"),
@@ -161,7 +159,7 @@ func TestExposeTrait(t *testing.T) {
 
 	// Header and attributes
 	assert.Contains(t, cue, `type: "trait"`)
-	assert.Contains(t, cue, `podDisruptive: false`)
+	assert.NotContains(t, cue, `podDisruptive:`, "podDisruptive: false should not be emitted")
 	assert.Contains(t, cue, `stage:`)
 	assert.Contains(t, cue, `"PostDispatch"`)
 	assert.Contains(t, cue, `"deployments.apps"`)
@@ -202,7 +200,7 @@ func TestHPATrait(t *testing.T) {
 
 	// Header and attributes
 	assert.Contains(t, cue, `type: "trait"`)
-	assert.Contains(t, cue, `podDisruptive: false`)
+	assert.NotContains(t, cue, `podDisruptive:`, "podDisruptive: false should not be emitted")
 	assert.Contains(t, cue, `"deployments.apps"`)
 	assert.Contains(t, cue, `"statefulsets.apps"`)
 
@@ -308,7 +306,7 @@ func TestServiceAccountTrait(t *testing.T) {
 
 	// Header and attributes
 	assert.Contains(t, cue, `type: "trait"`)
-	assert.Contains(t, cue, `podDisruptive: false`)
+	assert.NotContains(t, cue, `podDisruptive:`, "podDisruptive: false should not be emitted")
 	assert.Contains(t, cue, `"deployments.apps"`)
 	assert.Contains(t, cue, `"jobs.batch"`)
 
@@ -367,7 +365,7 @@ func TestGatewayTrait(t *testing.T) {
 
 	// Header and attributes
 	assert.Contains(t, cue, `type: "trait"`)
-	assert.Contains(t, cue, `podDisruptive: false`)
+	assert.NotContains(t, cue, `podDisruptive:`, "podDisruptive: false should not be emitted")
 	assert.Contains(t, cue, `"deployments.apps"`)
 	assert.Contains(t, cue, `"statefulsets.apps"`)
 	assert.Contains(t, cue, `customStatus:`)
@@ -453,17 +451,113 @@ func TestEnvTrait(t *testing.T) {
 	trait := Env()
 
 	assert.Equal(t, "env", trait.GetName())
+	assert.Equal(t, "Add env on K8s pod for your workload which follows the pod spec in path 'spec.template'", trait.GetDescription())
 
 	cue := trait.ToCue()
 
-	// Verify key elements are present
+	// Metadata
 	assert.Contains(t, cue, `type: "trait"`)
-	assert.Contains(t, cue, `#PatchParams`)
-	assert.Contains(t, cue, `PatchContainer:`)
-	assert.Contains(t, cue, `containerName:`)
+	assert.Contains(t, cue, `"deployments.apps"`)
+	assert.Contains(t, cue, `"statefulsets.apps"`)
+	assert.Contains(t, cue, `"daemonsets.apps"`)
+	assert.Contains(t, cue, `"jobs.batch"`)
+
+	// #PatchParams schema: all 4 fields with correct types
+	assert.Contains(t, cue, `#PatchParams: {`)
+	assert.Contains(t, cue, `containerName: *"" | string`)
 	assert.Contains(t, cue, `replace: *false | bool`)
 	assert.Contains(t, cue, `env: [string]: string`)
-	assert.Contains(t, cue, `unset:`)
+	assert.Contains(t, cue, `unset: *[] | [...string]`)
+
+	// No duplicate containerName (1 in #PatchParams + 2 in _params mapping = 3)
+	assert.Equal(t, 3, strings.Count(cue, "containerName:"),
+		"containerName: should appear exactly 3 times (1 in #PatchParams + 2 in _params mapping), not 4 (which was the duplicate bug)")
+
+	// PatchContainer body: complex env merge logic keywords
+	assert.Contains(t, cue, `PatchContainer: {`)
+	assert.Contains(t, cue, `_params: #PatchParams`)
+	assert.Contains(t, cue, `_delKeys: {for k in _params.unset`)
+	assert.Contains(t, cue, `_baseContainers: context.output.spec.template.spec.containers`)
+	assert.Contains(t, cue, `_baseEnv:       _baseContainer.env`)
+	assert.Contains(t, cue, `_baseEnvMap: {for envVar in _baseEnv`)
+	assert.Contains(t, cue, `envVar.valueFrom`)
+
+	// _params mapping: auto-generated unconditional field mappings
+	assert.Contains(t, cue, "replace: parameter.replace")
+	assert.Contains(t, cue, "env:     parameter.env")
+	assert.Contains(t, cue, "unset:   parameter.unset")
+
+	// Multi-container support
+	assert.Contains(t, cue, "if parameter.containers == _|_")
+	assert.Contains(t, cue, "if parameter.containers != _|_")
+	assert.Contains(t, cue, "containers: [...#PatchParams]")
+
+	// Error collection
+	assert.Contains(t, cue, `errs: [for c in patch.spec.template.spec.containers if c.err != _|_ {c.err}]`)
+
+	// Descriptions
+	assert.Contains(t, cue, "// +usage=Specify if replacing the whole environment settings")
+	assert.Contains(t, cue, "// +usage=Specify the  environment variables to merge")
+	assert.Contains(t, cue, "// +usage=Specify which existing environment variables to unset")
+	assert.Contains(t, cue, "// +usage=Specify the environment variables for multiple containers")
+}
+
+func TestContainerPortsTrait(t *testing.T) {
+	trait := ContainerPorts()
+
+	assert.Equal(t, "container-ports", trait.GetName())
+	assert.Equal(t, "Expose on the host and bind the external port to host to enable web traffic for your component.", trait.GetDescription())
+
+	cue := trait.ToCue()
+
+	// Metadata
+	assert.Contains(t, cue, `type: "trait"`)
+	assert.Contains(t, cue, `podDisruptive: true`)
+	assert.Contains(t, cue, `"deployments.apps"`)
+	assert.Contains(t, cue, `"jobs.batch"`)
+
+	// Imports
+	assert.Contains(t, cue, `"strconv"`)
+	assert.Contains(t, cue, `"strings"`)
+
+	// #PatchParams schema: containerName + ports with nested struct
+	assert.Contains(t, cue, `#PatchParams: {`)
+	assert.Contains(t, cue, `containerName: *"" | string`)
+	assert.Contains(t, cue, `ports: *[] | [...{`)
+	assert.Contains(t, cue, `containerPort: int`)
+	assert.Contains(t, cue, `protocol: *"TCP" | "UDP" | "SCTP"`)
+	assert.Contains(t, cue, `hostPort?: int`)
+	assert.Contains(t, cue, `hostIP?: string`)
+
+	// No duplicate containerName (1 in #PatchParams + 2 in _params mapping = 3)
+	assert.Equal(t, 3, strings.Count(cue, "containerName:"),
+		"containerName: should appear exactly 3 times (1 in #PatchParams + 2 in _params mapping), not 4 (which was the duplicate bug)")
+
+	// PatchContainer body: complex port merge logic
+	assert.Contains(t, cue, `PatchContainer: {`)
+	assert.Contains(t, cue, `_params:         #PatchParams`)
+	assert.Contains(t, cue, `_baseContainers: context.output.spec.template.spec.containers`)
+	assert.Contains(t, cue, `_basePorts:     _baseContainer.ports`)
+	assert.Contains(t, cue, `_basePortsMap:`)
+	assert.Contains(t, cue, `_portsMap:`)
+	assert.Contains(t, cue, `_uniqueKey:`)
+	assert.Contains(t, cue, `strings.ToLower`)
+	assert.Contains(t, cue, `strconv.FormatInt`)
+
+	// _params mapping: auto-generated
+	assert.Contains(t, cue, "ports: parameter.ports")
+
+	// Multi-container support
+	assert.Contains(t, cue, "if parameter.containers == _|_")
+	assert.Contains(t, cue, "if parameter.containers != _|_")
+	assert.Contains(t, cue, "containers: [...#PatchParams]")
+
+	// Error collection
+	assert.Contains(t, cue, `errs: [for c in patch.spec.template.spec.containers if c.err != _|_ {c.err}]`)
+
+	// Descriptions
+	assert.Contains(t, cue, "// +usage=Specify ports you want customer traffic sent to")
+	assert.Contains(t, cue, "// +usage=Specify the container ports for multiple containers")
 }
 
 func TestResourceTrait(t *testing.T) {
@@ -546,7 +640,7 @@ func TestHostAliasTrait(t *testing.T) {
 	assert.Contains(t, cue, `hostalias: {`)
 	assert.Contains(t, cue, `type: "trait"`)
 	assert.Contains(t, cue, `description: "Add host aliases on K8s pod for your workload which follows the pod spec in path 'spec.template'."`)
-	assert.Contains(t, cue, `podDisruptive: false`)
+	assert.NotContains(t, cue, `podDisruptive:`, "podDisruptive: false should not be emitted")
 	assert.Contains(t, cue, `"deployments.apps"`)
 	assert.Contains(t, cue, `"statefulsets.apps"`)
 	assert.Contains(t, cue, `"daemonsets.apps"`)
@@ -631,7 +725,7 @@ func TestSecurityContextTrait(t *testing.T) {
 	assert.Contains(t, cue, `runAsNonRoot:             _params.runAsNonRoot`)
 
 	// Multi-container support
-	assert.Contains(t, cue, "parameter: #PatchParams | close({")
+	assert.Contains(t, cue, "parameter: *#PatchParams | close({")
 	assert.Contains(t, cue, "containers: [...#PatchParams]")
 
 	// Error collection
@@ -722,6 +816,69 @@ func TestAllTraitsRegistered(t *testing.T) {
 			assert.True(t, strings.Contains(cue, "}"))
 		})
 	}
+}
+
+func TestCommandTrait(t *testing.T) {
+	trait := Command()
+
+	assert.Equal(t, "command", trait.GetName())
+	assert.Equal(t, "Add command on K8s pod for your workload which follows the pod spec in path 'spec.template'", trait.GetDescription())
+
+	cue := trait.ToCue()
+
+	// Metadata
+	assert.Contains(t, cue, `type: "trait"`)
+	assert.Contains(t, cue, `"deployments.apps"`)
+	assert.Contains(t, cue, `"statefulsets.apps"`)
+	assert.Contains(t, cue, `"daemonsets.apps"`)
+	assert.Contains(t, cue, `"jobs.batch"`)
+
+	// #PatchParams schema: all 5 fields with correct types
+	assert.Contains(t, cue, `#PatchParams: {`)
+	assert.Contains(t, cue, `containerName: *"" | string`)
+	assert.Contains(t, cue, `command: *null | [...string]`)
+	assert.Contains(t, cue, `args: *null | [...string]`)
+	assert.Contains(t, cue, `addArgs: *null | [...string]`)
+	assert.Contains(t, cue, `delArgs: *null | [...string]`)
+
+	// No duplicate containerName in #PatchParams (total count: 1 field in #PatchParams + 2 in _params mapping = 3)
+	assert.Equal(t, 3, strings.Count(cue, "containerName:"),
+		"containerName: should appear exactly 3 times (1 in #PatchParams + 2 in _params mapping), not 4 (which was the duplicate bug)")
+
+	// PatchContainer body: complex merge logic keywords
+	assert.Contains(t, cue, `PatchContainer: {`)
+	assert.Contains(t, cue, `_params:         #PatchParams`)
+	assert.Contains(t, cue, `_baseContainers: context.output.spec.template.spec.containers`)
+	assert.Contains(t, cue, `_matchContainers_:`)
+	assert.Contains(t, cue, `_baseContainer: *_|_ | {...}`)
+	assert.Contains(t, cue, `_delArgs: {...}`)
+	assert.Contains(t, cue, `_argsMap: {for a in _args`)
+	assert.Contains(t, cue, `_addArgs: [...string]`)
+
+	// _params mapping: auto-generated unconditional field mappings
+	assert.Contains(t, cue, "command: parameter.command",
+		"_params mapping should have unconditional command: parameter.command")
+	assert.Contains(t, cue, "args:    parameter.args",
+		"_params mapping should have unconditional args: parameter.args")
+	assert.Contains(t, cue, "addArgs: parameter.addArgs",
+		"_params mapping should have unconditional addArgs: parameter.addArgs")
+	assert.Contains(t, cue, "delArgs: parameter.delArgs",
+		"_params mapping should have unconditional delArgs: parameter.delArgs")
+
+	// Multi-container support
+	assert.Contains(t, cue, "if parameter.containers == _|_")
+	assert.Contains(t, cue, "if parameter.containers != _|_")
+	assert.Contains(t, cue, "containers: [...#PatchParams]")
+
+	// Error collection
+	assert.Contains(t, cue, `errs: [for c in patch.spec.template.spec.containers if c.err != _|_ {c.err}]`)
+
+	// Descriptions
+	assert.Contains(t, cue, "// +usage=Specify the command to use in the target container")
+	assert.Contains(t, cue, "// +usage=Specify the args to use in the target container")
+	assert.Contains(t, cue, "// +usage=Specify the args to add in the target container")
+	assert.Contains(t, cue, "// +usage=Specify the existing args to delete in the target container")
+	assert.Contains(t, cue, "// +usage=Specify the commands for multiple containers")
 }
 
 func TestK8sUpdateStrategyTrait(t *testing.T) {

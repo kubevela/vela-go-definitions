@@ -22,11 +22,24 @@ import (
 
 // ContainerPorts creates the container-ports trait definition.
 // This trait exposes ports on the host and binds external ports to host.
-// Uses PatchContainer fluent API pattern with CustomPatchContainerBlock for complex merge logic:
-// - Container lookup from context.output with error handling
-// - Complex port merging logic with maps and list comprehensions
-// - CUE imports (strconv, strings)
+// Uses PatchContainer fluent API with PatchFields for standard parts (#PatchParams, _params mapping,
+// parameter block) and CustomPatchContainerBlock for the complex port merge logic that can't be
+// expressed through simple PatchFields.
 func ContainerPorts() *defkit.TraitDefinition {
+	// Multiline CUE type for the ports parameter — needs explicit tab indentation
+	// to align correctly inside the auto-generated #PatchParams block (2 tabs for
+	// struct fields, 1 tab for closing brace).
+	portsParamType := "[...{\n" +
+		"\t\t// +usage=Number of port to expose on the pod's IP address\n" +
+		"\t\tcontainerPort: int\n" +
+		"\t\t// +usage=Protocol for port. Must be UDP, TCP, or SCTP\n" +
+		"\t\tprotocol: *\"TCP\" | \"UDP\" | \"SCTP\"\n" +
+		"\t\t// +usage=Number of port to expose on the host\n" +
+		"\t\thostPort?: int\n" +
+		"\t\t// +usage=What host IP to bind the external port to.\n" +
+		"\t\thostIP?: string\n" +
+		"\t}]"
+
 	return defkit.NewTrait("container-ports").
 		Description("Expose on the host and bind the external port to host to enable web traffic for your component.").
 		AppliesTo("deployments.apps", "statefulsets.apps", "daemonsets.apps", "jobs.batch").
@@ -34,25 +47,22 @@ func ContainerPorts() *defkit.TraitDefinition {
 		WithImports("strconv", "strings").
 		Template(func(tpl *defkit.Template) {
 			tpl.UsePatchContainer(defkit.PatchContainerConfig{
-				ContainerNameParam:   "containerName",
-				DefaultToContextName: true,
-				AllowMultiple:        true,
-				ContainersParam:      "containers",
-				// Custom params for ports
-				CustomParamsBlock: `// +usage=Specify the name of the target container, if not set, use the component name
-containerName: *"" | string
-// +usage=Specify ports you want customer traffic sent to
-ports: *[] | [...{
-	// +usage=Number of port to expose on the pod's IP address
-	containerPort: int
-	// +usage=Protocol for port. Must be UDP, TCP, or SCTP
-	protocol: *"TCP" | "UDP" | "SCTP"
-	// +usage=Number of port to expose on the host
-	hostPort?: int
-	// +usage=What host IP to bind the external port to.
-	hostIP?: string
-}]`,
+				ContainerNameParam:    "containerName",
+				DefaultToContextName:  true,
+				AllowMultiple:         true,
+				ContainersParam:       "containers",
+				ContainersDescription: "Specify the container ports for multiple containers",
+				PatchFields: []defkit.PatchContainerField{
+					{
+						ParamName:    "ports",
+						TargetField:  "ports",
+						ParamType:    portsParamType,
+						ParamDefault: "[]",
+						Description:  "Specify ports you want customer traffic sent to",
+					},
+				},
 				// Custom PatchContainer body for complex port merge logic
+				// (composite key matching, deduplication by protocol+port, function calls)
 				CustomPatchContainerBlock: `_params:         #PatchParams
 name:            _params.containerName
 _baseContainers: context.output.spec.template.spec.containers
@@ -110,37 +120,6 @@ if len(_matchContainers_) > 0 {
 		}]
 	}
 }`,
-				// Custom patch block for standard PatchContainer invocation
-				CustomPatchBlock: `if parameter.containers == _|_ {
-	// +patchKey=name
-	containers: [{
-		PatchContainer & {_params: {
-			if parameter.containerName == "" {
-				containerName: context.name
-			}
-			if parameter.containerName != "" {
-				containerName: parameter.containerName
-			}
-			ports: parameter.ports
-		}}
-	}]
-}
-if parameter.containers != _|_ {
-	// +patchKey=name
-	containers: [for c in parameter.containers {
-		if c.containerName == "" {
-			err: "container name must be set for containers"
-		}
-		if c.containerName != "" {
-			PatchContainer & {_params: c}
-		}
-	}]
-}`,
-				// Custom parameter block
-				CustomParameterBlock: `*#PatchParams | close({
-	// +usage=Specify the container ports for multiple containers
-	containers: [...#PatchParams]
-})`,
 			})
 		})
 }
