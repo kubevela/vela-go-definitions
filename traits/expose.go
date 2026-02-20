@@ -44,7 +44,6 @@ func Expose() *defkit.TraitDefinition {
 	return defkit.NewTrait("expose").
 		Description("Expose port to enable web traffic for your component.").
 		AppliesTo("deployments.apps", "statefulsets.apps").
-		PodDisruptive(false).
 		Stage("PostDispatch").
 		WithImports("strconv", "strings").
 		CustomStatus(`service: context.outputs.service
