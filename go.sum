@@ -73,6 +73,8 @@ github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 h1:C3w9PqII01/Oq
 github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822/go.mod h1:+n7T8mK8HuQTcFwEeznm/DIxMOiR9yIdICNftLE1DvQ=
 github.com/oam-dev/kubevela v1.10.5-0.20260212142756-1396884a444d h1:rrLSOrRpXNy7xEgfBkTi/N6n4iLtjNlBeOnJcYdyaqs=
 github.com/oam-dev/kubevela v1.10.5-0.20260212142756-1396884a444d/go.mod h1:SqszKd2FCq6apGstniA11UkGR0khUhCfNERDI5TdjY4=
+github.com/oam-dev/kubevela v1.10.5-0.20260220220911-4010da6765ba h1:VcTdEHR/EtBL6r0XRSLzPgI1q3X8MDf+h7QeHTUfwdE=
+github.com/oam-dev/kubevela v1.10.5-0.20260220220911-4010da6765ba/go.mod h1:SqszKd2FCq6apGstniA11UkGR0khUhCfNERDI5TdjY4=
 github.com/onsi/ginkgo/v2 v2.23.3 h1:edHxnszytJ4lD9D5Jjc4tiDkPBZ3siDeJJkUZJJVkp0=
 github.com/onsi/ginkgo/v2 v2.23.3/go.mod h1:zXTP6xIp3U8aVuXN8ENK9IXRaTjFnpVB9mGmaSRvxnM=
 github.com/onsi/gomega v1.36.2 h1:koNYke6TVk6ZmnyHrCXba/T/MoLBXFjeC1PtvYgw0A8=
