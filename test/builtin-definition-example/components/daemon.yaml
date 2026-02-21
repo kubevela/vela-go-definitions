@@ -1,0 +1,24 @@
+apiVersion: core.oam.dev/v1beta1
+kind: Application
+metadata:
+  name: addon-node-exporter
+  namespace: vela-system
+spec:
+  components:
+  - name: node-exporter
+    type: daemon
+    properties:
+      image: prom/node-exporter
+      imagePullPolicy: IfNotPresent
+      volumeMounts:
+        hostPath:
+        - mountPath: /host/sys
+          mountPropagation: HostToContainer
+          name: sys
+          path: /sys
+          readOnly: true
+        - mountPath: /host/root
+          mountPropagation: HostToContainer
+          name: root
+          path: /
+          readOnly: true

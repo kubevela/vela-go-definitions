@@ -23,77 +23,58 @@ import (
 // ExportData creates the export-data workflow step definition.
 // This step exports data to clusters specified by topology.
 func ExportData() *defkit.WorkflowStepDefinition {
+	name := defkit.String("name").
+		Description("Specify the name of the export destination")
+	namespace := defkit.String("namespace").
+		Description("Specify the namespace of the export destination")
+	kind := defkit.String("kind").
+		Default("ConfigMap").
+		Enum("ConfigMap", "Secret").
+		Description("Specify the kind of the export destination")
+	data := defkit.Object("data").
+		Required().
+		Description("Specify the data to export").
+		WithSchema("{}")
+	topology := defkit.String("topology").
+		Description("Specify the topology to export")
+
+	object := defkit.NewArrayElement().
+		Set("apiVersion", defkit.Lit("v1")).
+		Set("kind", kind).
+		Set("metadata", defkit.NewArrayElement().
+			Set("name", defkit.Reference("*context.name | string")).
+			Set("namespace", defkit.Reference("*context.namespace | string")).
+			SetIf(name.IsSet(), "name", name).
+			SetIf(namespace.IsSet(), "namespace", namespace),
+		).
+		SetIf(kind.Eq("ConfigMap"), "data", data).
+		SetIf(kind.Eq("Secret"), "stringData", data)
+
 	return defkit.NewWorkflowStep("export-data").
 		Description("Export data to clusters specified by topology.").
-		RawCUE(`import (
-	"vela/op"
-	"vela/kube"
-)
-
-"export-data": {
-	type: "workflow-step"
-	annotations: {
-		"category": "Application Delivery"
+		Category("Application Delivery").
+		Scope("Application").
+		WithImports("vela/op", "vela/kube").
+		Params(name, namespace, kind, data, topology).
+		Template(func(tpl *defkit.WorkflowStepTemplate) {
+			tpl.Set("object", object)
+			tpl.Set("getPlacements", defkit.Reference(`op.#GetPlacementsFromTopologyPolicies & {
+	policies: *[] | [...string]
+	if parameter.topology != _|_ {
+		policies: [parameter.topology]
 	}
-	labels: {
-		"scope": "Application"
-	}
-	description: "Export data to clusters specified by topology."
-}
-template: {
-	object: {
-		apiVersion: "v1"
-		kind:       parameter.kind
-		metadata: {
-			name:      *context.name | string
-			namespace: *context.namespace | string
-			if parameter.name != _|_ {
-				name: parameter.name
-			}
-			if parameter.namespace != _|_ {
-				namespace: parameter.namespace
-			}
-		}
-		if parameter.kind == "ConfigMap" {
-			data: parameter.data
-		}
-		if parameter.kind == "Secret" {
-			stringData: parameter.data
-		}
-	}
-
-	getPlacements: op.#GetPlacementsFromTopologyPolicies & {
-		policies: *[] | [...string]
-		if parameter.topology != _|_ {
-			policies: [parameter.topology]
-		}
-	}
-
-	apply: {
-		for p in getPlacements.placements {
-			(p.cluster): kube.#Apply & {
-				$params: {
-					value:   object
-					cluster: p.cluster
-				}
+}`))
+			tpl.Set("apply", defkit.Reference(`{
+	for p in getPlacements.placements {
+		(p.cluster): kube.#Apply & {
+			$params: {
+				value:   object
+				cluster: p.cluster
 			}
 		}
 	}
-
-	parameter: {
-		// +usage=Specify the name of the export destination
-		name?: string
-		// +usage=Specify the namespace of the export destination
-		namespace?: string
-		// +usage=Specify the kind of the export destination
-		kind: *"ConfigMap" | "Secret"
-		// +usage=Specify the data to export
-		data: {}
-		// +usage=Specify the topology to export
-		topology?: string
-	}
-}
-`)
+}`))
+		})
 }
 
 func init() {

@@ -1,0 +1,23 @@
+apiVersion: core.oam.dev/v1beta1
+kind: Application
+metadata:
+  name: request-http
+  namespace: default
+spec:
+  components: []
+  workflow:
+    steps:
+    - name: request
+      type: request
+      properties:
+        url: https://api.github.com/repos/kubevela/workflow
+      outputs:
+      - name: stars
+        valueFrom: |
+          import "strconv"
+          "Current star count: " + strconv.FormatInt(response["stargazers_count"], 10)
+    - name: message
+      type: print-message-in-status
+      inputs:
+      - from: stars
+        parameterKey: message

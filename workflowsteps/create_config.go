@@ -23,39 +23,38 @@ import (
 // CreateConfig creates the create-config workflow step definition.
 // This step creates or updates a config.
 func CreateConfig() *defkit.WorkflowStepDefinition {
+	name := defkit.String("name").
+		Required().
+		Description("Specify the name of the config.")
+	namespace := defkit.Object("namespace").
+		Required().
+		Description("Specify the namespace of the config.").
+		WithSchema("*context.namespace | string")
+	template := defkit.String("template").
+		Description("Specify the template of the config.")
+	config := defkit.Object("config").
+		Required().
+		Description("Specify the content of the config.")
+
 	return defkit.NewWorkflowStep("create-config").
 		Description("Create or update a config").
-		RawCUE(`import (
-	"vela/config"
-)
-
-"create-config": {
-	type: "workflow-step"
-	annotations: {
-		"category": "Config Management"
-	}
-	labels: {}
-	description: "Create or update a config"
-}
-template: {
-	deploy: config.#CreateConfig & {
-		$params: parameter
-	}
-	parameter: {
-		//+usage=Specify the name of the config.
-		name: string
-
-		//+usage=Specify the namespace of the config.
-		namespace: *context.namespace | string
-
-		//+usage=Specify the template of the config.
-		template?: string
-
-		//+usage=Specify the content of the config.
-		config: {...}
-	}
-}
-`)
+		Category("Config Management").
+		WithImports("vela/config").
+		Params(name, namespace, template, config).
+		Template(func(tpl *defkit.WorkflowStepTemplate) {
+			tpl.Builtin("deploy", "config.#CreateConfig").
+				WithParams(map[string]defkit.Value{
+					"name":      name,
+					"namespace": namespace,
+					"config":    config,
+				}).
+				Build()
+			tpl.Builtin("deploy", "config.#CreateConfig").
+				WithParams(map[string]defkit.Value{
+					"template": template,
+				}).
+				If(template.IsSet())
+		})
 }
 
 func init() {

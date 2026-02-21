@@ -1,0 +1,20 @@
+apiVersion: core.oam.dev/v1beta1
+kind: Application
+metadata:
+  name: expose-example
+  namespace: default
+spec:
+  components:
+    - name: nginx-app
+      type: webservice
+      properties:
+        image: nginx:latest
+        ports:
+          - port: 80
+      traits:
+        - type: expose
+          properties:
+            port:
+              - 80
+            type: ClusterIP
+

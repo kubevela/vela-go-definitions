@@ -23,33 +23,26 @@ import (
 // ApplyObject creates the apply-object workflow step definition.
 // This step applies raw kubernetes objects for workflow steps.
 func ApplyObject() *defkit.WorkflowStepDefinition {
+	value := defkit.Object("value").
+		Required().
+		Description("Specify Kubernetes native resource object to be applied")
+	cluster := defkit.String("cluster").
+		Default("").
+		Description("The cluster you want to apply the resource to, default is the current control plane cluster")
+
 	return defkit.NewWorkflowStep("apply-object").
 		Description("Apply raw kubernetes objects for your workflow steps").
-		RawCUE(`import (
-	"vela/kube"
-)
-
-"apply-object": {
-	type: "workflow-step"
-	annotations: {
-		"category": "Resource Management"
-	}
-	labels: {}
-	description: "Apply raw kubernetes objects for your workflow steps"
-}
-template: {
-	apply: kube.#Apply & {
-		$params: parameter
-	}
-
-	parameter: {
-		// +usage=Specify Kubernetes native resource object to be applied
-		value: {...}
-		// +usage=The cluster you want to apply the resource to, default is the current control plane cluster
-		cluster: *"" | string
-	}
-}
-`)
+		Category("Resource Management").
+		WithImports("vela/kube").
+		Params(value, cluster).
+		Template(func(tpl *defkit.WorkflowStepTemplate) {
+			tpl.Builtin("apply", "kube.#Apply").
+				WithParams(map[string]defkit.Value{
+					"value":   value,
+					"cluster": cluster,
+				}).
+				Build()
+		})
 }
 
 func init() {

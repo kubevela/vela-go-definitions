@@ -1,0 +1,23 @@
+apiVersion: core.oam.dev/v1beta1
+kind: Application
+metadata:
+  name: hpa-example
+  namespace: default
+spec:
+  components:
+    - name: nginx-app
+      type: webservice
+      properties:
+        image: nginx:latest
+        cpu: "0.5"
+        memory: "512Mi"
+        ports:
+          - port: 80
+            expose: true
+      traits:
+        - type: hpa
+          properties:
+            min: 2
+            max: 10
+            cpuUtil: 70
+

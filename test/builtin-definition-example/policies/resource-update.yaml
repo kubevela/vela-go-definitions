@@ -1,0 +1,25 @@
+apiVersion: core.oam.dev/v1beta1
+kind: Application
+metadata:
+  name: recreate
+spec:
+  components:
+    - type: k8s-objects
+      name: recreate
+      properties:
+        objects:
+          - apiVersion: v1
+            kind: ConfigMap
+            metadata:
+              name: recreate
+            data:
+              key: val
+  policies:
+    - type: resource-update
+      name: resource-update
+      properties:
+        rules:
+          - selector:
+              resourceTypes: ["ConfigMap"]
+            strategy:
+              op: replace

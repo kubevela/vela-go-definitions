@@ -619,23 +619,25 @@ func TestAffinityTrait(t *testing.T) {
 	assert.Contains(t, cue, `nodeSelectorTerms: [...#nodeSelectorTerm]`)
 	assert.Contains(t, cue, `preference: #nodeSelectorTerm`)
 
-	// Fix 1: Sub-field conditions
+	// Sub-field conditions
 	assert.Contains(t, cue, `parameter.podAffinity.required != _|_`)
 	assert.Contains(t, cue, `parameter.podAffinity.preferred != _|_`)
 	assert.Contains(t, cue, `parameter.podAntiAffinity.required != _|_`)
-	assert.Contains(t, cue, `parameter.nodeAffinity.required != _|_`)
+	assert.Contains(t, cue, `parameter.nodeAffinity.required.nodeSelectorTerms != _|_`)
 	assert.Contains(t, cue, `parameter.nodeAffinity.preferred != _|_`)
 
-	// Fix 3: Optional field guards in foreach
+	// Optional field guards in foreach
 	assert.Contains(t, cue, `if v.labelSelector != _|_`)
-	assert.Contains(t, cue, `if v.namespaceSelector != _|_`)
 	assert.Contains(t, cue, `if v.namespaces != _|_`)
-	assert.Contains(t, cue, `if v.matchExpressions != _|_`)
-	assert.Contains(t, cue, `if v.matchFields != _|_`)
 	assert.Contains(t, cue, `if v.key != _|_`)
 	assert.Contains(t, cue, `if v.effect != _|_`)
 	assert.Contains(t, cue, `if v.tolerationSeconds != _|_`)
 	assert.Contains(t, cue, `operator: v.operator`) // required field - no guard
+
+	// Required field mappings (no guard) — upstream changed these from Optional to F
+	assert.Contains(t, cue, `namespaceSelector: v.namespaceSelector`)
+	assert.Contains(t, cue, `matchExpressions: v.matchExpressions`)
+	assert.Contains(t, cue, `matchFields:      v.matchFields`)
 
 	// Fix 6: Typed lists and maps in helpers
 	assert.Contains(t, cue, `#labelSelector`)

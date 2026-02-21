@@ -1,0 +1,32 @@
+apiVersion: core.oam.dev/v1beta1
+kind: Application
+metadata:
+  name: storage-example
+  namespace: default
+spec:
+  components:
+    - name: nginx-app
+      type: webservice
+      properties:
+        image: nginx:latest
+        ports:
+          - port: 80
+            expose: true
+      traits:
+        - type: storage
+          properties:
+            emptyDir:
+              - name: cache
+                mountPath: /cache
+                medium: ""
+            pvc:
+              - name: data
+                mountPath: /data
+                volumeMode: Filesystem
+                mountOnly: false
+                accessModes:
+                  - ReadWriteOnce
+                resources:
+                  requests:
+                    storage: "1Gi"
+

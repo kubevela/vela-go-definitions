@@ -1,0 +1,27 @@
+apiVersion: core.oam.dev/v1beta1
+kind: Application
+metadata:
+  name: container-ports
+spec:
+  components:
+    - name: container-ports
+      type: webservice
+      properties:
+        exposeType: ClusterIP
+        image: nginx:latest
+        ports:
+          - expose: false
+            port: 80
+            protocol: TCP
+          - expose: false
+            port: 801
+            protocol: TCP
+      traits:
+        - type: container-ports
+          properties:
+            containers:
+              - containerName: container-ports
+                ports:
+                  - containerPort: 80
+                    protocol: TCP
+                    hostPort: 8080

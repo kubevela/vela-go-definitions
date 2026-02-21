@@ -1,0 +1,80 @@
+# ============================================================================
+# READ-OBJECT WORKFLOW STEP EXAMPLE
+# ============================================================================
+#
+# WHAT DOES read-object DO?
+# -------------------------
+# The read-object workflow step reads any Kubernetes object from the cluster.
+# Unlike read-config (which is specific to KubeVela configs), read-object can
+# read any K8s resource like ConfigMaps, Secrets, Deployments, Services, etc.
+#
+# PARAMETERS:
+# -----------
+# | Parameter  | Required | Default                  | Description                    |
+# |------------|----------|--------------------------|--------------------------------|
+# | apiVersion | No       | core.oam.dev/v1beta1     | API version of the object      |
+# | kind       | No       | Application              | Kind of the object             |
+# | name       | Yes      | -                        | Name of the object             |
+# | namespace  | No       | default                  | Namespace of the object        |
+# | cluster    | No       | "" (control plane)       | Target cluster to read from    |
+#
+# OUTPUT:
+# -------
+# Returns: output.value - The full Kubernetes object
+#
+# ============================================================================
+# HOW TO TEST THIS EXAMPLE:
+# ============================================================================
+#
+# Step 1: Apply the ConfigMap and Application:
+#   kubectl apply -f read-object.yaml
+#
+# Step 2: Check application status:
+#   vela status read-object-example
+#
+# Step 3: Clean up (optional):
+#   vela delete read-object-example
+#   kubectl delete configmap app-resources
+#
+# ============================================================================
+
+# First, create a ConfigMap that will be read by the workflow
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: app-resources
+  namespace: default
+data:
+  cpu: "500m"
+  memory: "256Mi"
+
+---
+apiVersion: core.oam.dev/v1beta1
+kind: Application
+metadata:
+  name: read-object-example
+  namespace: default
+spec:
+  components:
+    - name: express-server
+      type: webservice
+      properties:
+        image: oamdev/hello-world
+        port: 8000
+
+  workflow:
+    steps:
+      # Step 1: Read the ConfigMap using read-object
+      - name: read-resources
+        type: read-object
+        properties:
+          apiVersion: v1
+          kind: ConfigMap
+          name: app-resources
+          namespace: default
+        outputs:
+          - name: cpu
+            valueFrom: output.value.data["cpu"]
+          - name: memory
+            valueFrom: output.value.data["memory"]

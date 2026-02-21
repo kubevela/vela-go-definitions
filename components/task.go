@@ -88,6 +88,12 @@ func Task() *defkit.ComponentDefinition {
 	return defkit.NewComponent("task").
 		Description("Describes jobs that run code or a script to completion.").
 		Workload("batch/v1", "Job").
+		CustomStatus(defkit.Status().
+			IntField("status.active", "status.active", 0).
+			IntField("status.failed", "status.failed", 0).
+			IntField("status.succeeded", "status.succeeded", 0).
+			Message("Active/Failed/Succeeded:\\(status.active)/\\(status.failed)/\\(status.succeeded)").
+			Build()).
 		HealthPolicy(defkit.JobHealth().Build()).
 		Params(
 			image, imagePullPolicy, imagePullSecrets,

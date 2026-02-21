@@ -1,0 +1,39 @@
+apiVersion: core.oam.dev/v1beta1
+kind: Application
+metadata:
+  name: deploy-with-override
+  namespace: default
+spec:
+  components:
+    - name: nginx-with-override
+      type: webservice
+      properties:
+        image: nginx
+  policies:
+    - name: topology-local
+      type: topology
+      properties:
+        clusters: ["local"]
+        namespace: default
+    - name: override-nginx-legacy-image
+      type: override
+      properties:
+        components:
+          - name: nginx-with-override
+            properties:
+              image: nginx:latest
+    - name: override-high-availability
+      type: override
+      properties:
+        components:
+          - type: webservice
+            traits:
+              - type: scaler
+                properties:
+                  replicas: 3
+  workflow:
+    steps:
+      - type: deploy
+        name: deploy-local
+        properties:
+          policies: ["topology-local", "override-nginx-legacy-image", "override-high-availability"]

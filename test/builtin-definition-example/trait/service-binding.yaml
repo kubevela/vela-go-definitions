@@ -1,0 +1,33 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: db-credentials
+  namespace: default
+type: Opaque
+stringData:
+  url: "postgresql://user:password@localhost:5432/mydb"
+
+---
+
+apiVersion: core.oam.dev/v1beta1
+kind: Application
+metadata:
+  name: service-binding-example
+  namespace: default
+spec:
+  components:
+    - name: nginx-app
+      type: webservice
+      properties:
+        image: nginx:latest
+        ports:
+          - port: 80
+            expose: true
+      traits:
+        - type: service-binding
+          properties:
+            envMappings:
+              DATABASE_URL:
+                secret: db-credentials
+                key: url
+

@@ -23,51 +23,40 @@ import (
 // Deploy creates the deploy workflow step definition.
 // This step provides a powerful and unified deploy for components multi-cluster delivery.
 func Deploy() *defkit.WorkflowStepDefinition {
-	// This workflow step uses vela/multicluster and vela/builtin imports
-	// and has conditional suspend logic. Raw CUE is needed.
+	auto := defkit.Bool("auto").
+		Default(true).
+		Description("If set to false, the workflow will suspend automatically before this step, default to be true.")
+	policies := defkit.StringList("policies").
+		Required().
+		WithSchema("*[] | [...string]").
+		Description("Declare the policies that used for this deployment. If not specified, the components will be deployed to the hub cluster.")
+	parallelism := defkit.Int("parallelism").
+		Default(5).
+		Description("Maximum number of concurrent delivered components.")
+	ignoreTerraformComponent := defkit.Bool("ignoreTerraformComponent").
+		Default(true).
+		Description("If set false, this step will apply the components with the terraform workload.")
+
 	return defkit.NewWorkflowStep("deploy").
 		Description("A powerful and unified deploy step for components multi-cluster delivery with policies.").
 		Category("Application Delivery").
 		Scope("Application").
 		WithImports("vela/multicluster", "vela/builtin").
-		RawCUE(`import (
-	"vela/multicluster"
-	"vela/builtin"
-)
-
-"deploy": {
-	type: "workflow-step"
-	annotations: {
-		"category": "Application Delivery"
-	}
-	labels: {
-		"scope": "Application"
-	}
-	description: "A powerful and unified deploy step for components multi-cluster delivery with policies."
-}
-template: {
-	if parameter.auto == false {
-		suspend: builtin.#Suspend & {$params: message: "Waiting approval to the deploy step \"\(context.stepName)\""}
-	}
-	deploy: multicluster.#Deploy & {
-		$params: {
-			policies:                 parameter.policies
-			parallelism:              parameter.parallelism
-			ignoreTerraformComponent: parameter.ignoreTerraformComponent
-		}
-	}
-	parameter: {
-		//+usage=If set to false, the workflow will suspend automatically before this step, default to be true.
-		auto: *true | bool
-		//+usage=Declare the policies that used for this deployment. If not specified, the components will be deployed to the hub cluster.
-		policies: *[] | [...string]
-		//+usage=Maximum number of concurrent delivered components.
-		parallelism: *5 | int
-		//+usage=If set false, this step will apply the components with the terraform workload.
-		ignoreTerraformComponent: *true | bool
-	}
-}
-`)
+		Params(auto, policies, parallelism, ignoreTerraformComponent).
+		Template(func(tpl *defkit.WorkflowStepTemplate) {
+			tpl.Builtin("suspend", "builtin.#Suspend").
+				WithParams(map[string]defkit.Value{
+					"message": defkit.Reference(`"Waiting approval to the deploy step \"\(context.stepName)\""`),
+				}).
+				If(auto.Eq(false))
+			tpl.Builtin("deploy", "multicluster.#Deploy").
+				WithParams(map[string]defkit.Value{
+					"policies":                 policies,
+					"parallelism":              parallelism,
+					"ignoreTerraformComponent": ignoreTerraformComponent,
+				}).
+				Build()
+		})
 }
 
 func init() {

@@ -1,0 +1,91 @@
+apiVersion: core.oam.dev/v1beta1
+kind: TraitDefinition
+metadata:
+  annotations:
+    definition.oam.dev/description: Affinity specifies affinity and toleration K8s
+      pod for your workload which follows the pod spec in path 'spec.template'.
+  creationTimestamp: "2026-02-13T06:17:53Z"
+  generation: 4
+  labels:
+    custom.definition.oam.dev/ui-hidden: "true"
+  name: affinity
+  namespace: vela-system
+  resourceVersion: "16010"
+  uid: 02f1b2e1-8bea-42f8-9b6c-3b480b01adf5
+spec:
+  appliesToWorkloads:
+  - deployments.apps
+  - statefulsets.apps
+  - daemonsets.apps
+  - jobs.batch
+  podDisruptive: true
+  schematic:
+    cue:
+      template: "patch: spec: template: spec: {\n\taffinity: {\n\t\tpodAffinity: {\n\t\t\tif
+        parameter.podAffinity != _|_ {\n\t\t\t\trequiredDuringSchedulingIgnoredDuringExecution:
+        [for v in parameter.podAffinity.required {\n\t\t\t\t\t{\n\t\t\t\t\t\tlabelSelector:
+        \    v.labelSelector\n\t\t\t\t\t\tnamespaces:        v.namespaces\n\t\t\t\t\t\ttopologyKey:
+        \      v.topologyKey\n\t\t\t\t\t\tnamespaceSelector: v.namespaceSelector\n\t\t\t\t\t}\n\t\t\t\t}]\n\t\t\t}\n\t\t\tif
+        parameter.podAffinity != _|_ {\n\t\t\t\tpreferredDuringSchedulingIgnoredDuringExecution:
+        [for v in parameter.podAffinity.preferred {\n\t\t\t\t\t{\n\t\t\t\t\t\tweight:
+        \         v.weight\n\t\t\t\t\t\tpodAffinityTerm: v.podAffinityTerm\n\t\t\t\t\t}\n\t\t\t\t}]\n\t\t\t}\n\t\t}\n\t\tpodAntiAffinity:
+        {\n\t\t\tif parameter.podAntiAffinity != _|_ {\n\t\t\t\trequiredDuringSchedulingIgnoredDuringExecution:
+        [for v in parameter.podAntiAffinity.required {\n\t\t\t\t\t{\n\t\t\t\t\t\tlabelSelector:
+        \    v.labelSelector\n\t\t\t\t\t\tnamespaces:        v.namespaces\n\t\t\t\t\t\ttopologyKey:
+        \      v.topologyKey\n\t\t\t\t\t\tnamespaceSelector: v.namespaceSelector\n\t\t\t\t\t}\n\t\t\t\t}]\n\t\t\t}\n\t\t\tif
+        parameter.podAntiAffinity != _|_ {\n\t\t\t\tpreferredDuringSchedulingIgnoredDuringExecution:
+        [for v in parameter.podAntiAffinity.preferred {\n\t\t\t\t\t{\n\t\t\t\t\t\tweight:
+        \         v.weight\n\t\t\t\t\t\tpodAffinityTerm: v.podAffinityTerm\n\t\t\t\t\t}\n\t\t\t\t}]\n\t\t\t}\n\t\t}\n\t\tnodeAffinity:
+        {\n\t\t\trequiredDuringSchedulingIgnoredDuringExecution: {\n\t\t\t\tif parameter.nodeAffinity
+        != _|_ {\n\t\t\t\t\tnodeSelectorTerms: [for v in parameter.nodeAffinity.required.nodeSelectorTerms
+        {\n\t\t\t\t\t\t{\n\t\t\t\t\t\t\tmatchExpressions: v.matchExpressions\n\t\t\t\t\t\t\tmatchFields:
+        \     v.matchFields\n\t\t\t\t\t\t}\n\t\t\t\t\t}]\n\t\t\t\t}\n\t\t\t}\n\t\t\tif
+        parameter.nodeAffinity != _|_ {\n\t\t\t\tpreferredDuringSchedulingIgnoredDuringExecution:
+        [for v in parameter.nodeAffinity.preferred {\n\t\t\t\t\t{\n\t\t\t\t\t\tweight:
+        \    v.weight\n\t\t\t\t\t\tpreference: v.preference\n\t\t\t\t\t}\n\t\t\t\t}]\n\t\t\t}\n\t\t}\n\t}\n\tif
+        parameter.tolerations != _|_ {\n\t\ttolerations: [for v in parameter.tolerations
+        {\n\t\t\t{\n\t\t\t\tkey:               v.key\n\t\t\t\toperator:          v.operator\n\t\t\t\tvalue:
+        \            v.value\n\t\t\t\teffect:            v.effect\n\t\t\t\ttolerationSeconds:
+        v.tolerationSeconds\n\t\t\t}\n\t\t}]\n\t}\n}\nparameter: {\n\t// +usage=Specify
+        the pod affinity scheduling rules\n\tpodAffinity?: {\n\t\t// +usage=Specify
+        the required during scheduling ignored during execution\n\t\trequired?: [...#podAffinityTerm]\n\t\t//
+        +usage=Specify the preferred during scheduling ignored during execution\n\t\tpreferred?:
+        [...{\n\t\t\t// +usage=Specify weight associated with matching the corresponding
+        podAffinityTerm\n\t\t\tweight: int\n\t\t\t// +usage=Specify a set of pods\n\t\t\tpodAffinityTerm?:
+        #podAffinityTerm\n\t\t}]\n\t}\n\t// +usage=Specify the pod anti-affinity scheduling
+        rules\n\tpodAntiAffinity?: {\n\t\t// +usage=Specify the required during scheduling
+        ignored during execution\n\t\trequired?: [...#podAffinityTerm]\n\t\t// +usage=Specify
+        the preferred during scheduling ignored during execution\n\t\tpreferred?:
+        [...{\n\t\t\t// +usage=Specify weight associated with matching the corresponding
+        podAffinityTerm\n\t\t\tweight: int\n\t\t\t// +usage=Specify a set of pods\n\t\t\tpodAffinityTerm?:
+        #podAffinityTerm\n\t\t}]\n\t}\n\t// +usage=Specify the node affinity scheduling
+        rules for the pod\n\tnodeAffinity?: {\n\t\t// +usage=Specify the required
+        during scheduling ignored during execution\n\t\trequired?: {\n\t\t\t// +usage=Specify
+        a list of node selector\n\t\t\tnodeSelectorTerms?: [...#nodeSelectorTerm]\n\t\t}\n\t\t//
+        +usage=Specify the preferred during scheduling ignored during execution\n\t\tpreferred?:
+        [...{\n\t\t\t// +usage=Specify weight associated with matching the corresponding
+        nodeSelector\n\t\t\tweight: int\n\t\t\t// +usage=Specify a node selector\n\t\t\tpreference?:
+        #nodeSelectorTerm\n\t\t}]\n\t}\n\t// +usage=Specify tolerant taint\n\ttolerations?:
+        [...{\n\t\tkey?:     string\n\t\toperator: *\"Equal\" | \"Exists\"\n\t\tvalue?:
+        \  string\n\t\teffect?:  \"NoSchedule\" | \"PreferNoSchedule\" | \"NoExecute\"\n\t\t//
+        +usage=Specify the period of time the toleration\n\t\ttolerationSeconds?:
+        int\n\t}]\n}\n#labelSelector: {\n\t// +usage=A map of {key,value} pairs\n\tmatchLabels?:
+        {...}\n\t// +usage=A list of label selector requirements\n\tmatchExpressions?:
+        {\n\t\tkey:      string\n\t\toperator: *\"In\" | \"NotIn\" | \"Exists\" |
+        \"DoesNotExist\"\n\t\tvalues?: [...]\n\t}\n}\n#podAffinityTerm: {\n\tlabelSelector?:
+        #labelSelector\n\tnamespaces?: [...]\n\ttopologyKey:        string\n\tnamespaceSelector?:
+        #labelSelector\n}\n#nodeSelector: {\n\tkey:      string\n\toperator: *\"In\"
+        | \"NotIn\" | \"Exists\" | \"DoesNotExist\" | \"Gt\" | \"Lt\"\n\tvalues?:
+        [...]\n}\n#nodeSelectorTerm: {\n\tmatchExpressions?: [...#nodeSelector]\n\tmatchFields?:
+        [...#nodeSelector]\n}\n"
+status:
+  conditions:
+  - lastTransitionTime: "2026-02-13T06:18:21Z"
+    reason: ReconcileSuccess
+    status: "True"
+    type: Synced
+  configMapRef: trait-schema-affinity
+  latestRevision:
+    name: affinity-v4
+    revision: 4
+    revisionHash: 110b7909a8708d7b

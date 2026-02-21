@@ -23,64 +23,44 @@ import (
 // Request creates the request workflow step definition.
 // This step sends a request to the url.
 func Request() *defkit.WorkflowStepDefinition {
+	url := defkit.String("url").Required()
+	method := defkit.String("method").
+		Default("GET").
+		Enum("GET", "POST", "PUT", "DELETE")
+	body := defkit.Object("body")
+	header := defkit.StringKeyMap("header")
+
+	requestBody := defkit.NewArrayElement().
+		SetIf(body.IsSet(), "body", defkit.Reference("json.Marshal(parameter.body)")).
+		SetIf(header.IsSet(), "header", header)
+
 	return defkit.NewWorkflowStep("request").
 		Description("Send request to the url").
-		RawCUE(`import (
-	"vela/op"
-	"vela/http"
-	"encoding/json"
-)
-
-request: {
-	alias: ""
-	attributes: {}
-	description: "Send request to the url"
-	annotations: {
-		"category": "External Integration"
-	}
-	labels: {}
-	type: "workflow-step"
-}
-
-template: {
-	req: http.#HTTPDo & {
-		$params: {
-			method: parameter.method
-			url:    parameter.url
-			request: {
-				if parameter.body != _|_ {
-					body: json.Marshal(parameter.body)
-				}
-				if parameter.header != _|_ {
-					header: parameter.header
-				}
-			}
+		Category("External Integration").
+		Alias("").
+		WithImports("vela/op", "vela/http", "encoding/json").
+		Params(url, method, body, header).
+		Template(func(tpl *defkit.WorkflowStepTemplate) {
+			tpl.Builtin("req", "http.#HTTPDo").
+				WithParams(map[string]defkit.Value{
+					"method":  method,
+					"url":     url,
+					"request": requestBody,
+				}).
+				Build()
+			tpl.Set("wait", defkit.Reference(`op.#ConditionalWait & {
+	continue: req.$returns != _|_
+	message?: "Waiting for response from \(parameter.url)"
+}`))
+			tpl.Set("fail", defkit.Reference(`op.#Steps & {
+	if req.$returns.statusCode > 400 {
+		requestFail: op.#Fail & {
+			message: "request of \(parameter.url) is fail: \(req.$returns.statusCode)"
 		}
 	}
-
-	wait: op.#ConditionalWait & {
-		continue: req.$returns != _|_
-		message?: "Waiting for response from \(parameter.url)"
-	}
-
-	fail: op.#Steps & {
-		if req.$returns.statusCode > 400 {
-			requestFail: op.#Fail & {
-				message: "request of \(parameter.url) is fail: \(req.$returns.statusCode)"
-			}
-		}
-	}
-
-	response: json.Unmarshal(req.$returns.body)
-
-	parameter: {
-		url:    string
-		method: *"GET" | "POST" | "PUT" | "DELETE"
-		body?: {...}
-		header?: [string]: string
-	}
-}
-`)
+}`))
+			tpl.Set("response", defkit.Reference("json.Unmarshal(req.$returns.body)"))
+		})
 }
 
 func init() {
