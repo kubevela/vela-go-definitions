@@ -17,7 +17,7 @@ E2E_TIMEOUT ?= 10m
 # Number of parallel processes for Ginkgo (can be overridden)
 PROCS ?= 10
 
-.PHONY: tidy install-ginkgo test-e2e test-e2e-components test-e2e-traits test-e2e-policies test-e2e-workflowsteps cleanup-e2e-namespaces force-cleanup-e2e-namespaces help
+.PHONY: tidy install-ginkgo test-unit test-e2e test-e2e-components test-e2e-traits test-e2e-policies test-e2e-workflowsteps cleanup-e2e-namespaces force-cleanup-e2e-namespaces help
 
 ## Dependency management
 tidy:
@@ -28,6 +28,11 @@ tidy:
 install-ginkgo:
 	@echo "Installing Ginkgo CLI..."
 	go install github.com/onsi/ginkgo/v2/ginkgo@latest
+
+## Unit tests
+test-unit:
+	@echo "Running unit tests..."
+	$(GOCMD) test -v -race -count=1 ./components/... ./traits/... ./policies/... ./workflowsteps/...
 
 ## E2E Test targets
 test-e2e: test-e2e-components test-e2e-traits test-e2e-policies test-e2e-workflowsteps
@@ -73,6 +78,7 @@ help:
 	@echo "Available targets:"
 	@echo "  tidy                   - Tidy go.mod dependencies"
 	@echo "  install-ginkgo         - Install Ginkgo CLI for running E2E tests"
+	@echo "  test-unit              - Run unit tests (no cluster required)"
 	@echo "  test-e2e               - Run all E2E tests"
 	@echo "  test-e2e-components    - Run E2E tests for component definitions (parallel)"
 	@echo "  test-e2e-traits        - Run E2E tests for trait definitions (parallel)"
