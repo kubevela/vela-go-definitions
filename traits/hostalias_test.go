@@ -29,7 +29,7 @@ func TestHostAliasTrait(t *testing.T) {
 	assert.Contains(t, cue, `hostalias: {`)
 	assert.Contains(t, cue, `type: "trait"`)
 	assert.Contains(t, cue, `description: "Add host aliases on K8s pod for your workload which follows the pod spec in path 'spec.template'."`)
-	assert.NotContains(t, cue, `podDisruptive:`, "podDisruptive: false should not be emitted")
+	assert.Contains(t, cue, `podDisruptive: false`)
 	assert.Contains(t, cue, `"deployments.apps"`)
 	assert.Contains(t, cue, `"statefulsets.apps"`)
 	assert.Contains(t, cue, `"daemonsets.apps"`)

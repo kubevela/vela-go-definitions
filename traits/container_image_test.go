@@ -36,27 +36,22 @@ func TestContainerImageTrait(t *testing.T) {
 	assert.Contains(t, cue, `podDisruptive: true`)
 	assert.Contains(t, cue, `"deployments.apps"`)
 
-	// Fix 1: imagePullPolicy default should be empty string, not null
 	assert.Contains(t, cue, `imagePullPolicy: *"" | "IfNotPresent" | "Always" | "Never"`,
 		"imagePullPolicy should default to empty string, not null")
 	assert.NotContains(t, cue, `imagePullPolicy: *null`,
 		"imagePullPolicy should NOT default to null")
 
-	// Fix 2: unconditional param mapping in single-container _params block
 	assert.Contains(t, cue, "imagePullPolicy: parameter.imagePullPolicy",
 		"imagePullPolicy should be mapped unconditionally in _params")
 
-	// Fix 3: parameter block should have * before #PatchParams (marks single-container as default)
-	assert.Contains(t, cue, "parameter: *#PatchParams | close({",
-		"parameter should reference *#PatchParams with star default marker")
+	assert.Contains(t, cue, "parameter: #PatchParams | close({",
+		"parameter should reference #PatchParams without star default marker")
 
-	// Fix 4: no trailing parameter: {}
 	assert.Equal(t, 1, strings.Count(cue, "parameter:"),
 		"parameter: should appear exactly once (no duplicate)")
 	assert.NotContains(t, cue, "parameter: {}",
 		"should not have empty parameter: {} block")
 
-	// Fix 5: descriptions should match vela reference
 	assert.Contains(t, cue, "// +usage=Specify the image of the container")
 	assert.Contains(t, cue, "// +usage=Specify the image pull policy of the container")
 	assert.Contains(t, cue, "// +usage=Specify the container image for multiple containers")

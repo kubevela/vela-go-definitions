@@ -32,7 +32,7 @@ func TestGatewayTrait(t *testing.T) {
 
 	// Header and attributes
 	assert.Contains(t, cue, `type: "trait"`)
-	assert.NotContains(t, cue, `podDisruptive:`, "podDisruptive: false should not be emitted")
+	assert.Contains(t, cue, `podDisruptive: false`)
 	assert.Contains(t, cue, `"deployments.apps"`)
 	assert.Contains(t, cue, `"statefulsets.apps"`)
 	assert.Contains(t, cue, `customStatus:`)

@@ -54,9 +54,9 @@ func TestStartupProbeTrait(t *testing.T) {
 	assert.Contains(t, cue, `tcpSocket?: {`)
 
 	// PatchContainer structure
-	assert.Contains(t, cue, `#PatchParams: {`)
+	assert.Contains(t, cue, `#StartupProbeParams: {`)
 	assert.Contains(t, cue, `PatchContainer: {`)
-	assert.Contains(t, cue, `_params:         #PatchParams`)
+	assert.Contains(t, cue, `_params:         #StartupProbeParams`)
 	assert.Contains(t, cue, `_baseContainers: context.output.spec.template.spec.containers`)
 
 	// PatchContainer body: conditional blocks for optional probe types
@@ -77,8 +77,8 @@ func TestStartupProbeTrait(t *testing.T) {
 	assert.Contains(t, cue, `startupProbe: {`)
 
 	// Multi-container support with custom param name "probes"
-	assert.Contains(t, cue, `parameter: *#PatchParams | close({`)
-	assert.Contains(t, cue, `probes: [...#PatchParams]`)
+	assert.Contains(t, cue, `parameter: *#StartupProbeParams | close({`)
+	assert.Contains(t, cue, `probes: [...#StartupProbeParams]`)
 	assert.Contains(t, cue, `// +usage=Specify the startup probe for multiple containers`)
 
 	// Error collection

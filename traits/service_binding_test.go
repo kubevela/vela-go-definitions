@@ -33,7 +33,7 @@ func TestServiceBindingTrait(t *testing.T) {
 	assert.Contains(t, cue, `type: "trait"`)
 	assert.Contains(t, cue, `"ui-hidden": "true"`)
 	assert.Contains(t, cue, `"deployments.apps"`)
-	assert.NotContains(t, cue, `podDisruptive:`, "podDisruptive: false should not be emitted")
+	assert.Contains(t, cue, `podDisruptive: false`)
 
 	// Template: patch with patchKey annotations
 	assert.Contains(t, cue, `// +patchKey=name`)
