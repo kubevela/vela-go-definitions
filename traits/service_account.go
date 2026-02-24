@@ -99,6 +99,7 @@ func ServiceAccount() *defkit.TraitDefinition {
 		Description("Specify serviceAccount for your workload which follows the pod spec in path 'spec.template'.").
 		AppliesTo("deployments.apps", "statefulsets.apps", "daemonsets.apps", "jobs.batch").
 		PodDisruptive(false).
+		Labels(map[string]string{}).
 		Helper("Privileges", privilegesHelper).
 		Params(name, create, privileges).
 		Template(func(tpl *defkit.Template) {

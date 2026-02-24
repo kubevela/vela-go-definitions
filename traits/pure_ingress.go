@@ -33,6 +33,7 @@ func PureIngress() *defkit.TraitDefinition {
 		PodDisruptive(false).
 		Labels(map[string]string{"ui-hidden": "true", "deprecated": "true"}).
 		ConflictsWith().
+		WorkloadRefPath("").
 		CustomStatus(`let igs = context.outputs.ingress.status.loadBalancer.ingress
 if igs == _|_ {
 	message: "No loadBalancer found, visiting by using 'vela port-forward " + context.appName + " --route'\n"

@@ -36,6 +36,7 @@ func StartupProbe() *defkit.TraitDefinition {
 				AllowMultiple:         true,
 				MultiContainerParam:   "probes",
 				ContainersDescription: "Specify the startup probe for multiple containers",
+				ParamsTypeName:        "StartupProbeParams",
 				// Complex parameter schema requiring CustomParamsBlock
 				CustomParamsBlock: `// +usage=Number of seconds after the container has started before liveness probes are initiated. Minimum value is 0.
 initialDelaySeconds: *0 | int

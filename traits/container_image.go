@@ -33,6 +33,7 @@ func ContainerImage() *defkit.TraitDefinition {
 				ContainerNameParam:    "containerName",
 				DefaultToContextName:  true,
 				AllowMultiple:         true,
+				NoDefaultDisjunction:  true,
 				ContainersParam:       "containers",
 				ContainersDescription: "Specify the container image for multiple containers",
 				PatchFields: defkit.PatchFields(
