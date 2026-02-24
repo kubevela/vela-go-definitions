@@ -35,6 +35,7 @@ func Command() *defkit.TraitDefinition {
 				DefaultToContextName:  true,
 				AllowMultiple:         true,
 				ContainersParam:       "containers",
+				MultiContainerErrMsg:  "container name must be set for containers",
 				ContainersDescription: "Specify the commands for multiple containers",
 				PatchStrategy:         "open",
 				PatchFields: []defkit.PatchContainerField{

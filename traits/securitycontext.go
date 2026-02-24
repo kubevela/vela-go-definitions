@@ -34,6 +34,7 @@ func SecurityContext() *defkit.TraitDefinition {
 				DefaultToContextName: true,
 				AllowMultiple:        true,
 				ContainersParam:      "containers",
+				NoDefaultDisjunction: true,
 				Groups: []defkit.PatchContainerGroup{
 					{
 						TargetField: "securityContext",

@@ -83,7 +83,7 @@ func TestSecurityContextTrait(t *testing.T) {
 	assert.Contains(t, cue, `runAsNonRoot:             _params.runAsNonRoot`)
 
 	// Multi-container support
-	assert.Contains(t, cue, "parameter: *#PatchParams | close({")
+	assert.Contains(t, cue, "parameter: #PatchParams | close({")
 	assert.Contains(t, cue, "containers: [...#PatchParams]")
 
 	// Error collection
