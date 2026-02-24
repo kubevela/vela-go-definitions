@@ -28,7 +28,7 @@ func Webservice() *defkit.ComponentDefinition {
 	labels := defkit.StringKeyMap("labels").Description("Specify the labels in the workload")
 	annotations := defkit.StringKeyMap("annotations").Description("Specify the annotations in the workload")
 
-	image := defkit.String("image").Required().Description("Which image would you like to use for your service")
+	image := defkit.String("image").Required().Description("Which image would you like to use for your service").Short("i")
 
 	// Use Enum for imagePullPolicy to generate proper CUE enum type
 	imagePullPolicy := defkit.Enum("imagePullPolicy").
@@ -38,10 +38,13 @@ func Webservice() *defkit.ComponentDefinition {
 	imagePullSecrets := defkit.StringList("imagePullSecrets").
 		Description("Specify image pull secrets for your service")
 
-	// Deprecated port parameter
-	port := defkit.Int("port").Description("Deprecated field, please use ports instead")
+	// Deprecated port parameter with Ignore and Short directives
+	port := defkit.Int("port").
+		Ignore().
+		Description("Deprecated field, please use ports instead").
+		Short("p")
 
-	// Structured ports array matching original CUE
+	// Structured ports array with containerPort and nodePort fields
 	ports := defkit.Array("ports").
 		Description("Which ports do you want customer traffic sent to, defaults to 80").
 		WithFields(
@@ -56,10 +59,12 @@ func Webservice() *defkit.ComponentDefinition {
 	exposeType := defkit.Enum("exposeType").
 		Values("ClusterIP", "NodePort", "LoadBalancer").
 		Default("ClusterIP").
-		Description("Specify what kind of Service you want. options: \"ClusterIP\", \"NodePort\", \"LoadBalancer\"")
+		Ignore().
+		Description(`Specify what kind of Service you want. options: "ClusterIP", "NodePort", "LoadBalancer"`)
 
 	addRevisionLabel := defkit.Bool("addRevisionLabel").
 		Default(false).
+		Ignore().
 		Description("If addRevisionLabel is true, the revision label will be added to the underlying pods")
 
 	cmd := defkit.StringList("cmd").Description("Commands to run in the container")
@@ -95,8 +100,8 @@ func Webservice() *defkit.ComponentDefinition {
 		defkit.String("memory"),
 	)
 
-	// VolumeMounts with detailed schemas using fluent API
-	volumeMounts := defkit.Object("volumeMounts").Description("Volume mount configurations").
+	// VolumeMounts with subPath support, no mountPropagation/readOnly on hostPath
+	volumeMounts := defkit.Object("volumeMounts").
 		WithFields(
 			defkit.List("pvc").Description("Mount PVC type volume").WithFields(
 				defkit.String("name").Required(),
@@ -138,10 +143,48 @@ func Webservice() *defkit.ComponentDefinition {
 				defkit.String("name").Required(),
 				defkit.String("mountPath").Required(),
 				defkit.String("subPath"),
-				defkit.Enum("mountPropagation").Values("None", "HostToContainer", "Bidirectional"),
 				defkit.String("path").Required(),
-				defkit.Bool("readOnly"),
 			),
+		)
+
+	// Deprecated volumes parameter - discriminated union with type-based conditional fields
+	volumes := defkit.List("volumes").Description("Deprecated field, use volumeMounts instead.").
+		WithFields(
+			defkit.String("name").Required(),
+			defkit.String("mountPath").Required(),
+			defkit.OneOf("type").
+				Description(`Specify volume type, options: "pvc","configMap","secret","emptyDir", default to emptyDir`).
+				Default("emptyDir").
+				Variants(
+					defkit.Variant("pvc").Fields(
+						defkit.Field("claimName", defkit.ParamTypeString).Required(),
+					),
+					defkit.Variant("configMap").Fields(
+						defkit.Field("defaultMode", defkit.ParamTypeInt).Default(420),
+						defkit.Field("cmName", defkit.ParamTypeString).Required(),
+						defkit.Field("items", defkit.ParamTypeArray).Nested(
+							defkit.Struct("").Fields(
+								defkit.Field("key", defkit.ParamTypeString).Required(),
+								defkit.Field("path", defkit.ParamTypeString).Required(),
+								defkit.Field("mode", defkit.ParamTypeInt).Default(511),
+							),
+						),
+					),
+					defkit.Variant("secret").Fields(
+						defkit.Field("defaultMode", defkit.ParamTypeInt).Default(420),
+						defkit.Field("secretName", defkit.ParamTypeString).Required(),
+						defkit.Field("items", defkit.ParamTypeArray).Nested(
+							defkit.Struct("").Fields(
+								defkit.Field("key", defkit.ParamTypeString).Required(),
+								defkit.Field("path", defkit.ParamTypeString).Required(),
+								defkit.Field("mode", defkit.ParamTypeInt).Default(511),
+							),
+						),
+					),
+					defkit.Variant("emptyDir").Fields(
+						defkit.Field("medium", defkit.ParamTypeString).Default("").Enum("", "Memory"),
+					),
+				),
 		)
 
 	// Health probes referencing the helper definition
@@ -163,6 +206,7 @@ func Webservice() *defkit.ComponentDefinition {
 	return defkit.NewComponent("webservice").
 		Description("Describes long-running, scalable, containerized services that have a stable network endpoint to receive external network traffic from customers.").
 		Workload("apps/v1", "Deployment").
+		WithImports("strings").
 		CustomStatus(defkit.DeploymentStatus().Build()).
 		HealthPolicy(defkit.DeploymentHealth().Build()).
 		Params(
@@ -171,7 +215,7 @@ func Webservice() *defkit.ComponentDefinition {
 			port, // deprecated
 			ports, exposeType, addRevisionLabel,
 			cmd, args, env,
-			cpu, memory, limit, volumeMounts,
+			cpu, memory, limit, volumeMounts, volumes,
 			livenessProbe, readinessProbe, hostAliases,
 		).
 		Helper("HealthProbe", HealthProbeParam()).
@@ -182,6 +226,7 @@ func Webservice() *defkit.ComponentDefinition {
 func webserviceTemplate(tpl *defkit.Template) {
 	vela := defkit.VelaCtx()
 	image := defkit.String("image")
+	port := defkit.Int("port")
 	ports := defkit.List("ports")
 	exposeType := defkit.String("exposeType")
 	addRevisionLabel := defkit.Bool("addRevisionLabel")
@@ -191,6 +236,7 @@ func webserviceTemplate(tpl *defkit.Template) {
 	cpu := defkit.String("cpu")
 	memory := defkit.String("memory")
 	volumeMounts := defkit.Object("volumeMounts")
+	volumes := defkit.List("volumes")
 	livenessProbe := defkit.Object("livenessProbe")
 	readinessProbe := defkit.Object("readinessProbe")
 	hostAliases := defkit.List("hostAliases")
@@ -199,35 +245,58 @@ func webserviceTemplate(tpl *defkit.Template) {
 	imagePullPolicy := defkit.String("imagePullPolicy")
 	imagePullSecrets := defkit.StringList("imagePullSecrets")
 
-	// Transform ports to container format using fluent collection API:
-	// {port, name, protocol, expose} -> {containerPort, name, protocol}
-	containerPorts := defkit.Each(ports).
-		Map(defkit.FieldMap{
-			"containerPort": defkit.FieldRef("port"),
-			"name":          defkit.FieldRef("name").Or(defkit.Format("port-%v", defkit.FieldRef("port"))),
-			"protocol":      defkit.FieldRef("protocol"),
+	// Transform ports to container format using ForEachWith for complex
+	// _name let binding with containerPort preference and protocol suffix.
+	containerPorts := defkit.NewArray().ForEachWith(ports, func(item *defkit.ItemBuilder) {
+		v := item.Var()
+
+		// containerPort: prefer v.containerPort, fall back to v.port
+		item.IfSet("containerPort", func() {
+			item.Set("containerPort", v.Field("containerPort"))
+		})
+		item.IfNotSet("containerPort", func() {
+			item.Set("containerPort", v.Field("port"))
 		})
 
-	// Transform imagePullSecrets: ["secret1", "secret2"] -> [{name: "secret1"}, ...]
-	pullSecrets := defkit.Each(imagePullSecrets).Wrap("name")
+		item.Set("protocol", v.Field("protocol"))
 
-	// Define template-level helpers for volumeMounts using the new Helper API.
-	// This creates named definitions that can be referenced in the output.
-	//
-	// mountsArray: Collect all mount entries from different sources (pvc, configMap, etc.)
-	// Each entry has: name, mountPath, and optional subPath (only included if set)
+		// name: use v.name if set
+		item.IfSet("name", func() {
+			item.Set("name", v.Field("name"))
+		})
+
+		// Complex name fallback: _name with containerPort preference + protocol suffix
+		item.IfNotSet("name", func() {
+			item.IfSet("containerPort", func() {
+				nameRef := item.Let("_name",
+					defkit.Plus(defkit.Lit("port-"), defkit.StrconvFormatInt(v.Field("containerPort"), 10)))
+				item.SetDefault("name", nameRef, "string")
+				item.If(defkit.Ne(v.Field("protocol"), defkit.Lit("TCP")), func() {
+					item.Set("name", defkit.Plus(nameRef, defkit.Lit("-"), defkit.StringsToLower(v.Field("protocol"))))
+				})
+			})
+			item.IfNotSet("containerPort", func() {
+				nameRef := item.Let("_name",
+					defkit.Plus(defkit.Lit("port-"), defkit.StrconvFormatInt(v.Field("port"), 10)))
+				item.SetDefault("name", nameRef, "string")
+				item.If(defkit.Ne(v.Field("protocol"), defkit.Lit("TCP")), func() {
+					item.Set("name", defkit.Plus(nameRef, defkit.Lit("-"), defkit.StringsToLower(v.Field("protocol"))))
+				})
+			})
+		})
+	})
+
+	// Transform imagePullSecrets: ["secret1", "secret2"] -> [{name: "secret1"}, ...]
+	pullSecrets := ImagePullSecretsTransform(imagePullSecrets)
+
+	// Define template-level helpers for volumeMounts
 	mountsArray := tpl.Helper("mountsArray").
 		FromFields(volumeMounts, "pvc", "configMap", "secret", "emptyDir", "hostPath").
 		Pick("name", "mountPath").
 		PickIf(defkit.ItemFieldIsSet("subPath"), "subPath").
 		Build()
 
-	// Note: mountsArray is NOT deduped for container volumeMounts.
-	// It's valid to mount the same volume at multiple paths.
-	// Only pod volumes (volumesList) need deduplication.
-
 	// volumesList: Transform volume sources to Kubernetes volume specs
-	// Each source type maps to its corresponding volume spec format
 	volumesList := tpl.Helper("volumesList").
 		FromFields(volumeMounts, "pvc", "configMap", "secret", "emptyDir", "hostPath").
 		MapBySource(map[string]defkit.FieldMap{
@@ -279,53 +348,155 @@ func webserviceTemplate(tpl *defkit.Template) {
 		Set("spec.template.metadata.labels[app.oam.dev/component]", vela.Name()).
 		// Use IsTrue() to generate `if parameter.addRevisionLabel` (truthy check)
 		SetIf(addRevisionLabel.IsTrue(), "spec.template.metadata.labels[app.oam.dev/revision]", vela.Revision()).
-		// SpreadIf spreads user labels inside the labels block (not wrapping entire block in conditional)
+		// SpreadIf spreads user labels inside the labels block
 		SpreadIf(labels.IsSet(), "spec.template.metadata.labels", labels).
+		SetIf(annotations.IsSet(), "spec.template.metadata.annotations", annotations).
+		// Container spec
 		Set("spec.template.spec.containers[0].name", vela.Name()).
 		Set("spec.template.spec.containers[0].image", image).
-		SetIf(annotations.IsSet(), "spec.template.metadata.annotations", annotations).
+		// Deprecated port fallback (before modern ports)
+		If(defkit.And(port.IsSet(), ports.NotSet())).
+		Set("spec.template.spec.containers[0].ports", defkit.InlineArray(map[string]defkit.Value{
+			"containerPort": port,
+		})).
+		EndIf().
 		SetIf(ports.IsSet(), "spec.template.spec.containers[0].ports", containerPorts).
 		SetIf(imagePullPolicy.IsSet(), "spec.template.spec.containers[0].imagePullPolicy", imagePullPolicy).
 		SetIf(cmd.IsSet(), "spec.template.spec.containers[0].command", cmd).
 		SetIf(args.IsSet(), "spec.template.spec.containers[0].args", args).
 		SetIf(env.IsSet(), "spec.template.spec.containers[0].env", env).
-		SetIf(cpu.IsSet(), "spec.template.spec.containers[0].resources.requests.cpu", cpu).
-		SetIf(cpu.IsSet(), "spec.template.spec.containers[0].resources.limits.cpu", cpu).
-		SetIf(memory.IsSet(), "spec.template.spec.containers[0].resources.requests.memory", memory).
-		SetIf(memory.IsSet(), "spec.template.spec.containers[0].resources.limits.memory", memory).
-		// Use the helper reference for volumeMounts - this generates "volumeMounts: mountsArray"
+		SetIf(defkit.PathExists(`context["config"]`), "spec.template.spec.containers[0].env", defkit.Reference("context.config")).
+		// CPU with limit branching: when limit.cpu is set, use it for limits; otherwise use cpu for both
+		SetIf(defkit.And(cpu.IsSet(), defkit.PathExists("parameter.limit.cpu")),
+			"spec.template.spec.containers[0].resources.requests.cpu", cpu).
+		SetIf(defkit.And(cpu.IsSet(), defkit.PathExists("parameter.limit.cpu")),
+			"spec.template.spec.containers[0].resources.limits.cpu", defkit.Reference("parameter.limit.cpu")).
+		SetIf(defkit.And(cpu.IsSet(), defkit.Not(defkit.PathExists("parameter.limit.cpu"))),
+			"spec.template.spec.containers[0].resources.limits.cpu", cpu).
+		SetIf(defkit.And(cpu.IsSet(), defkit.Not(defkit.PathExists("parameter.limit.cpu"))),
+			"spec.template.spec.containers[0].resources.requests.cpu", cpu).
+		// Memory with limit branching: when limit.memory is set, use it for limits; otherwise use memory for both
+		SetIf(defkit.And(memory.IsSet(), defkit.PathExists("parameter.limit.memory")),
+			"spec.template.spec.containers[0].resources.limits.memory", defkit.Reference("parameter.limit.memory")).
+		SetIf(defkit.And(memory.IsSet(), defkit.PathExists("parameter.limit.memory")),
+			"spec.template.spec.containers[0].resources.requests.memory", memory).
+		SetIf(defkit.And(memory.IsSet(), defkit.Not(defkit.PathExists("parameter.limit.memory"))),
+			"spec.template.spec.containers[0].resources.limits.memory", memory).
+		SetIf(defkit.And(memory.IsSet(), defkit.Not(defkit.PathExists("parameter.limit.memory"))),
+			"spec.template.spec.containers[0].resources.requests.memory", memory).
+		// Deprecated volumes fallback - container volumeMounts
+		If(defkit.And(volumes.IsSet(), volumeMounts.NotSet())).
+		Set("spec.template.spec.containers[0].volumeMounts",
+			defkit.Each(volumes).Map(defkit.FieldMap{
+				"mountPath": defkit.FieldRef("mountPath"),
+				"name":      defkit.FieldRef("name"),
+			})).
+		EndIf().
 		SetIf(volumeMounts.IsSet(), "spec.template.spec.containers[0].volumeMounts", mountsArray).
 		SetIf(livenessProbe.IsSet(), "spec.template.spec.containers[0].livenessProbe", livenessProbe).
 		SetIf(readinessProbe.IsSet(), "spec.template.spec.containers[0].readinessProbe", readinessProbe).
+		// Pod spec
 		SetIf(hostAliases.IsSet(), "spec.template.spec.hostAliases", hostAliases).
+		Directive("spec.template.spec.hostAliases", "patchKey=ip").
 		SetIf(imagePullSecrets.IsSet(), "spec.template.spec.imagePullSecrets", pullSecrets).
-		// Use the helper reference for volumes - this generates "volumes: deDupVolumesArray"
+		// Deprecated volumes fallback - pod spec volumes
+		If(defkit.And(volumes.IsSet(), volumeMounts.NotSet())).
+		Set("spec.template.spec.volumes",
+			defkit.Each(volumes).
+				Map(defkit.FieldMap{
+					"name": defkit.FieldRef("name"),
+				}).
+				MapVariant("type", "pvc", defkit.FieldMap{
+					"persistentVolumeClaim.claimName": defkit.FieldRef("claimName"),
+				}).
+				MapVariant("type", "configMap", defkit.FieldMap{
+					"configMap.defaultMode": defkit.FieldRef("defaultMode"),
+					"configMap.name":        defkit.FieldRef("cmName"),
+					"configMap.items":       defkit.OptionalFieldRef("items"),
+				}).
+				MapVariant("type", "secret", defkit.FieldMap{
+					"secret.defaultMode": defkit.FieldRef("defaultMode"),
+					"secret.secretName":  defkit.FieldRef("secretName"),
+					"secret.items":       defkit.OptionalFieldRef("items"),
+				}).
+				MapVariant("type", "emptyDir", defkit.FieldMap{
+					"emptyDir.medium": defkit.FieldRef("medium"),
+				})).
+		EndIf().
 		SetIf(volumeMounts.IsSet(), "spec.template.spec.volumes", deDupVolumesArray)
 
 	tpl.Output(deployment)
 
-	// exposePorts helper: Filter ports where expose=true and map to Service format
-	// Guard() adds the outer condition: if parameter.ports != _|_ for v in ...
-	// AfterOutput() places this helper after the output: block, matching the original CUE structure
+	// exposePorts helper: Complex iteration with guard, filter, conditionals,
+	// _name let binding with containerPort preference, and protocol suffix.
+	// Uses FromArray with ForEachWithGuardedFiltered for full expressiveness.
+	exposePortsArray := defkit.NewArray().ForEachWithGuardedFiltered(
+		ports.IsSet(),
+		defkit.FieldEquals("expose", true),
+		ports,
+		func(item *defkit.ItemBuilder) {
+			v := item.Var()
+
+			item.Set("port", v.Field("port"))
+
+			// targetPort: prefer containerPort, fall back to port
+			item.IfSet("containerPort", func() {
+				item.Set("targetPort", v.Field("containerPort"))
+			})
+			item.IfNotSet("containerPort", func() {
+				item.Set("targetPort", v.Field("port"))
+			})
+
+			// name: use v.name if set
+			item.IfSet("name", func() {
+				item.Set("name", v.Field("name"))
+			})
+
+			// Complex name fallback: _name with containerPort preference + protocol suffix
+			item.IfNotSet("name", func() {
+				item.IfSet("containerPort", func() {
+					nameRef := item.Let("_name",
+						defkit.Plus(defkit.Lit("port-"), defkit.StrconvFormatInt(v.Field("containerPort"), 10)))
+					item.SetDefault("name", nameRef, "string")
+					item.If(defkit.Ne(v.Field("protocol"), defkit.Lit("TCP")), func() {
+						item.Set("name", defkit.Plus(nameRef, defkit.Lit("-"), defkit.StringsToLower(v.Field("protocol"))))
+					})
+				})
+				item.IfNotSet("containerPort", func() {
+					nameRef := item.Let("_name",
+						defkit.Plus(defkit.Lit("port-"), defkit.StrconvFormatInt(v.Field("port"), 10)))
+					item.SetDefault("name", nameRef, "string")
+					item.If(defkit.Ne(v.Field("protocol"), defkit.Lit("TCP")), func() {
+						item.Set("name", defkit.Plus(nameRef, defkit.Lit("-"), defkit.StringsToLower(v.Field("protocol"))))
+					})
+				})
+			})
+
+			// nodePort: compound conditional
+			item.IfSet("nodePort", func() {
+				item.If(defkit.Eq(exposeType, defkit.Lit("NodePort")), func() {
+					item.Set("nodePort", v.Field("nodePort"))
+				})
+			})
+
+			// protocol: optional
+			item.IfSet("protocol", func() {
+				item.Set("protocol", v.Field("protocol"))
+			})
+		},
+	)
+
 	exposePorts := tpl.Helper("exposePorts").
-		From(ports).
-		Guard(ports.IsSet()).
-		FilterPred(defkit.FieldEquals("expose", true)).
-		Map(defkit.FieldMap{
-			"port":       defkit.FieldRef("port"),
-			"targetPort": defkit.FieldRef("port"),
-			"name":       defkit.FieldRef("name").Or(defkit.Format("port-%v", defkit.FieldRef("port"))),
-		}).
+		FromArray(exposePortsArray).
 		AfterOutput().
 		Build()
 
 	// Auxiliary output: Service (only if there are exposed ports)
-	// Uses the exposePorts helper and checks len(exposePorts) != 0
 	service := defkit.NewResource("v1", "Service").
 		Set("metadata.name", vela.Name()).
 		Set("spec.selector[app.oam.dev/component]", vela.Name()).
-		Set("spec.type", exposeType).
-		Set("spec.ports", exposePorts)
+		Set("spec.ports", exposePorts).
+		Set("spec.type", exposeType)
 
 	tpl.OutputsIf(exposePorts.NotEmpty(), "webserviceExpose", service)
 }
