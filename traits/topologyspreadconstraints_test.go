@@ -43,9 +43,13 @@ func TestTopologySpreadConstraintsTrait(t *testing.T) {
 	assert.NotContains(t, cue, "constraints?: [...{",
 		"constraints should NOT be optional")
 
-	// Bug 2 fix: labelSelector should be required (no ?)
-	assert.Contains(t, cue, "labelSelector: {",
-		"labelSelector should be required, not optional")
+	// Bug 2 fix: labelSelector should be required and reference #labSelector helper
+	assert.Contains(t, cue, "labelSelector: #labSelector",
+		"labelSelector should reference #labSelector helper")
+
+	// Helper type definition should exist as closed struct
+	assert.Contains(t, cue, "#labSelector: {",
+		"#labSelector helper type should be defined")
 
 	// Bug 3 fix: nodeAffinityPolicy and nodeTaintsPolicy should be optional WITH default
 	assert.Contains(t, cue, `nodeAffinityPolicy?: *"Honor" | "Ignore"`,
