@@ -169,7 +169,6 @@ func CronTaskHealthProbeParam() *defkit.MapParam {
 // CronTaskVolumeMountsParam creates the volumeMounts parameter for cron-task.
 func CronTaskVolumeMountsParam() defkit.Param {
 	return defkit.Object("volumeMounts").
-		Description("Volume mounts configuration").
 		WithFields(
 			defkit.List("pvc").Description("Mount PVC type volume").WithFields(
 				defkit.String("name").Required(),
