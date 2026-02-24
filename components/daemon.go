@@ -20,42 +20,6 @@ import (
 	"github.com/oam-dev/kubevela/pkg/definition/defkit"
 )
 
-// DaemonParams holds configuration for the daemon component.
-type DaemonParams struct {
-	// Labels to add to the workload.
-	Labels map[string]string
-	// Annotations to add to the workload.
-	Annotations map[string]string
-	// Image is the container image to use (required).
-	Image string
-	// ImagePullPolicy specifies when to pull the image.
-	ImagePullPolicy *string
-	// ImagePullSecrets are the secrets for pulling private images.
-	ImagePullSecrets []string
-	// Ports defines the ports to expose.
-	Ports []Port
-	// ExposeType defines the Service type (ClusterIP, NodePort, LoadBalancer).
-	ExposeType ExposeType
-	// AddRevisionLabel if true, adds the revision label to pods.
-	AddRevisionLabel bool
-	// Cmd are the commands to run in the container.
-	Cmd []string
-	// Env are the environment variables.
-	Env []Env
-	// CPU is the CPU resource request/limit.
-	CPU *string
-	// Memory is the memory resource request/limit.
-	Memory *string
-	// VolumeMounts are the volume mounts.
-	VolumeMounts *VolumeMounts
-	// LivenessProbe is the liveness probe configuration.
-	LivenessProbe *HealthProbe
-	// ReadinessProbe is the readiness probe configuration.
-	ReadinessProbe *HealthProbe
-	// HostAliases are custom host-to-IP mappings.
-	HostAliases []HostAlias
-}
-
 // Daemon creates a daemon component definition.
 // It describes a DaemonSet which runs on every node in the cluster.
 func Daemon() *defkit.ComponentDefinition {

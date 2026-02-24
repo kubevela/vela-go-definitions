@@ -20,50 +20,6 @@ import (
 	"github.com/oam-dev/kubevela/pkg/definition/defkit"
 )
 
-// RestartPolicy defines the restart policy for a task.
-type RestartPolicy string
-
-const (
-	// RestartPolicyNever never restarts the container.
-	RestartPolicyNever RestartPolicy = "Never"
-	// RestartPolicyOnFailure restarts the container only on failure.
-	RestartPolicyOnFailure RestartPolicy = "OnFailure"
-)
-
-// TaskParams holds configuration for the task component.
-type TaskParams struct {
-	// Labels to add to the workload.
-	Labels map[string]string
-	// Annotations to add to the workload.
-	Annotations map[string]string
-	// Image is the container image to use (required).
-	Image string
-	// ImagePullPolicy specifies when to pull the image.
-	ImagePullPolicy *string
-	// ImagePullSecrets are the secrets for pulling private images.
-	ImagePullSecrets []string
-	// Count specifies the number of tasks to run in parallel.
-	Count int
-	// Cmd are the commands to run in the container.
-	Cmd []string
-	// Args are the arguments to the entrypoint.
-	Args []string
-	// Env are the environment variables.
-	Env []Env
-	// CPU is the CPU resource request/limit.
-	CPU *string
-	// Memory is the memory resource request/limit.
-	Memory *string
-	// VolumeMounts are the volume mounts.
-	VolumeMounts *VolumeMounts
-	// Restart defines the restart policy (Never or OnFailure).
-	Restart RestartPolicy
-	// LivenessProbe is the liveness probe configuration.
-	LivenessProbe *HealthProbe
-	// ReadinessProbe is the readiness probe configuration.
-	ReadinessProbe *HealthProbe
-}
-
 // Task creates a task component definition.
 // It describes a one-time task that runs to completion.
 func Task() *defkit.ComponentDefinition {
