@@ -204,5 +204,24 @@ var _ = Describe("Daemon Component", func() {
 
 			Expect(cue).To(ContainSubstring(`"strconv"`))
 		})
+
+		It("should not generate // +usage directive for volumeMounts parameter", func() {
+			comp := components.Daemon()
+			cue := comp.ToCue()
+
+			// Find volumeMounts param declaration
+			vmIdx := strings.Index(cue, "volumeMounts?:")
+			Expect(vmIdx).To(BeNumerically(">", 0))
+			// Check the 100 chars before it for any +usage directive
+			start := vmIdx - 100
+			if start < 0 {
+				start = 0
+			}
+			beforeVM := cue[start:vmIdx]
+			// There should be no +usage line immediately before volumeMounts
+			lines := strings.Split(beforeVM, "\n")
+			lastLine := strings.TrimSpace(lines[len(lines)-1])
+			Expect(lastLine).NotTo(HavePrefix("// +usage="))
+		})
 	})
 })

@@ -125,6 +125,24 @@ var _ = Describe("CronTask Component", func() {
 			gen = defkit.NewCUEGenerator()
 		})
 
+		It("should generate // +short=i directive for image parameter", func() {
+			comp := components.CronTask()
+			cue := gen.GenerateFullDefinition(comp)
+			Expect(cue).To(ContainSubstring("// +short=i"))
+		})
+
+		It("should generate // +short=c directive for count parameter", func() {
+			comp := components.CronTask()
+			cue := gen.GenerateFullDefinition(comp)
+
+			// Find count param - should have +short=c before it
+			countIdx := strings.Index(cue, "count:")
+			Expect(countIdx).To(BeNumerically(">", 0))
+			beforeCount := cue[:countIdx]
+			shortIdx := strings.LastIndex(beforeCount, "// +short=c")
+			Expect(shortIdx).To(BeNumerically(">", 0))
+		})
+
 		It("should generate conditional resources block", func() {
 			comp := components.CronTask()
 			cue := gen.GenerateFullDefinition(comp)
