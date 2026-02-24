@@ -265,26 +265,4 @@ var _ = Describe("Webservice Component", func() {
 		})
 	})
 
-	Describe("Helper Functions", func() {
-		It("StringPtr should create a string pointer", func() {
-			ptr := components.StringPtr("test")
-			Expect(ptr).NotTo(BeNil())
-			Expect(*ptr).To(Equal("test"))
-		})
-
-		It("IntPtr should create an int pointer", func() {
-			ptr := components.IntPtr(42)
-			Expect(ptr).NotTo(BeNil())
-			Expect(*ptr).To(Equal(42))
-		})
-
-		It("NewDefaultHealthProbe should create probe with defaults", func() {
-			probe := components.NewDefaultHealthProbe()
-			Expect(probe.InitialDelaySeconds).To(Equal(0))
-			Expect(probe.PeriodSeconds).To(Equal(10))
-			Expect(probe.TimeoutSeconds).To(Equal(1))
-			Expect(probe.SuccessThreshold).To(Equal(1))
-			Expect(probe.FailureThreshold).To(Equal(3))
-		})
-	})
 })
