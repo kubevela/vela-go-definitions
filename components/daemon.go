@@ -91,7 +91,7 @@ func Daemon() *defkit.ComponentDefinition {
 	memory := defkit.String("memory").Description("Specifies the attributes of the memory resource required for the container.")
 
 	// VolumeMounts with detailed schemas using fluent API
-	volumeMounts := defkit.Object("volumeMounts").Description("Volume mounts configuration").
+	volumeMounts := defkit.Object("volumeMounts").
 		WithFields(
 			defkit.List("pvc").Description("Mount PVC type volume").WithFields(
 				defkit.String("name").Required(),

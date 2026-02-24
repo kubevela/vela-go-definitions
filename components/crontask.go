@@ -36,8 +36,8 @@ func CronTask() *defkit.ComponentDefinition {
 		Description("The number of successful finished jobs to retain")
 	failedJobsHistoryLimit := defkit.Int("failedJobsHistoryLimit").Default(1).
 		Description("The number of failed finished jobs to retain")
-	count := defkit.Int("count").Default(1).Description("Specify number of tasks to run in parallel")
-	image := defkit.String("image").Required().Description("Which image would you like to use for your service")
+	count := defkit.Int("count").Default(1).Description("Specify number of tasks to run in parallel").Short("c")
+	image := defkit.String("image").Required().Description("Which image would you like to use for your service").Short("i")
 	imagePullPolicy := defkit.String("imagePullPolicy").
 		Enum("Always", "Never", "IfNotPresent").
 		Description("Specify image pull policy for your service")
