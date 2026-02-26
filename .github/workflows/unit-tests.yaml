@@ -22,58 +22,6 @@ jobs:
         with:
           go-version-file: go.mod
 
-      - name: Extract KubeVela source from go.mod
-        id: kubevela-ref
-        run: |
-          # The go.mod has: replace github.com/oam-dev/kubevela => ../kubevela
-          # In CI there is no ../kubevela, so we need to resolve the actual
-          # upstream dependency and clone it adjacent to this repo.
-
-          # First check if replace points to a local path
-          REPLACE_LINE=$(grep 'replace github.com/oam-dev/kubevela =>' go.mod)
-          REPLACEMENT=$(echo "$REPLACE_LINE" | sed 's/.*=> //')
-
-          if echo "$REPLACEMENT" | grep -q '^\.\./\|^\./'; then
-            # Local path replace — resolve the actual require version
-            VERSION=$(grep '^\s*github.com/oam-dev/kubevela ' go.mod | awk '{print $2}')
-            echo "Local replace detected, using require version: $VERSION"
-          else
-            # Remote replace — use the replacement version directly
-            VERSION=$(echo "$REPLACEMENT" | awk '{print $2}')
-            echo "Remote replace detected, using version: $VERSION"
-          fi
-
-          # Extract repo from require or replace line
-          REPO=$(grep '^\s*github.com/oam-dev/kubevela ' go.mod | awk '{print $1}' | sed 's|github.com/||')
-          # Check if replace points to a different repo
-          REPLACE_REPO=$(echo "$REPLACEMENT" | awk '{print $1}' | sed 's|github.com/||')
-          if ! echo "$REPLACE_REPO" | grep -q '^\.\./\|^\./'; then
-            REPO="$REPLACE_REPO"
-          fi
-
-          # Extract commit SHA from pseudo-version if applicable
-          if echo "$VERSION" | grep -qE '^v.*-[0-9]{14}-[0-9a-f]+$'; then
-            COMMIT_SHA=$(echo "$VERSION" | sed 's/.*-//')
-            echo "ref=$COMMIT_SHA" >> "$GITHUB_OUTPUT"
-          else
-            echo "ref=$VERSION" >> "$GITHUB_OUTPUT"
-          fi
-
-          echo "repo=$REPO" >> "$GITHUB_OUTPUT"
-          echo "Resolved: repo=$REPO ref=$(cat "$GITHUB_OUTPUT" | grep ref | cut -d= -f2)"
-
-      - name: Clone KubeVela dependency
-        run: |
-          git clone --depth=1 "https://github.com/${{ steps.kubevela-ref.outputs.repo }}.git" ../kubevela || {
-            # Shallow clone may fail for commit refs; fall back to full clone
-            git clone "https://github.com/${{ steps.kubevela-ref.outputs.repo }}.git" ../kubevela
-          }
-          cd ../kubevela
-          git fetch origin "${{ steps.kubevela-ref.outputs.ref }}" || true
-          git checkout "${{ steps.kubevela-ref.outputs.ref }}"
-          echo "Checked out kubevela at:"
-          git log -1 --oneline
-
       - name: Download dependencies
         run: go mod download
 
@@ -86,4 +34,3 @@ jobs:
           echo "## Unit Test Results" >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"
           echo "- **Go version:** $(go version | awk '{print $3}')" >> "$GITHUB_STEP_SUMMARY"
-          echo "- **KubeVela ref:** \`${{ steps.kubevela-ref.outputs.ref }}\`" >> "$GITHUB_STEP_SUMMARY"
