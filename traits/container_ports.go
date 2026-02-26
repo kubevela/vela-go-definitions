@@ -51,6 +51,7 @@ func ContainerPorts() *defkit.TraitDefinition {
 				DefaultToContextName:  true,
 				AllowMultiple:         true,
 				ContainersParam:       "containers",
+				MultiContainerErrMsg:  "container name must be set for containers",
 				ContainersDescription: "Specify the container ports for multiple containers",
 				PatchFields: []defkit.PatchContainerField{
 					{

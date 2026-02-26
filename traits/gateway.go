@@ -45,6 +45,8 @@ func Gateway() *defkit.TraitDefinition {
 	return defkit.NewTrait("gateway").
 		Description("Enable public web traffic for the component, the ingress API matches K8s v1.20+.").
 		AppliesTo("deployments.apps", "statefulsets.apps").
+		PodDisruptive(false).
+		Labels(map[string]string{}).
 		WithImports("strconv").
 		CustomStatus(`let nameSuffix = {
   if parameter.name != _|_ { "-" + parameter.name }

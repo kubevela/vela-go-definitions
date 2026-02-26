@@ -29,6 +29,7 @@ func Scaler() *defkit.TraitDefinition {
 		Description("Manually scale K8s pod for your workload which follows the pod spec in path 'spec.template'.").
 		AppliesTo("deployments.apps", "statefulsets.apps").
 		PodDisruptive(false).
+		Labels(map[string]string{}).
 		Params(replicas).
 		Template(func(tpl *defkit.Template) {
 			tpl.PatchStrategy("retainKeys").

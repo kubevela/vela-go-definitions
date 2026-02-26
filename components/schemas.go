@@ -35,7 +35,7 @@ func HealthProbeParam() *defkit.MapParam {
 					defkit.String("path").Required().Description("The endpoint, relative to the port, to which the HTTP GET request should be directed."),
 					defkit.Int("port").Required().Description("The TCP socket within the container to which the HTTP GET request should be directed."),
 					defkit.String("host"),
-					defkit.String("scheme").Default("HTTP"),
+					defkit.String("scheme").Default("HTTP").ForceOptional(),
 					defkit.List("httpHeaders").WithFields(
 						defkit.String("name").Required(),
 						defkit.String("value").Required(),

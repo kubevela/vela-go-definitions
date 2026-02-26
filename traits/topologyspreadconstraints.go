@@ -23,6 +23,16 @@ import (
 // TopologySpreadConstraints creates the topologyspreadconstraints trait definition.
 // This trait adds topology spread constraints hooks for K8s pod.
 func TopologySpreadConstraints() *defkit.TraitDefinition {
+	// Define #labSelector helper type for closed struct generation
+	labSelectorParam := defkit.Map("labSelector").WithFields(
+		defkit.StringKeyMap("matchLabels"),
+		defkit.Array("matchExpressions").WithFields(
+			defkit.String("key").Required(),
+			defkit.String("operator").Default("In").Enum("In", "NotIn", "Exists", "DoesNotExist"),
+			defkit.Array("values").Of(defkit.ParamTypeString),
+		),
+	)
+
 	// Define constraints array parameter using WithFields for inline struct definition
 	constraints := defkit.Array("constraints").Description("List of topology spread constraints").Required().
 		WithFields(
@@ -30,14 +40,7 @@ func TopologySpreadConstraints() *defkit.TraitDefinition {
 			defkit.String("topologyKey").Description("Specify the key of node labels").Required(),
 			defkit.String("whenUnsatisfiable").Default("DoNotSchedule").Enum("DoNotSchedule", "ScheduleAnyway").
 				Description("Indicate how to deal with a Pod if it doesn't satisfy the spread constraint"),
-			defkit.Map("labelSelector").Description("labelSelector to find matching Pods").Required().WithFields(
-				defkit.StringKeyMap("matchLabels"),
-				defkit.Array("matchExpressions").WithFields(
-					defkit.String("key").Required(),
-					defkit.String("operator").Default("In").Enum("In", "NotIn", "Exists", "DoesNotExist"),
-					defkit.Array("values").Of(defkit.ParamTypeString),
-				),
-			),
+			defkit.Map("labelSelector").Description("labelSelector to find matching Pods").Required().WithSchemaRef("labSelector"),
 			defkit.Int("minDomains").Description("Indicate a minimum number of eligible domains"),
 			defkit.Array("matchLabelKeys").Of(defkit.ParamTypeString).
 				Description("A list of pod label keys to select the pods over which spreading will be calculated"),
@@ -51,6 +54,7 @@ func TopologySpreadConstraints() *defkit.TraitDefinition {
 		Description("Add topology spread constraints hooks for every container of K8s pod for your workload which follows the pod spec in path 'spec.template'.").
 		AppliesTo("deployments.apps", "statefulsets.apps", "daemonsets.apps", "jobs.batch").
 		PodDisruptive(true).
+		Helper("labSelector", labSelectorParam).
 		Params(constraints).
 		Template(func(tpl *defkit.Template) {
 			// Create list comprehension with conditional fields

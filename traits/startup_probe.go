@@ -31,11 +31,14 @@ func StartupProbe() *defkit.TraitDefinition {
 		PodDisruptive(true).
 		Template(func(tpl *defkit.Template) {
 			tpl.UsePatchContainer(defkit.PatchContainerConfig{
-				ContainerNameParam:    "containerName",
-				DefaultToContextName:  true,
-				AllowMultiple:         true,
-				MultiContainerParam:   "probes",
-				ContainersDescription: "Specify the startup probe for multiple containers",
+				ContainerNameParam:       "containerName",
+				DefaultToContextName:     true,
+				AllowMultiple:            true,
+				MultiContainerParam:      "probes",
+				MultiContainerCheckField: "name",
+				MultiContainerErrMsg:     "containerName must be set when specifying startup probe for multiple containers",
+				ContainersDescription:    "Specify the startup probe for multiple containers",
+				ParamsTypeName:           "StartupProbeParams",
 				// Complex parameter schema requiring CustomParamsBlock
 				CustomParamsBlock: `// +usage=Number of seconds after the container has started before liveness probes are initiated. Minimum value is 0.
 initialDelaySeconds: *0 | int

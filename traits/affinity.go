@@ -69,8 +69,9 @@ func Affinity() *defkit.TraitDefinition {
 		Helper("nodeSelector", nodeSelectorHelper()).
 		Helper("nodeSelectorTerm", nodeSelectorTermHelper()).
 		Template(func(tpl *defkit.Template) {
-			// Pod Affinity
+			// Pod Affinity — wrapped in outer guard for parameter.podAffinity
 			tpl.Patch().
+				If(podAffinity.IsSet()).
 				SetIf(defkit.ParamPath("podAffinity.required").IsSet(),
 					"spec.template.spec.affinity.podAffinity.requiredDuringSchedulingIgnoredDuringExecution",
 					defkit.From(defkit.ParamPath("podAffinity.required")).Map(defkit.FieldMap{
@@ -78,11 +79,8 @@ func Affinity() *defkit.TraitDefinition {
 						"namespace":         defkit.Optional("namespace"),
 						"namespaces":        defkit.Optional("namespaces"),
 						"topologyKey":       defkit.F("topologyKey"),
-						"namespaceSelector": defkit.F("namespaceSelector"),
-					}))
-
-			// Pod Affinity - preferred
-			tpl.Patch().
+						"namespaceSelector": defkit.Optional("namespaceSelector"),
+					})).
 				SetIf(defkit.ParamPath("podAffinity.preferred").IsSet(),
 					"spec.template.spec.affinity.podAffinity.preferredDuringSchedulingIgnoredDuringExecution",
 					defkit.From(defkit.ParamPath("podAffinity.preferred")).Map(defkit.FieldMap{
@@ -91,8 +89,9 @@ func Affinity() *defkit.TraitDefinition {
 					})).
 				EndIf()
 
-			// Pod Anti-Affinity
+			// Pod Anti-Affinity — wrapped in outer guard for parameter.podAntiAffinity
 			tpl.Patch().
+				If(podAntiAffinity.IsSet()).
 				SetIf(defkit.ParamPath("podAntiAffinity.required").IsSet(),
 					"spec.template.spec.affinity.podAntiAffinity.requiredDuringSchedulingIgnoredDuringExecution",
 					defkit.From(defkit.ParamPath("podAntiAffinity.required")).Map(defkit.FieldMap{
@@ -100,11 +99,8 @@ func Affinity() *defkit.TraitDefinition {
 						"namespace":         defkit.Optional("namespace"),
 						"namespaces":        defkit.Optional("namespaces"),
 						"topologyKey":       defkit.F("topologyKey"),
-						"namespaceSelector": defkit.F("namespaceSelector"),
-					}))
-
-			// Pod Anti-Affinity - preferred
-			tpl.Patch().
+						"namespaceSelector": defkit.Optional("namespaceSelector"),
+					})).
 				SetIf(defkit.ParamPath("podAntiAffinity.preferred").IsSet(),
 					"spec.template.spec.affinity.podAntiAffinity.preferredDuringSchedulingIgnoredDuringExecution",
 					defkit.From(defkit.ParamPath("podAntiAffinity.preferred")).Map(defkit.FieldMap{
@@ -113,17 +109,15 @@ func Affinity() *defkit.TraitDefinition {
 					})).
 				EndIf()
 
-			// Node Affinity
+			// Node Affinity — wrapped in outer guard for parameter.nodeAffinity
 			tpl.Patch().
-				SetIf(defkit.ParamPath("nodeAffinity.required.nodeSelectorTerms").IsSet(),
+				If(nodeAffinity.IsSet()).
+				SetIf(defkit.ParamPath("nodeAffinity.required").IsSet(),
 					"spec.template.spec.affinity.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms",
 					defkit.From(defkit.ParamPath("nodeAffinity.required.nodeSelectorTerms")).Map(defkit.FieldMap{
-						"matchExpressions": defkit.F("matchExpressions"),
-						"matchFields":      defkit.F("matchFields"),
-					}))
-
-			// Node Affinity - preferred
-			tpl.Patch().
+						"matchExpressions": defkit.Optional("matchExpressions"),
+						"matchFields":      defkit.Optional("matchFields"),
+					})).
 				SetIf(defkit.ParamPath("nodeAffinity.preferred").IsSet(),
 					"spec.template.spec.affinity.nodeAffinity.preferredDuringSchedulingIgnoredDuringExecution",
 					defkit.From(defkit.ParamPath("nodeAffinity.preferred")).Map(defkit.FieldMap{
@@ -132,16 +126,18 @@ func Affinity() *defkit.TraitDefinition {
 					})).
 				EndIf()
 
-			// Tolerations
+			// Tolerations — wrapped in outer guard for parameter.tolerations
 			tpl.Patch().
-				SetIf(tolerations.IsSet(), "spec.template.spec.tolerations",
+				If(tolerations.IsSet()).
+				Set("spec.template.spec.tolerations",
 					defkit.From(tolerations).Map(defkit.FieldMap{
 						"key":               defkit.Optional("key"),
 						"operator":          defkit.F("operator"),
 						"value":             defkit.Optional("value"),
 						"effect":            defkit.Optional("effect"),
 						"tolerationSeconds": defkit.Optional("tolerationSeconds"),
-					}))
+					})).
+				EndIf()
 		})
 }
 

@@ -20,72 +20,6 @@ import (
 	"github.com/oam-dev/kubevela/pkg/definition/defkit"
 )
 
-// ConcurrencyPolicy defines how to treat concurrent executions of a job.
-type ConcurrencyPolicy string
-
-const (
-	// ConcurrencyPolicyAllow allows concurrent executions.
-	ConcurrencyPolicyAllow ConcurrencyPolicy = "Allow"
-	// ConcurrencyPolicyForbid forbids concurrent executions.
-	ConcurrencyPolicyForbid ConcurrencyPolicy = "Forbid"
-	// ConcurrencyPolicyReplace cancels the currently running job and replaces it.
-	ConcurrencyPolicyReplace ConcurrencyPolicy = "Replace"
-)
-
-// CronTaskParams holds configuration for the cron-task component.
-type CronTaskParams struct {
-	// Labels to add to the workload.
-	Labels map[string]string
-	// Annotations to add to the workload.
-	Annotations map[string]string
-	// Image is the container image to use (required).
-	Image string
-	// ImagePullPolicy specifies when to pull the image.
-	ImagePullPolicy *string
-	// ImagePullSecrets are the secrets for pulling private images.
-	ImagePullSecrets []string
-	// Schedule is the cron schedule (required).
-	Schedule string
-	// StartingDeadlineSeconds is the deadline in seconds for starting the job.
-	StartingDeadlineSeconds *int
-	// Suspend indicates whether the cron job should be suspended.
-	Suspend bool
-	// ConcurrencyPolicy specifies how to treat concurrent executions.
-	ConcurrencyPolicy ConcurrencyPolicy
-	// SuccessfulJobsHistoryLimit is the number of successful jobs to retain.
-	SuccessfulJobsHistoryLimit *int
-	// FailedJobsHistoryLimit is the number of failed jobs to retain.
-	FailedJobsHistoryLimit *int
-	// Count specifies the number of tasks to run in parallel.
-	Count int
-	// Cmd are the commands to run in the container.
-	Cmd []string
-	// Args are the arguments to the entrypoint.
-	Args []string
-	// Env are the environment variables.
-	Env []Env
-	// CPU is the CPU resource request/limit.
-	CPU *string
-	// Memory is the memory resource request/limit.
-	Memory *string
-	// VolumeMounts are the volume mounts.
-	VolumeMounts *VolumeMounts
-	// Restart defines the restart policy (Never or OnFailure).
-	Restart RestartPolicy
-	// ActiveDeadlineSeconds is the duration the job can be active.
-	ActiveDeadlineSeconds *int
-	// BackoffLimit is the number of retries before marking the job as failed.
-	BackoffLimit *int
-	// TTLSecondsAfterFinished is the TTL to clean up finished jobs.
-	TTLSecondsAfterFinished *int
-	// LivenessProbe is the liveness probe configuration.
-	LivenessProbe *HealthProbe
-	// ReadinessProbe is the readiness probe configuration.
-	ReadinessProbe *HealthProbe
-	// HostAliases are custom host-to-IP mappings.
-	HostAliases []HostAlias
-}
-
 // CronTask creates a cron-task component definition.
 // It describes a CronJob that runs code or a script on a schedule.
 func CronTask() *defkit.ComponentDefinition {
@@ -102,8 +36,8 @@ func CronTask() *defkit.ComponentDefinition {
 		Description("The number of successful finished jobs to retain")
 	failedJobsHistoryLimit := defkit.Int("failedJobsHistoryLimit").Default(1).
 		Description("The number of failed finished jobs to retain")
-	count := defkit.Int("count").Default(1).Description("Specify number of tasks to run in parallel")
-	image := defkit.String("image").Required().Description("Which image would you like to use for your service")
+	count := defkit.Int("count").Default(1).Description("Specify number of tasks to run in parallel").Short("c")
+	image := defkit.String("image").Required().Description("Which image would you like to use for your service").Short("i")
 	imagePullPolicy := defkit.String("imagePullPolicy").
 		Enum("Always", "Never", "IfNotPresent").
 		Description("Specify image pull policy for your service")
@@ -131,6 +65,45 @@ func CronTask() *defkit.ComponentDefinition {
 	cpu := defkit.String("cpu").Description("Number of CPU units for the service, like `0.5` (0.5 CPU core), `1` (1 CPU core)")
 	memory := defkit.String("memory").Description("Specifies the attributes of the memory resource required for the container.")
 	volumeMounts := CronTaskVolumeMountsParam()
+	// Deprecated volumes parameter - discriminated union with type-based conditional fields
+	volumes := defkit.List("volumes").Description("Deprecated field, use volumeMounts instead.").
+		WithFields(
+			defkit.String("name").Required(),
+			defkit.String("mountPath").Required(),
+			defkit.OneOf("type").
+				Description("Specify volume type, options: \"pvc\",\"configMap\",\"secret\",\"emptyDir\", default to emptyDir").
+				Default("emptyDir").
+				Variants(
+					defkit.Variant("pvc").Fields(
+						defkit.Field("claimName", defkit.ParamTypeString).Required(),
+					),
+					defkit.Variant("configMap").Fields(
+						defkit.Field("defaultMode", defkit.ParamTypeInt).Default(420),
+						defkit.Field("cmName", defkit.ParamTypeString).Required(),
+						defkit.Field("items", defkit.ParamTypeArray).Nested(
+							defkit.Struct("").Fields(
+								defkit.Field("key", defkit.ParamTypeString).Required(),
+								defkit.Field("path", defkit.ParamTypeString).Required(),
+								defkit.Field("mode", defkit.ParamTypeInt).Default(511),
+							),
+						),
+					),
+					defkit.Variant("secret").Fields(
+						defkit.Field("defaultMode", defkit.ParamTypeInt).Default(420),
+						defkit.Field("secretName", defkit.ParamTypeString).Required(),
+						defkit.Field("items", defkit.ParamTypeArray).Nested(
+							defkit.Struct("").Fields(
+								defkit.Field("key", defkit.ParamTypeString).Required(),
+								defkit.Field("path", defkit.ParamTypeString).Required(),
+								defkit.Field("mode", defkit.ParamTypeInt).Default(511),
+							),
+						),
+					),
+					defkit.Variant("emptyDir").Fields(
+						defkit.Field("medium", defkit.ParamTypeString).Default("").Enum("", "Memory"),
+					),
+				),
+		)
 	hostAliases := defkit.List("hostAliases").Description("An optional list of hosts and IPs that will be injected into the pod's hosts file").
 		WithFields(
 			defkit.String("ip").Required(),
@@ -149,24 +122,53 @@ func CronTask() *defkit.ComponentDefinition {
 	return defkit.NewComponent("cron-task").
 		Description("Describes cron jobs that run code or a script to completion.").
 		AutodetectWorkload().
-		Helper("HealthProbe", HealthProbeParam()).
+		Helper("HealthProbe", CronTaskHealthProbeParam()).
 		Params(
 			labels, annotations,
 			schedule, startingDeadlineSeconds, suspend,
 			concurrencyPolicy, successfulJobsHistoryLimit, failedJobsHistoryLimit,
 			count, image, imagePullPolicy, imagePullSecrets,
 			restart, cmd, env,
-			cpu, memory, volumeMounts, hostAliases,
+			cpu, memory, volumeMounts, volumes, hostAliases,
 			ttlSecondsAfterFinished, activeDeadlineSeconds, backoffLimit,
 			livenessProbe, readinessProbe,
 		).
 		Template(cronTaskTemplate)
 }
 
+// CronTaskHealthProbeParam returns a HealthProbe Param without host and scheme fields
+// in httpGet, matching the cron-task reference CUE (which omits them unlike webservice/daemon/statefulset).
+func CronTaskHealthProbeParam() *defkit.MapParam {
+	return defkit.Object("probe").
+		WithFields(
+			defkit.Object("exec").Description("Instructions for assessing container health by executing a command. Either this attribute or the httpGet attribute or the tcpSocket attribute MUST be specified. This attribute is mutually exclusive with both the httpGet attribute and the tcpSocket attribute.").
+				WithFields(
+					defkit.StringList("command").Required().Description("A command to be executed inside the container to assess its health. Each space delimited token of the command is a separate array element. Commands exiting 0 are considered to be successful probes, whilst all other exit codes are considered failures."),
+				),
+			defkit.Object("httpGet").Description("Instructions for assessing container health by executing an HTTP GET request. Either this attribute or the exec attribute or the tcpSocket attribute MUST be specified. This attribute is mutually exclusive with both the exec attribute and the tcpSocket attribute.").
+				WithFields(
+					defkit.String("path").Required().Description("The endpoint, relative to the port, to which the HTTP GET request should be directed."),
+					defkit.Int("port").Required().Description("The TCP socket within the container to which the HTTP GET request should be directed."),
+					defkit.List("httpHeaders").WithFields(
+						defkit.String("name").Required(),
+						defkit.String("value").Required(),
+					),
+				),
+			defkit.Object("tcpSocket").Description("Instructions for assessing container health by probing a TCP socket. Either this attribute or the exec attribute or the httpGet attribute MUST be specified. This attribute is mutually exclusive with both the exec attribute and the httpGet attribute.").
+				WithFields(
+					defkit.Int("port").Required().Description("The TCP socket within the container that should be probed to assess container health."),
+				),
+			defkit.Int("initialDelaySeconds").Default(0).Description("Number of seconds after the container is started before the first probe is initiated."),
+			defkit.Int("periodSeconds").Default(10).Description("How often, in seconds, to execute the probe."),
+			defkit.Int("timeoutSeconds").Default(1).Description("Number of seconds after which the probe times out."),
+			defkit.Int("successThreshold").Default(1).Description("Minimum consecutive successes for the probe to be considered successful after having failed."),
+			defkit.Int("failureThreshold").Default(3).Description("Number of consecutive failures required to determine the container is not alive (liveness probe) or not ready (readiness probe)."),
+		)
+}
+
 // CronTaskVolumeMountsParam creates the volumeMounts parameter for cron-task.
 func CronTaskVolumeMountsParam() defkit.Param {
 	return defkit.Object("volumeMounts").
-		Description("Volume mounts configuration").
 		WithFields(
 			defkit.List("pvc").Description("Mount PVC type volume").WithFields(
 				defkit.String("name").Required(),
@@ -238,6 +240,7 @@ func cronTaskTemplate(tpl *defkit.Template) {
 	cpu := defkit.String("cpu")
 	memory := defkit.String("memory")
 	volumeMounts := defkit.Object("volumeMounts")
+	volumes := defkit.List("volumes")
 	imagePullSecrets := defkit.StringList("imagePullSecrets")
 	hostAliases := defkit.List("hostAliases")
 
@@ -352,21 +355,65 @@ func cronTaskTemplate(tpl *defkit.Template) {
 		SetIf(imagePullPolicy.IsSet(), "spec.jobTemplate.spec.template.spec.containers[0].imagePullPolicy", imagePullPolicy).
 		SetIf(cmd.IsSet(), "spec.jobTemplate.spec.template.spec.containers[0].command", cmd).
 		SetIf(env.IsSet(), "spec.jobTemplate.spec.template.spec.containers[0].env", env).
-		// Resources - note: original CUE nests cpu/memory under resources.limits and resources.requests
-		SetIf(cpu.IsSet(), "spec.jobTemplate.spec.template.spec.containers[0].resources.limits.cpu", cpu).
-		SetIf(cpu.IsSet(), "spec.jobTemplate.spec.template.spec.containers[0].resources.requests.cpu", cpu).
-		SetIf(memory.IsSet(), "spec.jobTemplate.spec.template.spec.containers[0].resources.limits.memory", memory).
-		SetIf(memory.IsSet(), "spec.jobTemplate.spec.template.spec.containers[0].resources.requests.memory", memory).
-		// volumeMounts on container - uses mountsArray concatenation
-		SetIf(volumeMounts.IsSet(), "spec.jobTemplate.spec.template.spec.containers[0].volumeMounts",
+		// Resources - wrap in If blocks so the resources block only appears when cpu/memory is set
+		If(cpu.IsSet()).
+		Set("spec.jobTemplate.spec.template.spec.containers[0].resources.limits.cpu", cpu).
+		Set("spec.jobTemplate.spec.template.spec.containers[0].resources.requests.cpu", cpu).
+		EndIf().
+		If(memory.IsSet()).
+		Set("spec.jobTemplate.spec.template.spec.containers[0].resources.limits.memory", memory).
+		Set("spec.jobTemplate.spec.template.spec.containers[0].resources.requests.memory", memory).
+		EndIf().
+		// New-style volumeMounts on container - uses mountsArray concatenation
+		If(volumeMounts.IsSet()).
+		Set("spec.jobTemplate.spec.template.spec.containers[0].volumeMounts",
 			defkit.ConcatExpr(mountsArray, "pvc", "configMap", "secret", "emptyDir", "hostPath")).
-		// volumes on pod spec - uses deduplicated list
-		SetIf(volumeMounts.IsSet(), "spec.jobTemplate.spec.template.spec.volumes", deDupVolumesArray).
+		EndIf().
+		// Deprecated volumes fallback - container volumeMounts
+		If(defkit.And(volumes.IsSet(), volumeMounts.NotSet())).
+		Set("spec.jobTemplate.spec.template.spec.containers[0].volumeMounts",
+			defkit.Each(volumes).Map(defkit.FieldMap{
+				"mountPath": defkit.FieldRef("mountPath"),
+				"name":      defkit.FieldRef("name"),
+			})).
+		EndIf().
 		// imagePullSecrets
 		SetIf(imagePullSecrets.IsSet(), "spec.jobTemplate.spec.template.spec.imagePullSecrets",
 			ImagePullSecretsTransform(imagePullSecrets)).
 		// hostAliases
-		SetIf(hostAliases.IsSet(), "spec.jobTemplate.spec.template.spec.hostAliases", hostAliases)
+		SetIf(hostAliases.IsSet(), "spec.jobTemplate.spec.template.spec.hostAliases",
+			defkit.Each(hostAliases).Map(defkit.FieldMap{
+				"ip":        defkit.FieldRef("ip"),
+				"hostnames": defkit.FieldRef("hostnames"),
+			})).
+		// New-style volumes on pod spec - uses deduplicated list
+		If(volumeMounts.IsSet()).
+		Set("spec.jobTemplate.spec.template.spec.volumes", deDupVolumesArray).
+		EndIf().
+		// Deprecated volumes fallback - pod spec volumes
+		If(defkit.And(volumes.IsSet(), volumeMounts.NotSet())).
+		Set("spec.jobTemplate.spec.template.spec.volumes",
+			defkit.Each(volumes).
+				Map(defkit.FieldMap{
+					"name": defkit.FieldRef("name"),
+				}).
+				MapVariant("type", "pvc", defkit.FieldMap{
+					"persistentVolumeClaim.claimName": defkit.FieldRef("claimName"),
+				}).
+				MapVariant("type", "configMap", defkit.FieldMap{
+					"configMap.defaultMode": defkit.FieldRef("defaultMode"),
+					"configMap.name":        defkit.FieldRef("cmName"),
+					"configMap.items":       defkit.OptionalFieldRef("items"),
+				}).
+				MapVariant("type", "secret", defkit.FieldMap{
+					"secret.defaultMode": defkit.FieldRef("defaultMode"),
+					"secret.secretName":  defkit.FieldRef("secretName"),
+					"secret.items":       defkit.OptionalFieldRef("items"),
+				}).
+				MapVariant("type", "emptyDir", defkit.FieldMap{
+					"emptyDir.medium": defkit.FieldRef("medium"),
+				})).
+		EndIf()
 
 	tpl.Output(cronjob)
 }

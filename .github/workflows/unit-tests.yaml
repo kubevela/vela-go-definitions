@@ -1,0 +1,36 @@
+name: Unit Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  unit-tests:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - name: Download dependencies
+        run: go mod download
+
+      - name: Run unit tests
+        run: go test -v -race -count=1 ./components/... ./traits/... ./policies/... ./workflowsteps/...
+
+      - name: Test summary
+        if: always()
+        run: |
+          echo "## Unit Test Results" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "- **Go version:** $(go version | awk '{print $3}')" >> "$GITHUB_STEP_SUMMARY"
