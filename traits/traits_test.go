@@ -160,8 +160,12 @@ var _ = Describe("All Traits Registered", func() {
 			// Verify CUE structural correctness
 			cue := t.ToCue()
 			Expect(cue).To(ContainSubstring(`type: "trait"`))
-			Expect(cue).To(ContainSubstring(tc.name + ": {"))
 			Expect(cue).To(ContainSubstring("description:"))
+			// Trait name appears at top level (quoted if hyphenated)
+			Expect(cue).To(Or(
+				ContainSubstring(tc.name+": {"),
+				ContainSubstring(`"`+tc.name+`": {`),
+			))
 		})
 	}
 })
