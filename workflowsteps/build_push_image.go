@@ -23,178 +23,166 @@ import (
 // BuildPushImage creates the build-push-image workflow step definition.
 // This step builds and pushes image from git url.
 func BuildPushImage() *defkit.WorkflowStepDefinition {
+	kanikoExecutor := defkit.String("kanikoExecutor").
+		Default("oamdev/kaniko-executor:v1.9.1").
+		Description("Specify the kaniko executor image, default to oamdev/kaniko-executor:v1.9.1")
+	dockerfile := defkit.String("dockerfile").
+		Default("./Dockerfile").
+		Description("Specify the dockerfile")
+	image := defkit.String("image").
+		Required().
+		Description("Specify the image")
+	platform := defkit.String("platform").
+		Optional().
+		Description("Specify the platform to build")
+	buildArgs := defkit.StringList("buildArgs").
+		Optional().
+		Description("Specify the build args")
+	credentials := defkit.Struct("credentials").
+		Optional().
+		Description("Specify the credentials to access git and image registry").
+		Fields(
+			defkit.Field("git", defkit.ParamTypeStruct).Optional().
+				Description("Specify the credentials to access git").
+				Nested(defkit.Struct("git").Fields(
+					defkit.Field("name", defkit.ParamTypeString).Required().Description("Specify the secret name"),
+					defkit.Field("key", defkit.ParamTypeString).Required().Description("Specify the secret key"),
+				)),
+			defkit.Field("image", defkit.ParamTypeStruct).Optional().
+				Description("Specify the credentials to access image registry").
+				Nested(defkit.Struct("image").Fields(
+					defkit.Field("name", defkit.ParamTypeString).Required().Description("Specify the secret name"),
+					defkit.Field("key", defkit.ParamTypeString).Default(".dockerconfigjson").Description("Specify the secret key"),
+				)),
+		)
+	verbosity := defkit.Enum("verbosity").
+		Values("info", "panic", "fatal", "error", "warn", "debug", "trace").
+		Default("info").
+		Description("Specify the verbosity level")
+
 	return defkit.NewWorkflowStep("build-push-image").
 		Description("Build and push image from git url").
-		RawCUE(`import (
-	"vela/builtin"
-	"vela/kube"
-	"vela/util"
-	"encoding/json"
-	"strings"
-)
-
-"build-push-image": {
-	alias: ""
-	attributes: {}
-	description: "Build and push image from git url"
-	annotations: {
-		"category": "CI Integration"
+		Category("CI Integration").
+		Alias("").
+		WithImports("vela/builtin", "vela/kube", "vela/util", "encoding/json", "strings").
+		Helper("secret", defkit.Struct("secret").Fields(
+			defkit.Field("name", defkit.ParamTypeString).Required(),
+			defkit.Field("key", defkit.ParamTypeString).Required(),
+		)).
+		Helper("git", defkit.Struct("git").Fields(
+			defkit.Field("git", defkit.ParamTypeString).Required(),
+			defkit.Field("branch", defkit.ParamTypeString).Default("master"),
+		)).
+		Params(kanikoExecutor, dockerfile, image, platform, buildArgs, credentials, verbosity).
+		TemplateBody(`url: {
+	if parameter.context.git != _|_ {
+		address: strings.TrimPrefix(parameter.context.git, "git://")
+		value:   "git://\(address)#refs/heads/\(parameter.context.branch)"
 	}
-	labels: {}
-	type: "workflow-step"
+	if parameter.context.git == _|_ {
+		value: parameter.context
+	}
 }
-
-template: {
-	url: {
-		if parameter.context.git != _|_ {
-			address: strings.TrimPrefix(parameter.context.git, "git://")
-			value:   "git://\(address)#refs/heads/\(parameter.context.branch)"
+kaniko: kube.#Apply & {
+	$params: value: {
+		apiVersion: "v1"
+		kind:       "Pod"
+		metadata: {
+			name:      "\(context.name)-\(context.stepSessionID)-kaniko"
+			namespace: context.namespace
 		}
-		if parameter.context.git == _|_ {
-			value: parameter.context
-		}
-	}
-	kaniko: kube.#Apply & {
-		$params: {
-			value: {
-				apiVersion: "v1"
-				kind:       "Pod"
-				metadata: {
-					name:      "\(context.name)-\(context.stepSessionID)-kaniko"
-					namespace: context.namespace
-				}
-				spec: {
-					containers: [
-						{
-							args: [
-								"--dockerfile=\(parameter.dockerfile)",
-								"--context=\(url.value)",
-								"--destination=\(parameter.image)",
-								"--verbosity=\(parameter.verbosity)",
-								if parameter.platform != _|_ {
-									"--customPlatform=\(parameter.platform)"
-								},
-								if parameter.buildArgs != _|_ for arg in parameter.buildArgs {
-									"--build-arg=\(arg)"
-								},
-							]
-							image: parameter.kanikoExecutor
-							name:  "kaniko"
-							if parameter.credentials != _|_ && parameter.credentials.image != _|_ {
-								volumeMounts: [
-									{
-										mountPath: "/kaniko/.docker/"
-										name:      parameter.credentials.image.name
-									},
-								]
-							}
-							if parameter.credentials != _|_ && parameter.credentials.git != _|_ {
-								env: [
-									{
-										name: "GIT_TOKEN"
-										valueFrom: {
-											secretKeyRef: {
-												key:  parameter.credentials.git.key
-												name: parameter.credentials.git.name
-											}
-										}
-									},
-								]
-							}
+		spec: {
+			containers: [
+				{
+					args: [
+						"--dockerfile=\(parameter.dockerfile)",
+						"--context=\(url.value)",
+						"--destination=\(parameter.image)",
+						"--verbosity=\(parameter.verbosity)",
+						if parameter.platform != _|_ {
+							"--customPlatform=\(parameter.platform)"
+						},
+						if parameter.buildArgs != _|_ for arg in parameter.buildArgs {
+							"--build-arg=\(arg)"
 						},
 					]
+					image: parameter.kanikoExecutor
+					name:  "kaniko"
 					if parameter.credentials != _|_ && parameter.credentials.image != _|_ {
-						volumes: [
+						volumeMounts: [
 							{
-								name: parameter.credentials.image.name
-								secret: {
-									defaultMode: 420
-									items: [
-										{
-											key:  parameter.credentials.image.key
-											path: "config.json"
-										},
-									]
-									secretName: parameter.credentials.image.name
+								mountPath: "/kaniko/.docker/"
+								name:      parameter.credentials.image.name
+							},
+						]
+					}
+					if parameter.credentials != _|_ && parameter.credentials.git != _|_ {
+						env: [
+							{
+								name: "GIT_TOKEN"
+								valueFrom: {
+									secretKeyRef: {
+										key:  parameter.credentials.git.key
+										name: parameter.credentials.git.name
+									}
 								}
 							},
 						]
 					}
-					restartPolicy: "Never"
-				}
+				},
+			]
+			if parameter.credentials != _|_ && parameter.credentials.image != _|_ {
+				volumes: [
+					{
+						name: parameter.credentials.image.name
+						secret: {
+							defaultMode: 420
+							items: [
+								{
+									key:  parameter.credentials.image.key
+									path: "config.json"
+								},
+							]
+							secretName: parameter.credentials.image.name
+						}
+					},
+				]
 			}
+			restartPolicy: "Never"
 		}
-	}
-	log: util.#Log & {
-		$params: {
-			source: {
-				resources: [{
-					name:      "\(context.name)-\(context.stepSessionID)-kaniko"
-					namespace: context.namespace
-				}]
-			}
-		}
-	}
-	read: kube.#Read & {
-		$params: {
-			value: {
-				apiVersion: "v1"
-				kind:       "Pod"
-				metadata: {
-					name:      "\(context.name)-\(context.stepSessionID)-kaniko"
-					namespace: context.namespace
-				}
-			}
-		}
-	}
-	wait: builtin.#ConditionalWait & {
-		if read.$returns.value.status != _|_ {
-			$params: continue: read.$returns.value.status.phase == "Succeeded"
-		}
-	}
-	#secret: {
-		name: string
-		key:  string
-	}
-	#git: {
-		git:    string
-		branch: *"master" | string
-	}
-	parameter: {
-		// +usage=Specify the kaniko executor image, default to oamdev/kaniko-executor:v1.9.1
-		kanikoExecutor: *"oamdev/kaniko-executor:v1.9.1" | string
-		// +usage=Specify the context to build image, you can use context with git and branch or directly specify the context, please refer to https://github.com/GoogleContainerTools/kaniko#kaniko-build-contexts
-		context: #git | string
-		// +usage=Specify the dockerfile
-		dockerfile: *"./Dockerfile" | string
-		// +usage=Specify the image
-		image: string
-		// +usage=Specify the platform to build
-		platform?: string
-		// +usage=Specify the build args
-		buildArgs?: [...string]
-		// +usage=Specify the credentials to access git and image registry
-		credentials?: {
-			// +usage=Specify the credentials to access git
-			git?: {
-				// +usage=Specify the secret name
-				name: string
-				// +usage=Specify the secret key
-				key: string
-			}
-			// +usage=Specify the credentials to access image registry
-			image?: {
-				// +usage=Specify the secret name
-				name: string
-				// +usage=Specify the secret key
-				key: *".dockerconfigjson" | string
-			}
-		}
-		// +usage=Specify the verbosity level
-		verbosity: *"info" | "panic" | "fatal" | "error" | "warn" | "debug" | "trace"
 	}
 }
-`)
+log: util.#Log & {
+	$params: {
+		source: {
+			resources: [{
+				name:      "\(context.name)-\(context.stepSessionID)-kaniko"
+				namespace: context.namespace
+			}]
+		}
+	}
+}
+read: kube.#Read & {
+	$params: {
+		value: {
+			apiVersion: "v1"
+			kind:       "Pod"
+			metadata: {
+				name:      "\(context.name)-\(context.stepSessionID)-kaniko"
+				namespace: context.namespace
+			}
+		}
+	}
+}
+wait: builtin.#ConditionalWait & {
+	if read.$returns.value.status != _|_ {
+		$params: continue: read.$returns.value.status.phase == "Succeeded"
+	}
+}
+parameter: {
+	// +usage=Specify the context to build image, you can use context with git and branch or directly specify the context, please refer to https://github.com/GoogleContainerTools/kaniko#kaniko-build-contexts
+	context: #git | string
+}`)
 }
 
 func init() {
