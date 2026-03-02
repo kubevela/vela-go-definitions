@@ -281,10 +281,10 @@ func cronTaskTemplate(tpl *defkit.Template) {
 	// volumesArray follows same struct pattern but with different mappings for each type
 	volumesArray := tpl.StructArrayHelper("volumesArray", volumeMounts).
 		Field("pvc", defkit.FieldMap{
-			"name":                            defkit.FieldRef("name"),
+			"name": defkit.FieldRef("name"),
 			"persistentVolumeClaim": defkit.NestedFieldMap(defkit.FieldMap{
-						"claimName": defkit.FieldRef("claimName"),
-					}),
+				"claimName": defkit.FieldRef("claimName"),
+			}),
 		}).
 		Field("configMap", defkit.FieldMap{
 			"name": defkit.FieldRef("name"),
@@ -303,16 +303,16 @@ func cronTaskTemplate(tpl *defkit.Template) {
 			}),
 		}).
 		Field("emptyDir", defkit.FieldMap{
-			"name":            defkit.FieldRef("name"),
+			"name": defkit.FieldRef("name"),
 			"emptyDir": defkit.NestedFieldMap(defkit.FieldMap{
-						"medium": defkit.FieldRef("medium"),
-					}),
+				"medium": defkit.FieldRef("medium"),
+			}),
 		}).
 		Field("hostPath", defkit.FieldMap{
-			"name":          defkit.FieldRef("name"),
+			"name": defkit.FieldRef("name"),
 			"hostPath": defkit.NestedFieldMap(defkit.FieldMap{
-			"path": defkit.FieldRef("path"),
-		}),
+				"path": defkit.FieldRef("path"),
+			}),
 		}).
 		Build()
 
