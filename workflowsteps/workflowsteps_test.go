@@ -129,8 +129,12 @@ var _ = Describe("All WorkflowSteps Registered", func() {
 			// Verify CUE structural correctness
 			cue := s.ToCue()
 			Expect(cue).To(ContainSubstring(`type: "workflow-step"`))
-			Expect(cue).To(ContainSubstring(tc.name + ": {"))
 			Expect(cue).To(ContainSubstring("parameter:"))
+			// Step name appears at top level (quoted if hyphenated)
+			Expect(cue).To(Or(
+				ContainSubstring(tc.name+": {"),
+				ContainSubstring(`"`+tc.name+`": {`),
+			))
 		})
 	}
 })

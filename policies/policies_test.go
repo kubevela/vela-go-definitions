@@ -150,8 +150,12 @@ var _ = Describe("All Policies Registered", func() {
 			// Verify CUE structural correctness
 			cue := p.ToCue()
 			Expect(cue).To(ContainSubstring(`type: "policy"`))
-			Expect(cue).To(ContainSubstring(tc.name + ": {"))
 			Expect(cue).To(ContainSubstring("parameter:"))
+			// Policy name appears at top level (quoted if hyphenated)
+			Expect(cue).To(Or(
+				ContainSubstring(tc.name+": {"),
+				ContainSubstring(`"`+tc.name+`": {`),
+			))
 		})
 	}
 })

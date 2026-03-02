@@ -113,15 +113,9 @@ var _ = Describe("Webservice Component", func() {
 			)
 
 			Expect(rendered.Kind()).To(Equal("Deployment"))
-			ports := rendered.Get("spec.template.spec.containers[0].ports")
-			Expect(ports).NotTo(BeNil())
-			portsList, ok := ports.([]any)
-			Expect(ok).To(BeTrue())
-			Expect(portsList).To(HaveLen(1))
-			port0, ok := portsList[0].(map[string]any)
-			Expect(ok).To(BeTrue())
-			Expect(port0["containerPort"]).To(Equal(80))
-			Expect(port0["protocol"]).To(Equal("TCP"))
+			Expect(rendered.Get("spec.template.spec.containers[0].ports")).NotTo(BeNil())
+			Expect(rendered.Get("spec.template.spec.containers[0].ports[0].containerPort")).To(Equal(80))
+			Expect(rendered.Get("spec.template.spec.containers[0].ports[0].protocol")).To(Equal("TCP"))
 		})
 
 		It("should render webservice with exposeType", func() {
@@ -152,15 +146,11 @@ var _ = Describe("Webservice Component", func() {
 			)
 
 			Expect(rendered.Kind()).To(Equal("Deployment"))
-			envList := rendered.Get("spec.template.spec.containers[0].env")
-			Expect(envList).NotTo(BeNil())
-			envs, ok := envList.([]any)
-			Expect(ok).To(BeTrue())
-			Expect(envs).To(HaveLen(2))
-			env0, ok := envs[0].(map[string]any)
-			Expect(ok).To(BeTrue())
-			Expect(env0["name"]).To(Equal("LOG_LEVEL"))
-			Expect(env0["value"]).To(Equal("debug"))
+			Expect(rendered.Get("spec.template.spec.containers[0].env")).NotTo(BeNil())
+			Expect(rendered.Get("spec.template.spec.containers[0].env[0].name")).To(Equal("LOG_LEVEL"))
+			Expect(rendered.Get("spec.template.spec.containers[0].env[0].value")).To(Equal("debug"))
+			Expect(rendered.Get("spec.template.spec.containers[0].env[1].name")).To(Equal("DB_HOST"))
+			Expect(rendered.Get("spec.template.spec.containers[0].env[1].value")).To(Equal("localhost"))
 		})
 
 		It("should render webservice with resource limits", func() {
@@ -201,15 +191,10 @@ var _ = Describe("Webservice Component", func() {
 			)
 
 			Expect(rendered.Kind()).To(Equal("Deployment"))
-			labels := rendered.Get("spec.template.metadata.labels")
-			labelsMap, ok := labels.(map[string]any)
-			Expect(ok).To(BeTrue())
-			Expect(labelsMap["tier"]).To(Equal("frontend"))
-
-			annotations := rendered.Get("spec.template.metadata.annotations")
-			annotationsMap, ok := annotations.(map[string]any)
-			Expect(ok).To(BeTrue())
-			Expect(annotationsMap["prometheus.io/scrape"]).To(Equal("true"))
+			Expect(rendered.Get("spec.template.metadata.labels")).NotTo(BeNil())
+			Expect(rendered.Get("spec.template.metadata.labels.tier")).To(Equal("frontend"))
+			Expect(rendered.Get("spec.template.metadata.annotations")).NotTo(BeNil())
+			Expect(rendered.Get("spec.template.metadata.annotations.prometheus\\.io/scrape")).To(Equal("true"))
 		})
 
 		It("should render webservice with image pull policy", func() {
@@ -233,14 +218,8 @@ var _ = Describe("Webservice Component", func() {
 			)
 
 			Expect(rendered.Kind()).To(Equal("Deployment"))
-			secrets := rendered.Get("spec.template.spec.imagePullSecrets")
-			Expect(secrets).NotTo(BeNil())
-			secretsList, ok := secrets.([]any)
-			Expect(ok).To(BeTrue())
-			Expect(secretsList).To(HaveLen(1))
-			secret0, ok := secretsList[0].(map[string]any)
-			Expect(ok).To(BeTrue())
-			Expect(secret0["name"]).To(Equal("registry-secret"))
+			Expect(rendered.Get("spec.template.spec.imagePullSecrets")).NotTo(BeNil())
+			Expect(rendered.Get("spec.template.spec.imagePullSecrets[0].name")).To(Equal("registry-secret"))
 		})
 
 		It("should render all outputs including Service", func() {

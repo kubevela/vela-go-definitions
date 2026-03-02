@@ -121,15 +121,9 @@ var _ = Describe("Worker Component", func() {
 			)
 
 			Expect(rendered.Kind()).To(Equal("Deployment"))
-			envList := rendered.Get("spec.template.spec.containers[0].env")
-			Expect(envList).NotTo(BeNil())
-			envs, ok := envList.([]any)
-			Expect(ok).To(BeTrue())
-			Expect(envs).To(HaveLen(1))
-			env0, ok := envs[0].(map[string]any)
-			Expect(ok).To(BeTrue())
-			Expect(env0["name"]).To(Equal("LOG_LEVEL"))
-			Expect(env0["value"]).To(Equal("debug"))
+			Expect(rendered.Get("spec.template.spec.containers[0].env")).NotTo(BeNil())
+			Expect(rendered.Get("spec.template.spec.containers[0].env[0].name")).To(Equal("LOG_LEVEL"))
+			Expect(rendered.Get("spec.template.spec.containers[0].env[0].value")).To(Equal("debug"))
 		})
 
 		It("should render worker with resource limits", func() {
@@ -179,14 +173,8 @@ var _ = Describe("Worker Component", func() {
 			)
 
 			Expect(rendered.Kind()).To(Equal("Deployment"))
-			secrets := rendered.Get("spec.template.spec.imagePullSecrets")
-			Expect(secrets).NotTo(BeNil())
-			secretsList, ok := secrets.([]any)
-			Expect(ok).To(BeTrue())
-			Expect(secretsList).To(HaveLen(1))
-			secret0, ok := secretsList[0].(map[string]any)
-			Expect(ok).To(BeTrue())
-			Expect(secret0["name"]).To(Equal("registry-secret"))
+			Expect(rendered.Get("spec.template.spec.imagePullSecrets")).NotTo(BeNil())
+			Expect(rendered.Get("spec.template.spec.imagePullSecrets[0].name")).To(Equal("registry-secret"))
 		})
 
 		It("should resolve context.name in rendered output", func() {

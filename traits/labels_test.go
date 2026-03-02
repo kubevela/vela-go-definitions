@@ -37,15 +37,16 @@ var _ = Describe("Labels", func() {
 		Expect(cue).To(ContainSubstring(`podDisruptive: true`))
 		Expect(cue).To(ContainSubstring(`appliesToWorkloads: ["*"]`))
 
-		// Verify patch strategy
-		Expect(cue).To(ContainSubstring(`patchStrategy: "jsonMergePatch"`))
+		// Verify patch strategy directive
+		Expect(cue).To(ContainSubstring(`// +patchStrategy=jsonMergePatch`))
 
 		// Verify labels are applied to metadata.labels
 		Expect(cue).To(ContainSubstring("metadata: labels:"))
 		Expect(cue).To(ContainSubstring(`for k, v in parameter`))
 
 		// Verify conditional patch for pod templates (spec.template.metadata.labels)
-		Expect(cue).To(ContainSubstring("spec: template: metadata: labels:"))
+		Expect(cue).To(ContainSubstring("context.output.spec != _|_"))
+		Expect(cue).To(ContainSubstring("context.output.spec.template != _|_"))
 
 		// Verify parameter type: map of string to string|null
 		Expect(cue).To(ContainSubstring(`parameter: [string]: string | null`))
