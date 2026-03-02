@@ -1,7 +1,7 @@
 apiVersion: core.oam.dev/v1beta1
 kind: Application
 metadata:
-  name: server-with-pvc
+  name: server-with-configmap
   namespace: default
 spec:
   components:
@@ -10,29 +10,19 @@ spec:
     properties:
       image: oamdev/hello-world
       port: 8000
-      volumes:
-      - name: "my-pvc"
-        type: "pvc"
-        mountPath: "/test"
-        claimName: "myclaim"
   workflow:
     steps:
-    - name: apply-pvc
+    - name: apply-cm
       type: apply-object
       properties:
         # Kubernetes native resources fields
         value:
           apiVersion: v1
-          kind: PersistentVolumeClaim
+          kind: ConfigMap
           metadata:
-            name: myclaim
-          spec:
-            accessModes:
-            - ReadWriteOnce
-            resources:
-              requests:
-                storage: 8Gi
-            storageClassName: standard
+            name: my-config
+          data:
+            key: value
     - name: apply-server
       type: apply-component
       properties:
