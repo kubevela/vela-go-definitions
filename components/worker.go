@@ -264,20 +264,28 @@ func workerTemplate(tpl *defkit.Template) {
 					"name": defkit.FieldRef("name"),
 				}).
 				MapVariant("type", "pvc", defkit.FieldMap{
-					"persistentVolumeClaim.claimName": defkit.FieldRef("claimName"),
+					"persistentVolumeClaim": defkit.NestedFieldMap(defkit.FieldMap{
+						"claimName": defkit.FieldRef("claimName"),
+					}),
 				}).
 				MapVariant("type", "configMap", defkit.FieldMap{
-					"configMap.defaultMode": defkit.FieldRef("defaultMode"),
-					"configMap.name":        defkit.FieldRef("cmName"),
-					"configMap.items":       defkit.OptionalFieldRef("items"),
+					"configMap": defkit.NestedFieldMap(defkit.FieldMap{
+						"defaultMode": defkit.FieldRef("defaultMode"),
+						"name":        defkit.FieldRef("cmName"),
+						"items":       defkit.OptionalFieldRef("items"),
+					}),
 				}).
 				MapVariant("type", "secret", defkit.FieldMap{
-					"secret.defaultMode": defkit.FieldRef("defaultMode"),
-					"secret.secretName":  defkit.FieldRef("secretName"),
-					"secret.items":       defkit.OptionalFieldRef("items"),
+					"secret": defkit.NestedFieldMap(defkit.FieldMap{
+						"defaultMode": defkit.FieldRef("defaultMode"),
+						"secretName":  defkit.FieldRef("secretName"),
+						"items":       defkit.OptionalFieldRef("items"),
+					}),
 				}).
 				MapVariant("type", "emptyDir", defkit.FieldMap{
-					"emptyDir.medium": defkit.FieldRef("medium"),
+					"emptyDir": defkit.NestedFieldMap(defkit.FieldMap{
+						"medium": defkit.FieldRef("medium"),
+					}),
 				})).
 		EndIf().
 		SetIf(volumeMounts.IsSet(), "spec.template.spec.volumes", deDupVolumesArray)
