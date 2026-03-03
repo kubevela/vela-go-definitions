@@ -6,7 +6,6 @@ require (
 	github.com/oam-dev/kubevela v0.0.0
 	github.com/onsi/ginkgo/v2 v2.23.3
 	github.com/onsi/gomega v1.36.2
-	github.com/stretchr/testify v1.10.0
 	k8s.io/api v0.31.10
 	k8s.io/apimachinery v0.31.10
 	k8s.io/client-go v0.31.10
@@ -14,7 +13,7 @@ require (
 	sigs.k8s.io/yaml v1.4.0
 )
 
-replace github.com/oam-dev/kubevela => /Users/viskumar/Open_Source/kubevela
+replace github.com/oam-dev/kubevela => github.com/guidewire-oss/kubevela v0.0.0-20260303042900-1613bec97aee
 
 require (
 	cuelang.org/go v0.14.1 // indirect
@@ -70,7 +69,6 @@ require (
 	github.com/oam-dev/terraform-controller v0.8.1-0.20250707044258-c0557127de25 // indirect
 	github.com/openshift/library-go v0.0.0-20230327085348-8477ec72b725 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
-	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
 	github.com/prometheus/client_golang v1.20.5 // indirect
 	github.com/prometheus/client_model v0.6.1 // indirect
 	github.com/prometheus/common v0.55.0 // indirect
