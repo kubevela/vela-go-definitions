@@ -113,19 +113,7 @@ var _ = Describe("TakeOver Policy", func() {
 				Expect(selectorParam.GetFields()).To(HaveLen(6))
 			})
 
-			selectorFields := []struct {
-				name string
-				desc string
-			}{
-				{"componentNames", "Select resources by component names"},
-				{"componentTypes", "Select resources by component types"},
-				{"oamTypes", "Select resources by oamTypes (COMPONENT or TRAIT)"},
-				{"traitTypes", "Select resources by trait types"},
-				{"resourceTypes", "Select resources by resource types (like Deployment)"},
-				{"resourceNames", "Select resources by their names"},
-			}
-
-			for _, sf := range selectorFields {
+			for _, sf := range selectorFieldEntries {
 				Describe(sf.name+" field", func() {
 					It("should be optional", func() {
 						f := selectorParam.GetField(sf.name)
@@ -302,69 +290,21 @@ var _ = Describe("TakeOver Policy", func() {
 
 		Describe("Required vs optional field correctness", func() {
 			It("should have exactly 1 required field in PolicyRule (selector)", func() {
-				start := strings.Index(cueOutput, "#PolicyRule:")
-				end := findClosingBrace(cueOutput, start)
-				block := cueOutput[start:end]
-
-				requiredCount := 0
-				optionalCount := 0
-				for _, line := range strings.Split(block, "\n") {
-					trimmed := strings.TrimSpace(line)
-					if trimmed == "" || strings.HasPrefix(trimmed, "//") || strings.HasPrefix(trimmed, "#") {
-						continue
-					}
-					if strings.Contains(trimmed, "?:") {
-						optionalCount++
-					} else if strings.Contains(trimmed, ": ") && !strings.HasSuffix(trimmed, "{") {
-						requiredCount++
-					}
-				}
-				Expect(requiredCount).To(Equal(1), "PolicyRule should have 1 required field (selector)")
-				Expect(optionalCount).To(Equal(0), "PolicyRule should have 0 optional fields")
+				required, optional, _ := cueBlockFieldCounts(cueOutput, "#PolicyRule:")
+				Expect(required).To(Equal(1), "PolicyRule should have 1 required field (selector)")
+				Expect(optional).To(Equal(0), "PolicyRule should have 0 optional fields")
 			})
 
 			It("should have all 6 optional fields in RuleSelector", func() {
-				start := strings.Index(cueOutput, "#RuleSelector:")
-				end := findClosingBrace(cueOutput, start)
-				block := cueOutput[start:end]
-
-				requiredCount := 0
-				optionalCount := 0
-				for _, line := range strings.Split(block, "\n") {
-					trimmed := strings.TrimSpace(line)
-					if trimmed == "" || strings.HasPrefix(trimmed, "//") || strings.HasPrefix(trimmed, "#") {
-						continue
-					}
-					if strings.Contains(trimmed, "?:") {
-						optionalCount++
-					} else if strings.Contains(trimmed, ": ") && !strings.HasSuffix(trimmed, "{") {
-						requiredCount++
-					}
-				}
-				Expect(requiredCount).To(Equal(0), "RuleSelector should have 0 required fields")
-				Expect(optionalCount).To(Equal(6), "RuleSelector should have 6 optional fields")
+				required, optional, _ := cueBlockFieldCounts(cueOutput, "#RuleSelector:")
+				Expect(required).To(Equal(0), "RuleSelector should have 0 required fields")
+				Expect(optional).To(Equal(6), "RuleSelector should have 6 optional fields")
 			})
 
 			It("should have 1 optional field in parameter block (rules)", func() {
-				start := strings.Index(cueOutput, "parameter: {")
-				end := findClosingBrace(cueOutput, start)
-				block := cueOutput[start:end]
-
-				requiredCount := 0
-				optionalCount := 0
-				for _, line := range strings.Split(block, "\n") {
-					trimmed := strings.TrimSpace(line)
-					if trimmed == "" || strings.HasPrefix(trimmed, "//") || strings.HasPrefix(trimmed, "#") || strings.HasPrefix(trimmed, "parameter") {
-						continue
-					}
-					if strings.Contains(trimmed, "?:") {
-						optionalCount++
-					} else if strings.Contains(trimmed, ": ") && !strings.HasSuffix(trimmed, "{") {
-						requiredCount++
-					}
-				}
-				Expect(requiredCount).To(Equal(0), "parameter block should have 0 required fields")
-				Expect(optionalCount).To(Equal(1), "parameter block should have 1 optional field (rules)")
+				required, optional, _ := cueBlockFieldCounts(cueOutput, "parameter: {", "parameter")
+				Expect(required).To(Equal(0), "parameter block should have 0 required fields")
+				Expect(optional).To(Equal(1), "parameter block should have 1 optional field (rules)")
 			})
 		})
 
@@ -391,12 +331,7 @@ var _ = Describe("TakeOver Policy", func() {
 
 		Describe("No untyped arrays anywhere in generated CUE", func() {
 			It("should not contain any untyped array literals", func() {
-				for _, line := range strings.Split(cueOutput, "\n") {
-					trimmed := strings.TrimSpace(line)
-					if strings.Contains(trimmed, "[...]") && !strings.Contains(trimmed, "[...string]") && !strings.Contains(trimmed, "[...#") {
-						Fail("Found untyped array in CUE output: " + trimmed)
-					}
-				}
+				assertNoUntypedArrays(cueOutput)
 			})
 		})
 	})

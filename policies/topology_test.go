@@ -268,36 +268,15 @@ var _ = Describe("Topology Policy", func() {
 
 		Describe("Required vs optional field correctness", func() {
 			It("should have 0 required and 5 optional in parameter block", func() {
-				start := strings.Index(cueOutput, "parameter: {")
-				end := findClosingBrace(cueOutput, start)
-				block := cueOutput[start:end]
-
-				requiredCount := 0
-				optionalCount := 0
-				for _, line := range strings.Split(block, "\n") {
-					trimmed := strings.TrimSpace(line)
-					if trimmed == "" || strings.HasPrefix(trimmed, "//") || strings.HasPrefix(trimmed, "parameter") {
-						continue
-					}
-					if strings.Contains(trimmed, "?:") {
-						optionalCount++
-					} else if strings.Contains(trimmed, ": ") && !strings.HasSuffix(trimmed, "{") {
-						requiredCount++
-					}
-				}
-				Expect(requiredCount).To(Equal(0), "parameter block should have 0 required fields")
-				Expect(optionalCount).To(Equal(5), "parameter block should have 5 optional fields")
+				required, optional, _ := cueBlockFieldCounts(cueOutput, "parameter: {", "parameter")
+				Expect(required).To(Equal(0), "parameter block should have 0 required fields")
+				Expect(optional).To(Equal(5), "parameter block should have 5 optional fields")
 			})
 		})
 
 		Describe("No untyped arrays anywhere in generated CUE", func() {
 			It("should not contain any untyped array literals", func() {
-				for _, line := range strings.Split(cueOutput, "\n") {
-					trimmed := strings.TrimSpace(line)
-					if strings.Contains(trimmed, "[...]") && !strings.Contains(trimmed, "[...string]") && !strings.Contains(trimmed, "[...#") {
-						Fail("Found untyped array in CUE output: " + trimmed)
-					}
-				}
+				assertNoUntypedArrays(cueOutput)
 			})
 		})
 	})

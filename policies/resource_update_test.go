@@ -114,19 +114,7 @@ var _ = Describe("ResourceUpdate Policy", func() {
 				Expect(selectorParam.GetFields()).To(HaveLen(6))
 			})
 
-			selectorFields := []struct {
-				name string
-				desc string
-			}{
-				{"componentNames", "Select resources by component names"},
-				{"componentTypes", "Select resources by component types"},
-				{"oamTypes", "Select resources by oamTypes (COMPONENT or TRAIT)"},
-				{"traitTypes", "Select resources by trait types"},
-				{"resourceTypes", "Select resources by resource types (like Deployment)"},
-				{"resourceNames", "Select resources by their names"},
-			}
-
-			for _, sf := range selectorFields {
+			for _, sf := range selectorFieldEntries {
 				Describe(sf.name+" field", func() {
 					It("should be optional", func() {
 						f := selectorParam.GetField(sf.name)
@@ -423,65 +411,20 @@ var _ = Describe("ResourceUpdate Policy", func() {
 
 		Describe("Required vs optional field correctness", func() {
 			It("should have 2 required fields in PolicyRule (selector, strategy)", func() {
-				start := strings.Index(cueOutput, "#PolicyRule:")
-				end := findClosingBrace(cueOutput, start)
-				block := cueOutput[start:end]
-
-				requiredCount := 0
-				optionalCount := 0
-				for _, line := range strings.Split(block, "\n") {
-					trimmed := strings.TrimSpace(line)
-					if trimmed == "" || strings.HasPrefix(trimmed, "//") || strings.HasPrefix(trimmed, "#") {
-						continue
-					}
-					if strings.Contains(trimmed, "?:") {
-						optionalCount++
-					} else if strings.Contains(trimmed, ": ") && !strings.HasSuffix(trimmed, "{") {
-						requiredCount++
-					}
-				}
-				Expect(requiredCount).To(Equal(2), "PolicyRule should have 2 required fields (selector, strategy)")
-				Expect(optionalCount).To(Equal(0), "PolicyRule should have 0 optional fields")
+				required, optional, _ := cueBlockFieldCounts(cueOutput, "#PolicyRule:")
+				Expect(required).To(Equal(2), "PolicyRule should have 2 required fields (selector, strategy)")
+				Expect(optional).To(Equal(0), "PolicyRule should have 0 optional fields")
 			})
 
 			It("should have 1 default and 1 optional in Strategy", func() {
-				start := strings.Index(cueOutput, "#Strategy:")
-				end := findClosingBrace(cueOutput, start)
-				block := cueOutput[start:end]
-
-				defaultCount := 0
-				optionalCount := 0
-				for _, line := range strings.Split(block, "\n") {
-					trimmed := strings.TrimSpace(line)
-					if trimmed == "" || strings.HasPrefix(trimmed, "//") || strings.HasPrefix(trimmed, "#") {
-						continue
-					}
-					if strings.Contains(trimmed, "?:") {
-						optionalCount++
-					} else if strings.Contains(trimmed, ": *") {
-						defaultCount++
-					}
-				}
-				Expect(defaultCount).To(Equal(1), "Strategy should have 1 field with default (op)")
-				Expect(optionalCount).To(Equal(1), "Strategy should have 1 optional field (recreateFields)")
+				_, optional, defaulted := cueBlockFieldCounts(cueOutput, "#Strategy:")
+				Expect(defaulted).To(Equal(1), "Strategy should have 1 field with default (op)")
+				Expect(optional).To(Equal(1), "Strategy should have 1 optional field (recreateFields)")
 			})
 
 			It("should have all 6 optional fields in RuleSelector", func() {
-				start := strings.Index(cueOutput, "#RuleSelector:")
-				end := findClosingBrace(cueOutput, start)
-				block := cueOutput[start:end]
-
-				optionalCount := 0
-				for _, line := range strings.Split(block, "\n") {
-					trimmed := strings.TrimSpace(line)
-					if trimmed == "" || strings.HasPrefix(trimmed, "//") || strings.HasPrefix(trimmed, "#") {
-						continue
-					}
-					if strings.Contains(trimmed, "?:") {
-						optionalCount++
-					}
-				}
-				Expect(optionalCount).To(Equal(6))
+				_, optional, _ := cueBlockFieldCounts(cueOutput, "#RuleSelector:")
+				Expect(optional).To(Equal(6))
 			})
 		})
 
@@ -516,12 +459,7 @@ var _ = Describe("ResourceUpdate Policy", func() {
 
 		Describe("No untyped arrays anywhere in generated CUE", func() {
 			It("should not contain any untyped array literals", func() {
-				for _, line := range strings.Split(cueOutput, "\n") {
-					trimmed := strings.TrimSpace(line)
-					if strings.Contains(trimmed, "[...]") && !strings.Contains(trimmed, "[...string]") && !strings.Contains(trimmed, "[...#") {
-						Fail("Found untyped array in CUE output: " + trimmed)
-					}
-				}
+				assertNoUntypedArrays(cueOutput)
 			})
 		})
 	})

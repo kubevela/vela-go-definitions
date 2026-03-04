@@ -453,73 +453,22 @@ var _ = Describe("Override Policy", func() {
 
 		Describe("Required vs optional field correctness", func() {
 			It("should have exactly 1 required field in TraitPatch (type)", func() {
-				start := strings.Index(cueOutput, "#TraitPatch:")
-				end := findClosingBrace(cueOutput, start)
-				block := cueOutput[start:end]
-
-				requiredCount := 0
-				optionalCount := 0
-				defaultCount := 0
-				for _, line := range strings.Split(block, "\n") {
-					trimmed := strings.TrimSpace(line)
-					if trimmed == "" || strings.HasPrefix(trimmed, "//") || strings.HasPrefix(trimmed, "#") {
-						continue
-					}
-					if strings.Contains(trimmed, "?:") {
-						optionalCount++
-					} else if strings.Contains(trimmed, ": *") {
-						defaultCount++
-					} else if strings.Contains(trimmed, ": ") && !strings.HasSuffix(trimmed, "{") {
-						requiredCount++
-					}
-				}
-				Expect(requiredCount).To(Equal(1), "TraitPatch should have 1 required field (type)")
-				Expect(optionalCount).To(Equal(1), "TraitPatch should have 1 optional field (properties)")
-				Expect(defaultCount).To(Equal(1), "TraitPatch should have 1 field with default (disable)")
+				required, optional, defaulted := cueBlockFieldCounts(cueOutput, "#TraitPatch:")
+				Expect(required).To(Equal(1), "TraitPatch should have 1 required field (type)")
+				Expect(optional).To(Equal(1), "TraitPatch should have 1 optional field (properties)")
+				Expect(defaulted).To(Equal(1), "TraitPatch should have 1 field with default (disable)")
 			})
 
 			It("should have all 4 optional fields in PatchParams", func() {
-				start := strings.Index(cueOutput, "#PatchParams:")
-				end := findClosingBrace(cueOutput, start)
-				block := cueOutput[start:end]
-
-				requiredCount := 0
-				optionalCount := 0
-				for _, line := range strings.Split(block, "\n") {
-					trimmed := strings.TrimSpace(line)
-					if trimmed == "" || strings.HasPrefix(trimmed, "//") || strings.HasPrefix(trimmed, "#") {
-						continue
-					}
-					if strings.Contains(trimmed, "?:") {
-						optionalCount++
-					} else if strings.Contains(trimmed, ": ") && !strings.HasSuffix(trimmed, "{") {
-						requiredCount++
-					}
-				}
-				Expect(requiredCount).To(Equal(0), "PatchParams should have 0 required fields")
-				Expect(optionalCount).To(Equal(4), "PatchParams should have 4 optional fields")
+				required, optional, _ := cueBlockFieldCounts(cueOutput, "#PatchParams:")
+				Expect(required).To(Equal(0), "PatchParams should have 0 required fields")
+				Expect(optional).To(Equal(4), "PatchParams should have 4 optional fields")
 			})
 
 			It("should have 1 required and 1 optional in parameter block", func() {
-				start := strings.Index(cueOutput, "parameter: {")
-				end := findClosingBrace(cueOutput, start)
-				block := cueOutput[start:end]
-
-				requiredCount := 0
-				optionalCount := 0
-				for _, line := range strings.Split(block, "\n") {
-					trimmed := strings.TrimSpace(line)
-					if trimmed == "" || strings.HasPrefix(trimmed, "//") || strings.HasPrefix(trimmed, "#") || strings.HasPrefix(trimmed, "parameter") {
-						continue
-					}
-					if strings.Contains(trimmed, "?:") {
-						optionalCount++
-					} else if strings.Contains(trimmed, ": ") && !strings.HasSuffix(trimmed, "{") {
-						requiredCount++
-					}
-				}
-				Expect(requiredCount).To(Equal(1), "parameter block should have 1 required field (components)")
-				Expect(optionalCount).To(Equal(1), "parameter block should have 1 optional field (selector)")
+				required, optional, _ := cueBlockFieldCounts(cueOutput, "parameter: {", "parameter")
+				Expect(required).To(Equal(1), "parameter block should have 1 required field (components)")
+				Expect(optional).To(Equal(1), "parameter block should have 1 optional field (selector)")
 			})
 		})
 

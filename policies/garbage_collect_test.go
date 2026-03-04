@@ -148,19 +148,7 @@ var _ = Describe("GarbageCollect Policy", func() {
 				Expect(selectorParam.GetFields()).To(HaveLen(6))
 			})
 
-			selectorFields := []struct {
-				name string
-				desc string
-			}{
-				{"componentNames", "Select resources by component names"},
-				{"componentTypes", "Select resources by component types"},
-				{"oamTypes", "Select resources by oamTypes (COMPONENT or TRAIT)"},
-				{"traitTypes", "Select resources by trait types"},
-				{"resourceTypes", "Select resources by resource types (like Deployment)"},
-				{"resourceNames", "Select resources by their names"},
-			}
-
-			for _, sf := range selectorFields {
+			for _, sf := range selectorFieldEntries {
 				Describe(sf.name+" field", func() {
 					It("should be optional", func() {
 						f := selectorParam.GetField(sf.name)
@@ -410,58 +398,21 @@ var _ = Describe("GarbageCollect Policy", func() {
 
 		Describe("Required vs optional field correctness", func() {
 			It("should have exactly 1 required field in GarbageCollectPolicyRule (selector)", func() {
-				start := strings.Index(cueOutput, "#GarbageCollectPolicyRule:")
-				end := findClosingBrace(cueOutput, start)
-				block := cueOutput[start:end]
-
-				requiredCount := 0
-				optionalCount := 0
-				defaultCount := 0
-				for _, line := range strings.Split(block, "\n") {
-					trimmed := strings.TrimSpace(line)
-					if trimmed == "" || strings.HasPrefix(trimmed, "//") || strings.HasPrefix(trimmed, "#") {
-						continue
-					}
-					if strings.Contains(trimmed, "?:") {
-						optionalCount++
-					} else if strings.Contains(trimmed, ": *") {
-						defaultCount++ // fields with defaults (strategy)
-					} else if strings.Contains(trimmed, ": ") && !strings.HasSuffix(trimmed, "{") {
-						requiredCount++
-					}
-				}
-				Expect(requiredCount).To(Equal(1), "should have 1 required field (selector)")
-				Expect(optionalCount).To(Equal(1), "should have 1 optional field (propagation)")
-				Expect(defaultCount).To(Equal(1), "should have 1 field with default (strategy)")
+				required, optional, defaulted := cueBlockFieldCounts(cueOutput, "#GarbageCollectPolicyRule:")
+				Expect(required).To(Equal(1), "should have 1 required field (selector)")
+				Expect(optional).To(Equal(1), "should have 1 optional field (propagation)")
+				Expect(defaulted).To(Equal(1), "should have 1 field with default (strategy)")
 			})
 
 			It("should have all 6 optional fields in ResourcePolicyRuleSelector", func() {
-				start := strings.Index(cueOutput, "#ResourcePolicyRuleSelector:")
-				end := findClosingBrace(cueOutput, start)
-				block := cueOutput[start:end]
-
-				optionalCount := 0
-				for _, line := range strings.Split(block, "\n") {
-					trimmed := strings.TrimSpace(line)
-					if trimmed == "" || strings.HasPrefix(trimmed, "//") || strings.HasPrefix(trimmed, "#") {
-						continue
-					}
-					if strings.Contains(trimmed, "?:") {
-						optionalCount++
-					}
-				}
-				Expect(optionalCount).To(Equal(6))
+				_, optional, _ := cueBlockFieldCounts(cueOutput, "#ResourcePolicyRuleSelector:")
+				Expect(optional).To(Equal(6))
 			})
 		})
 
 		Describe("No untyped arrays anywhere in generated CUE", func() {
 			It("should not contain any untyped array literals", func() {
-				for _, line := range strings.Split(cueOutput, "\n") {
-					trimmed := strings.TrimSpace(line)
-					if strings.Contains(trimmed, "[...]") && !strings.Contains(trimmed, "[...string]") && !strings.Contains(trimmed, "[...#") {
-						Fail("Found untyped array in CUE output: " + trimmed)
-					}
-				}
+				assertNoUntypedArrays(cueOutput)
 			})
 		})
 	})
@@ -478,5 +429,3 @@ var _ = Describe("GarbageCollect Policy", func() {
 		})
 	})
 })
-
-// findClosingBrace is defined in apply_once_test.go

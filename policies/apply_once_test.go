@@ -229,19 +229,7 @@ var _ = Describe("ApplyOnce Policy", func() {
 				Expect(selectorParam.GetFields()).To(HaveLen(6))
 			})
 
-			selectorFields := []struct {
-				name string
-				desc string
-			}{
-				{"componentNames", "Select resources by component names"},
-				{"componentTypes", "Select resources by component types"},
-				{"oamTypes", "Select resources by oamTypes (COMPONENT or TRAIT)"},
-				{"traitTypes", "Select resources by trait types"},
-				{"resourceTypes", "Select resources by resource types (like Deployment)"},
-				{"resourceNames", "Select resources by their names"},
-			}
-
-			for _, sf := range selectorFields {
+			for _, sf := range selectorFieldEntries {
 				Describe(sf.name+" field", func() {
 					It("should be optional", func() {
 						f := selectorParam.GetField(sf.name)
@@ -422,85 +410,27 @@ var _ = Describe("ApplyOnce Policy", func() {
 
 		Describe("Required vs optional field correctness", func() {
 			It("should have exactly one required field in ApplyOnceStrategy (path)", func() {
-				// Extract #ApplyOnceStrategy block
-				start := strings.Index(cueOutput, "#ApplyOnceStrategy:")
-				end := findClosingBrace(cueOutput, start)
-				block := cueOutput[start:end]
-
-				// Count required fields (lines with "fieldname: type" without ?)
-				// and optional fields (lines with "fieldname?: type")
-				requiredCount := 0
-				optionalCount := 0
-				for _, line := range strings.Split(block, "\n") {
-					trimmed := strings.TrimSpace(line)
-					if trimmed == "" || strings.HasPrefix(trimmed, "//") || strings.HasPrefix(trimmed, "#") {
-						continue
-					}
-					if strings.Contains(trimmed, "?:") {
-						optionalCount++
-					} else if strings.Contains(trimmed, ": ") && !strings.HasSuffix(trimmed, "{") {
-						requiredCount++
-					}
-				}
-				Expect(requiredCount).To(Equal(1), "ApplyOnceStrategy should have 1 required field (path)")
-				Expect(optionalCount).To(Equal(1), "ApplyOnceStrategy should have 1 optional field (affect)")
+				required, optional, _ := cueBlockFieldCounts(cueOutput, "#ApplyOnceStrategy:")
+				Expect(required).To(Equal(1), "ApplyOnceStrategy should have 1 required field (path)")
+				Expect(optional).To(Equal(1), "ApplyOnceStrategy should have 1 optional field (affect)")
 			})
 
 			It("should have exactly one required field in ApplyOncePolicyRule (strategy)", func() {
-				start := strings.Index(cueOutput, "#ApplyOncePolicyRule:")
-				end := findClosingBrace(cueOutput, start)
-				block := cueOutput[start:end]
-
-				requiredCount := 0
-				optionalCount := 0
-				for _, line := range strings.Split(block, "\n") {
-					trimmed := strings.TrimSpace(line)
-					if trimmed == "" || strings.HasPrefix(trimmed, "//") || strings.HasPrefix(trimmed, "#") {
-						continue
-					}
-					if strings.Contains(trimmed, "?:") {
-						optionalCount++
-					} else if strings.Contains(trimmed, ": ") && !strings.HasSuffix(trimmed, "{") {
-						requiredCount++
-					}
-				}
-				Expect(requiredCount).To(Equal(1), "ApplyOncePolicyRule should have 1 required field (strategy)")
-				Expect(optionalCount).To(Equal(1), "ApplyOncePolicyRule should have 1 optional field (selector)")
+				required, optional, _ := cueBlockFieldCounts(cueOutput, "#ApplyOncePolicyRule:")
+				Expect(required).To(Equal(1), "ApplyOncePolicyRule should have 1 required field (strategy)")
+				Expect(optional).To(Equal(1), "ApplyOncePolicyRule should have 1 optional field (selector)")
 			})
 
 			It("should have all 6 optional fields in ResourcePolicyRuleSelector", func() {
-				start := strings.Index(cueOutput, "#ResourcePolicyRuleSelector:")
-				end := findClosingBrace(cueOutput, start)
-				block := cueOutput[start:end]
-
-				requiredCount := 0
-				optionalCount := 0
-				for _, line := range strings.Split(block, "\n") {
-					trimmed := strings.TrimSpace(line)
-					if trimmed == "" || strings.HasPrefix(trimmed, "//") || strings.HasPrefix(trimmed, "#") {
-						continue
-					}
-					if strings.Contains(trimmed, "?:") {
-						optionalCount++
-					} else if strings.Contains(trimmed, ": ") && !strings.HasSuffix(trimmed, "{") {
-						requiredCount++
-					}
-				}
-				Expect(requiredCount).To(Equal(0), "ResourcePolicyRuleSelector should have 0 required fields")
-				Expect(optionalCount).To(Equal(6), "ResourcePolicyRuleSelector should have 6 optional fields")
+				required, optional, _ := cueBlockFieldCounts(cueOutput, "#ResourcePolicyRuleSelector:")
+				Expect(required).To(Equal(0), "ResourcePolicyRuleSelector should have 0 required fields")
+				Expect(optional).To(Equal(6), "ResourcePolicyRuleSelector should have 6 optional fields")
 			})
 		})
 
 		Describe("No untyped arrays anywhere in generated CUE", func() {
 			It("should not contain any untyped array literals", func() {
-				// Every [...] should be [...string] or [...#SomeRef]
-				// Split into lines and check each line containing [...]
-				for _, line := range strings.Split(cueOutput, "\n") {
-					trimmed := strings.TrimSpace(line)
-					if strings.Contains(trimmed, "[...]") && !strings.Contains(trimmed, "[...string]") && !strings.Contains(trimmed, "[...#") {
-						Fail("Found untyped array in CUE output: " + trimmed)
-					}
-				}
+				assertNoUntypedArrays(cueOutput)
 			})
 		})
 	})
@@ -517,20 +447,3 @@ var _ = Describe("ApplyOnce Policy", func() {
 		})
 	})
 })
-
-// findClosingBrace finds the position of the closing brace for the block
-// starting at the given position in the CUE output.
-func findClosingBrace(cue string, start int) int {
-	depth := 0
-	for i := start; i < len(cue); i++ {
-		if cue[i] == '{' {
-			depth++
-		} else if cue[i] == '}' {
-			depth--
-			if depth == 0 {
-				return i + 1
-			}
-		}
-	}
-	return len(cue)
-}

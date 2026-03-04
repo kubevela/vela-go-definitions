@@ -23,33 +23,7 @@ import (
 // ApplyOnce creates the apply-once policy definition.
 // This policy allows configuration drift for applied resources.
 func ApplyOnce() *defkit.PolicyDefinition {
-	// Define helper type for resource selector (shared across policies)
-	resourcePolicyRuleSelector := defkit.Struct("selector").Fields(
-		defkit.Field("componentNames", defkit.ParamTypeArray).
-			ArrayOf(defkit.ParamTypeString).
-			Description("Select resources by component names").
-			Optional(),
-		defkit.Field("componentTypes", defkit.ParamTypeArray).
-			ArrayOf(defkit.ParamTypeString).
-			Description("Select resources by component types").
-			Optional(),
-		defkit.Field("oamTypes", defkit.ParamTypeArray).
-			ArrayOf(defkit.ParamTypeString).
-			Description("Select resources by oamTypes (COMPONENT or TRAIT)").
-			Optional(),
-		defkit.Field("traitTypes", defkit.ParamTypeArray).
-			ArrayOf(defkit.ParamTypeString).
-			Description("Select resources by trait types").
-			Optional(),
-		defkit.Field("resourceTypes", defkit.ParamTypeArray).
-			ArrayOf(defkit.ParamTypeString).
-			Description("Select resources by resource types (like Deployment)").
-			Optional(),
-		defkit.Field("resourceNames", defkit.ParamTypeArray).
-			ArrayOf(defkit.ParamTypeString).
-			Description("Select resources by their names").
-			Optional(),
-	)
+	resourcePolicyRuleSelector := defkit.Struct("selector").Fields(RuleSelectorFields()...)
 
 	// Define helper type for apply-once strategy
 	applyOnceStrategy := defkit.Struct("strategy").Fields(
