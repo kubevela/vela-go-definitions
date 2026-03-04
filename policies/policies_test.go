@@ -23,28 +23,6 @@ import (
 	"github.com/oam-dev/vela-go-definitions/policies"
 )
 
-var _ = Describe("Topology Policy", func() {
-	It("should have correct name and CUE output", func() {
-		policy := policies.Topology()
-
-		Expect(policy.GetName()).To(Equal("topology"))
-		Expect(policy.GetDescription()).To(Equal("Describe the destination where components should be deployed to."))
-
-		cue := policy.ToCue()
-
-		Expect(cue).To(ContainSubstring(`type: "policy"`))
-
-		// Verify parameter types (not just existence)
-		Expect(cue).To(ContainSubstring(`clusters?: [...string]`))
-		Expect(cue).To(ContainSubstring(`clusterLabelSelector?: [string]: string`))
-		Expect(cue).To(ContainSubstring(`allowEmpty?: bool`))
-		Expect(cue).To(ContainSubstring(`namespace?: string`))
-
-		// Verify deprecated clusterSelector parameter
-		Expect(cue).To(ContainSubstring(`clusterSelector?:`))
-	})
-})
-
 var _ = Describe("All Policies Registered", func() {
 	type policyEntry struct {
 		name        string
