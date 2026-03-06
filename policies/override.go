@@ -24,7 +24,7 @@ import (
 // This policy describes the configuration to override when deploying resources.
 func Override() *defkit.PolicyDefinition {
 	// Define helper type for trait patch
-	traitPatch := defkit.Struct("trait").Fields(
+	traitPatch := defkit.Struct("trait").WithFields(
 		defkit.Field("type", defkit.ParamTypeString).
 			Description("Specify the type of the trait to be patched").
 			Required(),
@@ -37,7 +37,7 @@ func Override() *defkit.PolicyDefinition {
 	)
 
 	// Define helper type for component patch params
-	patchParams := defkit.Struct("patch").Fields(
+	patchParams := defkit.Struct("patch").WithFields(
 		defkit.Field("name", defkit.ParamTypeString).
 			Description("Specify the name of the patch component, if empty, all components will be merged").
 			Optional(),

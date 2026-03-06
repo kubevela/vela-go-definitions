@@ -23,10 +23,10 @@ import (
 // TakeOver creates the take-over policy definition.
 // This policy configures resources to be able to take over when it belongs to no application.
 func TakeOver() *defkit.PolicyDefinition {
-	ruleSelector := defkit.Struct("selector").Fields(RuleSelectorFields()...)
+	ruleSelector := defkit.Struct("selector").WithFields(RuleSelectorFields()...)
 
 	// Define helper type for policy rule
-	policyRule := defkit.Struct("rule").Fields(
+	policyRule := defkit.Struct("rule").WithFields(
 		defkit.Field("selector", defkit.ParamTypeStruct).
 			Description("Specify how to select the targets of the rule").
 			WithSchemaRef("RuleSelector").

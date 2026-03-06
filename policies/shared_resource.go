@@ -23,10 +23,10 @@ import (
 // SharedResource creates the shared-resource policy definition.
 // This policy configures resources to be sharable across applications.
 func SharedResource() *defkit.PolicyDefinition {
-	resourcePolicyRuleSelector := defkit.Struct("selector").Fields(RuleSelectorFields()...)
+	resourcePolicyRuleSelector := defkit.Struct("selector").WithFields(RuleSelectorFields()...)
 
 	// Define helper type for policy rule
-	sharedResourcePolicyRule := defkit.Struct("rule").Fields(
+	sharedResourcePolicyRule := defkit.Struct("rule").WithFields(
 		defkit.Field("selector", defkit.ParamTypeStruct).
 			Description("Specify how to select the targets of the rule").
 			WithSchemaRef("ResourcePolicyRuleSelector").

@@ -25,12 +25,12 @@ func stringValueOrSecretRef(name, usage, valueUsage string) *defkit.OneOfParam {
 		Required().
 		Description(usage).
 		Variants(
-			defkit.Variant("value").Fields(
+			defkit.Variant("value").WithFields(
 				defkit.Field("value", defkit.ParamTypeString).Required().Description(valueUsage),
 			),
-			defkit.Variant("secretRef").Fields(
+			defkit.Variant("secretRef").WithFields(
 				defkit.Field("secretRef", defkit.ParamTypeStruct).Required().Nested(
-					defkit.Struct("secretRef").Fields(
+					defkit.Struct("secretRef").WithFields(
 						defkit.Field("name", defkit.ParamTypeString).Required().Description("name is the name of the secret"),
 						defkit.Field("key", defkit.ParamTypeString).Required().Description("key is the key in the secret"),
 					),

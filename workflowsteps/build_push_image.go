@@ -43,22 +43,22 @@ func BuildPushImage() *defkit.WorkflowStepDefinition {
 	credentials := defkit.Struct("credentials").
 		Optional().
 		Description("Specify the credentials to access git and image registry").
-		Fields(
+		WithFields(
 			defkit.Field("git", defkit.ParamTypeStruct).Optional().
 				Description("Specify the credentials to access git").
-				Nested(defkit.Struct("git").Fields(
+				Nested(defkit.Struct("git").WithFields(
 					defkit.Field("name", defkit.ParamTypeString).Required().Description("Specify the secret name"),
 					defkit.Field("key", defkit.ParamTypeString).Required().Description("Specify the secret key"),
 				)),
 			defkit.Field("image", defkit.ParamTypeStruct).Optional().
 				Description("Specify the credentials to access image registry").
-				Nested(defkit.Struct("image").Fields(
+				Nested(defkit.Struct("image").WithFields(
 					defkit.Field("name", defkit.ParamTypeString).Required().Description("Specify the secret name"),
 					defkit.Field("key", defkit.ParamTypeString).Default(".dockerconfigjson").Description("Specify the secret key"),
 				)),
 		)
 	verbosity := defkit.Enum("verbosity").
-		Values("info", "panic", "fatal", "error", "warn", "debug", "trace").
+		Enum("info", "panic", "fatal", "error", "warn", "debug", "trace").
 		Default("info").
 		Description("Specify the verbosity level")
 	context := defkit.Object("context").
@@ -74,11 +74,11 @@ func BuildPushImage() *defkit.WorkflowStepDefinition {
 		Category("CI Integration").
 		Alias("").
 		WithImports("vela/builtin", "vela/kube", "vela/util", "encoding/json", "strings").
-		Helper("secret", defkit.Struct("secret").Fields(
+		Helper("secret", defkit.Struct("secret").WithFields(
 			defkit.Field("name", defkit.ParamTypeString).Required(),
 			defkit.Field("key", defkit.ParamTypeString).Required(),
 		)).
-		Helper("git", defkit.Struct("git").Fields(
+		Helper("git", defkit.Struct("git").WithFields(
 			defkit.Field("git", defkit.ParamTypeString).Required(),
 			defkit.Field("branch", defkit.ParamTypeString).Default("master"),
 		)).

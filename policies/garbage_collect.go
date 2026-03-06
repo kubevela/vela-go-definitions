@@ -23,10 +23,10 @@ import (
 // GarbageCollect creates the garbage-collect policy definition.
 // This policy configures the garbage collection behavior for the application.
 func GarbageCollect() *defkit.PolicyDefinition {
-	resourcePolicyRuleSelector := defkit.Struct("selector").Fields(RuleSelectorFields()...)
+	resourcePolicyRuleSelector := defkit.Struct("selector").WithFields(RuleSelectorFields()...)
 
 	// Define helper type for GC policy rule
-	garbageCollectPolicyRule := defkit.Struct("rule").Fields(
+	garbageCollectPolicyRule := defkit.Struct("rule").WithFields(
 		defkit.Field("selector", defkit.ParamTypeStruct).
 			Description("Specify how to select the targets of the rule").
 			WithSchemaRef("ResourcePolicyRuleSelector").

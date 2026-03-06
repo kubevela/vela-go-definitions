@@ -45,7 +45,7 @@ func Export2Secret() *defkit.WorkflowStepDefinition {
 		Description("Specify the kind of the secret")
 	dockerRegistry := defkit.Struct("dockerRegistry").
 		Description("Specify the docker data").
-		Fields(
+		WithFields(
 			defkit.Field("username", defkit.ParamTypeString).
 				Required().
 				Description("Specify the username of the docker registry"),

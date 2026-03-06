@@ -81,26 +81,26 @@ func Sidecar() *defkit.TraitDefinition {
 
 // healthProbeSchema returns the #HealthProbe helper definition schema.
 func healthProbeSchema() defkit.Param {
-	return defkit.Struct("HealthProbe").Fields(
+	return defkit.Struct("HealthProbe").WithFields(
 		defkit.Field("exec", defkit.ParamTypeStruct).
 			Description("Instructions for assessing container health by executing a command. Either this attribute or the httpGet attribute or the tcpSocket attribute MUST be specified. This attribute is mutually exclusive with both the httpGet attribute and the tcpSocket attribute.").
-			Nested(defkit.Struct("exec").Fields(
+			Nested(defkit.Struct("exec").WithFields(
 				defkit.Field("command", defkit.ParamTypeArray).Of(defkit.ParamTypeString).Description("A command to be executed inside the container to assess its health. Each space delimited token of the command is a separate array element. Commands exiting 0 are considered to be successful probes, whilst all other exit codes are considered failures.").Required(),
 			)),
 		defkit.Field("httpGet", defkit.ParamTypeStruct).
 			Description("Instructions for assessing container health by executing an HTTP GET request. Either this attribute or the exec attribute or the tcpSocket attribute MUST be specified. This attribute is mutually exclusive with both the exec attribute and the httpGet attribute.").
-			Nested(defkit.Struct("httpGet").Fields(
+			Nested(defkit.Struct("httpGet").WithFields(
 				defkit.Field("path", defkit.ParamTypeString).Description("The endpoint, relative to the port, to which the HTTP GET request should be directed.").Required(),
 				defkit.Field("port", defkit.ParamTypeInt).Description("The TCP socket within the container to which the HTTP GET request should be directed.").Required(),
 				defkit.Field("httpHeaders", defkit.ParamTypeArray).
-				Nested(defkit.Struct("httpHeaders").Fields(
+				Nested(defkit.Struct("httpHeaders").WithFields(
 					defkit.Field("name", defkit.ParamTypeString).Required(),
 					defkit.Field("value", defkit.ParamTypeString).Required(),
 				)),
 			)),
 		defkit.Field("tcpSocket", defkit.ParamTypeStruct).
 			Description("Instructions for assessing container health by probing a TCP socket. Either this attribute or the exec attribute or the httpGet attribute MUST be specified. This attribute is mutually exclusive with both the exec attribute and the httpGet attribute.").
-			Nested(defkit.Struct("tcpSocket").Fields(
+			Nested(defkit.Struct("tcpSocket").WithFields(
 				defkit.Field("port", defkit.ParamTypeInt).Description("The TCP socket within the container that should be probed to assess container health.").Required(),
 			)),
 		defkit.Field("initialDelaySeconds", defkit.ParamTypeInt).Description("Number of seconds after the container is started before the first probe is initiated.").Default(0),

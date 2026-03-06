@@ -23,10 +23,10 @@ import (
 // ApplyOnce creates the apply-once policy definition.
 // This policy allows configuration drift for applied resources.
 func ApplyOnce() *defkit.PolicyDefinition {
-	resourcePolicyRuleSelector := defkit.Struct("selector").Fields(RuleSelectorFields()...)
+	resourcePolicyRuleSelector := defkit.Struct("selector").WithFields(RuleSelectorFields()...)
 
 	// Define helper type for apply-once strategy
-	applyOnceStrategy := defkit.Struct("strategy").Fields(
+	applyOnceStrategy := defkit.Struct("strategy").WithFields(
 		defkit.Field("affect", defkit.ParamTypeString).
 			Description("When the strategy takes effect, e.g. onUpdate, onStateKeep").
 			Optional(),
@@ -37,7 +37,7 @@ func ApplyOnce() *defkit.PolicyDefinition {
 	)
 
 	// Define helper type for apply-once policy rule
-	applyOncePolicyRule := defkit.Struct("rule").Fields(
+	applyOncePolicyRule := defkit.Struct("rule").WithFields(
 		defkit.Field("selector", defkit.ParamTypeStruct).
 			Description("Specify how to select the targets of the rule").
 			Optional().

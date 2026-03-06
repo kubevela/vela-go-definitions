@@ -31,7 +31,7 @@ func ServiceAccount() *defkit.TraitDefinition {
 	privileges := defkit.Array("privileges").WithSchemaRef("Privileges").Optional().Description("Specify the privileges of the ServiceAccount, if not empty, RoleBindings(ClusterRoleBindings) will be created")
 
 	// Helper type #Privileges
-	privilegesHelper := defkit.Struct("Privileges").Fields(
+	privilegesHelper := defkit.Struct("Privileges").WithFields(
 		defkit.Field("verbs", defkit.ParamTypeArray).Of(defkit.ParamTypeString).Required().Description("Specify the verbs to be allowed for the resource"),
 		defkit.Field("apiGroups", defkit.ParamTypeArray).Of(defkit.ParamTypeString).Optional().Description("Specify the apiGroups of the resource"),
 		defkit.Field("resources", defkit.ParamTypeArray).Of(defkit.ParamTypeString).Optional().Description("Specify the resources to be allowed"),

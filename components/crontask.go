@@ -74,32 +74,32 @@ func CronTask() *defkit.ComponentDefinition {
 				Description("Specify volume type, options: \"pvc\",\"configMap\",\"secret\",\"emptyDir\", default to emptyDir").
 				Default("emptyDir").
 				Variants(
-					defkit.Variant("pvc").Fields(
+					defkit.Variant("pvc").WithFields(
 						defkit.Field("claimName", defkit.ParamTypeString).Required(),
 					),
-					defkit.Variant("configMap").Fields(
+					defkit.Variant("configMap").WithFields(
 						defkit.Field("defaultMode", defkit.ParamTypeInt).Default(420),
 						defkit.Field("cmName", defkit.ParamTypeString).Required(),
 						defkit.Field("items", defkit.ParamTypeArray).Nested(
-							defkit.Struct("").Fields(
+							defkit.Struct("").WithFields(
 								defkit.Field("key", defkit.ParamTypeString).Required(),
 								defkit.Field("path", defkit.ParamTypeString).Required(),
 								defkit.Field("mode", defkit.ParamTypeInt).Default(511),
 							),
 						),
 					),
-					defkit.Variant("secret").Fields(
+					defkit.Variant("secret").WithFields(
 						defkit.Field("defaultMode", defkit.ParamTypeInt).Default(420),
 						defkit.Field("secretName", defkit.ParamTypeString).Required(),
 						defkit.Field("items", defkit.ParamTypeArray).Nested(
-							defkit.Struct("").Fields(
+							defkit.Struct("").WithFields(
 								defkit.Field("key", defkit.ParamTypeString).Required(),
 								defkit.Field("path", defkit.ParamTypeString).Required(),
 								defkit.Field("mode", defkit.ParamTypeInt).Default(511),
 							),
 						),
 					),
-					defkit.Variant("emptyDir").Fields(
+					defkit.Variant("emptyDir").WithFields(
 						defkit.Field("medium", defkit.ParamTypeString).Default("").Enum("", "Memory"),
 					),
 				),
@@ -204,7 +204,7 @@ func CronTaskVolumeMountsParam() defkit.Param {
 				defkit.String("name").Required(),
 				defkit.String("mountPath").Required(),
 				defkit.String("subPath"),
-				defkit.Enum("medium").Values("", "Memory").Default(""),
+				defkit.Enum("medium").Enum("", "Memory").Default(""),
 			),
 			defkit.List("hostPath").Description("Mount HostPath type volume").WithFields(
 				defkit.String("name").Required(),

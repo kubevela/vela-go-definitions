@@ -51,25 +51,25 @@ func portHelper() defkit.Param {
 
 // lifecycleHandlerHelper returns the #LifeCycleHandler helper definition schema.
 func lifecycleHandlerHelper() defkit.Param {
-	return defkit.Struct("LifeCycleHandler").Fields(
+	return defkit.Struct("LifeCycleHandler").WithFields(
 		defkit.Field("exec", defkit.ParamTypeStruct).
-			Nested(defkit.Struct("exec").Fields(
+			Nested(defkit.Struct("exec").WithFields(
 				defkit.Field("command", defkit.ParamTypeArray).Of(defkit.ParamTypeString).Required(),
 			)),
 		defkit.Field("httpGet", defkit.ParamTypeStruct).
-			Nested(defkit.Struct("httpGet").Fields(
+			Nested(defkit.Struct("httpGet").WithFields(
 				defkit.Field("path", defkit.ParamTypeString),
 				defkit.Field("port", defkit.ParamTypeInt).WithSchemaRef("Port").Required(),
 				defkit.Field("host", defkit.ParamTypeString),
 				defkit.Field("scheme", defkit.ParamTypeString).Default("HTTP").Enum("HTTP", "HTTPS"),
 				defkit.Field("httpHeaders", defkit.ParamTypeArray).
-					Nested(defkit.Struct("httpHeaders").Fields(
+					Nested(defkit.Struct("httpHeaders").WithFields(
 						defkit.Field("name", defkit.ParamTypeString).Required(),
 						defkit.Field("value", defkit.ParamTypeString).Required(),
 					)),
 			)),
 		defkit.Field("tcpSocket", defkit.ParamTypeStruct).
-			Nested(defkit.Struct("tcpSocket").Fields(
+			Nested(defkit.Struct("tcpSocket").WithFields(
 				defkit.Field("port", defkit.ParamTypeInt).WithSchemaRef("Port").Required(),
 				defkit.Field("host", defkit.ParamTypeString),
 			)),

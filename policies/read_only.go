@@ -23,10 +23,10 @@ import (
 // ReadOnly creates the read-only policy definition.
 // This policy configures resources to be read-only in the application.
 func ReadOnly() *defkit.PolicyDefinition {
-	ruleSelector := defkit.Struct("selector").Fields(RuleSelectorFields()...)
+	ruleSelector := defkit.Struct("selector").WithFields(RuleSelectorFields()...)
 
 	// Define helper type for policy rule
-	policyRule := defkit.Struct("rule").Fields(
+	policyRule := defkit.Struct("rule").WithFields(
 		defkit.Field("selector", defkit.ParamTypeStruct).
 			Description("Specify how to select the targets of the rule").
 			WithSchemaRef("RuleSelector").

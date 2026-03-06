@@ -31,7 +31,7 @@ import (
 func ServiceBinding() *defkit.TraitDefinition {
 	envMappings := defkit.Map("envMappings").Required().WithSchema("[string]: #KeySecret").Description("The mapping of environment variables to secret")
 
-	keySecretHelper := defkit.Struct("KeySecret").Fields(
+	keySecretHelper := defkit.Struct("KeySecret").WithFields(
 		defkit.Field("key", defkit.ParamTypeString),
 		defkit.Field("secret", defkit.ParamTypeString).Required(),
 	)

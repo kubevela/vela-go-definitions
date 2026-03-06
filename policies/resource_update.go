@@ -23,10 +23,10 @@ import (
 // ResourceUpdate creates the resource-update policy definition.
 // This policy configures the update strategy for selected resources.
 func ResourceUpdate() *defkit.PolicyDefinition {
-	ruleSelector := defkit.Struct("selector").Fields(RuleSelectorFields()...)
+	ruleSelector := defkit.Struct("selector").WithFields(RuleSelectorFields()...)
 
 	// Define helper type for strategy
-	strategy := defkit.Struct("strategy").Fields(
+	strategy := defkit.Struct("strategy").WithFields(
 		defkit.Field("op", defkit.ParamTypeString).
 			Description("Specify the op for updating target resources").
 			Default("patch").
@@ -38,7 +38,7 @@ func ResourceUpdate() *defkit.PolicyDefinition {
 	)
 
 	// Define helper type for policy rule
-	policyRule := defkit.Struct("rule").Fields(
+	policyRule := defkit.Struct("rule").WithFields(
 		defkit.Field("selector", defkit.ParamTypeStruct).
 			Description("Specify how to select the targets of the rule").
 			WithSchemaRef("RuleSelector").
