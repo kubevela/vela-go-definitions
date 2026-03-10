@@ -136,7 +136,7 @@ func Notification() *defkit.WorkflowStepDefinition {
 					defkit.String("msgtype").
 						Description("msgType can be text, link, mardown, actionCard, feedCard").
 						Default("text").
-						Enum("text", "link", "markdown", "actionCard", "feedCard"),
+						Values("text", "link", "markdown", "actionCard", "feedCard"),
 					defkit.Object("link").Optional().WithSchemaRef("DingLink"),
 					defkit.Object("markdown").Optional().WithFields(
 						defkit.String("text").Required(),

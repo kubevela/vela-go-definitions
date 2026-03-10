@@ -29,7 +29,7 @@ func ExportData() *defkit.WorkflowStepDefinition {
 		Description("Specify the namespace of the export destination")
 	kind := defkit.String("kind").
 		Default("ConfigMap").
-		Enum("ConfigMap", "Secret").
+		Values("ConfigMap", "Secret").
 		Description("Specify the kind of the export destination")
 	data := defkit.Object("data").
 		Required().

@@ -33,13 +33,13 @@ func Expose() *defkit.TraitDefinition {
 	ports := defkit.Array("ports").Optional().WithFields(
 		defkit.Int("port").Required().Description("Number of port to expose on the pod's IP address"),
 		defkit.String("name").Optional().Description("Name of the port"),
-		defkit.String("protocol").Default("TCP").Enum("TCP", "UDP", "SCTP").Description("Protocol for port. Must be UDP, TCP, or SCTP"),
+		defkit.String("protocol").Default("TCP").Values("TCP", "UDP", "SCTP").Description("Protocol for port. Must be UDP, TCP, or SCTP"),
 		defkit.Int("nodePort").Optional().Description("exposed node port. Only Valid when exposeType is NodePort"),
 	).Description("Specify portsyou want customer traffic sent to")
 
 	annotations := defkit.Map("annotations").Of(defkit.ParamTypeString).Required().Description("Specify the annotations of the exposed service")
 	matchLabels := defkit.Map("matchLabels").Of(defkit.ParamTypeString).Optional()
-	serviceType := defkit.String("type").Default("ClusterIP").Enum("ClusterIP", "NodePort", "LoadBalancer", "ExternalName").Description(`Specify what kind of Service you want. options: "ClusterIP","NodePort","LoadBalancer","ExternalName"`)
+	serviceType := defkit.String("type").Default("ClusterIP").Values("ClusterIP", "NodePort", "LoadBalancer", "ExternalName").Description(`Specify what kind of Service you want. options: "ClusterIP","NodePort","LoadBalancer","ExternalName"`)
 
 	return defkit.NewTrait("expose").
 		Description("Expose port to enable web traffic for your component.").

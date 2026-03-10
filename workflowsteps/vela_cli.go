@@ -55,7 +55,7 @@ func VelaCli() *defkit.WorkflowStepDefinition {
 			defkit.String("name").Required(),
 			defkit.String("path").Required(),
 			defkit.String("mountPath").Required(),
-			defkit.String("type").Default("Directory").Enum(
+			defkit.String("type").Default("Directory").Values(
 				"Directory", "DirectoryOrCreate", "FileOrCreate",
 				"File", "Socket", "CharDevice", "BlockDevice",
 			),

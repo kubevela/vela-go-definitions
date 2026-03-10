@@ -28,7 +28,7 @@ func CheckMetrics() *defkit.WorkflowStepDefinition {
 		Description("Query is a raw prometheus query to perform")
 	metricEndpoint := defkit.String("metricEndpoint").
 		Optional().
-		Enum("http://prometheus-server.o11y-system.svc:9090").
+		Values("http://prometheus-server.o11y-system.svc:9090").
 		OpenEnum().
 		Description("The HTTP address and port of the prometheus server")
 	condition := defkit.String("condition").

@@ -37,7 +37,7 @@ func ServiceAccount() *defkit.TraitDefinition {
 		defkit.Field("resources", defkit.ParamTypeArray).Of(defkit.ParamTypeString).Optional().Description("Specify the resources to be allowed"),
 		defkit.Field("resourceNames", defkit.ParamTypeArray).Of(defkit.ParamTypeString).Optional().Description("Specify the resourceNames to be allowed"),
 		defkit.Field("nonResourceURLs", defkit.ParamTypeArray).Of(defkit.ParamTypeString).Optional().Description("Specify the resource url to be allowed"),
-		defkit.Field("scope", defkit.ParamTypeString).Default("namespace").Enum("namespace", "cluster").Description("Specify the scope of the privileges, default to be namespace scope"),
+		defkit.Field("scope", defkit.ParamTypeString).Default("namespace").Values("namespace", "cluster").Description("Specify the scope of the privileges, default to be namespace scope"),
 	)
 
 	// Interpolated name for cluster-scoped resources: "\(context.namespace):\(parameter.name)"

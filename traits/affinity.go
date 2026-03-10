@@ -52,9 +52,9 @@ func Affinity() *defkit.TraitDefinition {
 
 	tolerations := defkit.Array("tolerations").Description("Specify tolerant taint").WithFields(
 		defkit.String("key"),
-		defkit.String("operator").Default("Equal").Enum("Equal", "Exists"),
+		defkit.String("operator").Default("Equal").Values("Equal", "Exists"),
 		defkit.String("value"),
-		defkit.String("effect").Enum("NoSchedule", "PreferNoSchedule", "NoExecute"),
+		defkit.String("effect").Values("NoSchedule", "PreferNoSchedule", "NoExecute"),
 		defkit.Int("tolerationSeconds").Description("Specify the period of time the toleration"),
 	)
 
@@ -147,7 +147,7 @@ func labelSelectorHelper() defkit.Param {
 		defkit.StringKeyMap("matchLabels").Description("A map of {key,value} pairs"),
 		defkit.Array("matchExpressions").Description("A list of label selector requirements").WithFields(
 			defkit.String("key").Required(),
-			defkit.String("operator").Default("In").Enum("In", "NotIn", "Exists", "DoesNotExist"),
+			defkit.String("operator").Default("In").Values("In", "NotIn", "Exists", "DoesNotExist"),
 			defkit.Array("values").Of(defkit.ParamTypeString),
 		),
 	)
@@ -168,7 +168,7 @@ func podAffinityTermHelper() defkit.Param {
 func nodeSelectorHelper() defkit.Param {
 	return defkit.Struct("nodeSelector").WithFields(
 		defkit.Field("key", defkit.ParamTypeString).Required(),
-		defkit.Field("operator", defkit.ParamTypeString).Default("In").Enum("In", "NotIn", "Exists", "DoesNotExist", "Gt", "Lt"),
+		defkit.Field("operator", defkit.ParamTypeString).Default("In").Values("In", "NotIn", "Exists", "DoesNotExist", "Gt", "Lt"),
 		defkit.Field("values", defkit.ParamTypeArray).Of(defkit.ParamTypeString),
 	)
 }

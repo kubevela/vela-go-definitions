@@ -73,7 +73,7 @@ func ApplyTerraformProvider() *defkit.WorkflowStepDefinition {
 			defkit.Field("accessKey", defkit.ParamTypeString).Required(),
 			defkit.Field("secretKey", defkit.ParamTypeString).Required(),
 			defkit.Field("region", defkit.ParamTypeString).Required(),
-			defkit.Field("type", defkit.ParamTypeString).Required().Enum("alibaba"),
+			defkit.Field("type", defkit.ParamTypeString).Required().Values("alibaba"),
 			defkit.Field("name", defkit.ParamTypeString).Default("alibaba-provider"),
 		)).
 		Helper("AWSProvider", defkit.Struct("AWSProvider").WithFields(
@@ -81,7 +81,7 @@ func ApplyTerraformProvider() *defkit.WorkflowStepDefinition {
 			defkit.Field("secretKey", defkit.ParamTypeString).Required(),
 			defkit.Field("region", defkit.ParamTypeString).Required(),
 			defkit.Field("token", defkit.ParamTypeString).Default(""),
-			defkit.Field("type", defkit.ParamTypeString).Required().Enum("aws"),
+			defkit.Field("type", defkit.ParamTypeString).Required().Values("aws"),
 			defkit.Field("name", defkit.ParamTypeString).Default("aws-provider"),
 		)).
 		Helper("AzureProvider", defkit.Struct("AzureProvider").WithFields(
@@ -95,11 +95,11 @@ func ApplyTerraformProvider() *defkit.WorkflowStepDefinition {
 			defkit.Field("accessKey", defkit.ParamTypeString).Required(),
 			defkit.Field("secretKey", defkit.ParamTypeString).Required(),
 			defkit.Field("region", defkit.ParamTypeString).Required(),
-			defkit.Field("type", defkit.ParamTypeString).Required().Enum("baidu"),
+			defkit.Field("type", defkit.ParamTypeString).Required().Values("baidu"),
 			defkit.Field("name", defkit.ParamTypeString).Default("baidu-provider"),
 		)).
 		Helper("ECProvider", defkit.Struct("ECProvider").WithFields(
-			defkit.Field("type", defkit.ParamTypeString).Required().Enum("ec"),
+			defkit.Field("type", defkit.ParamTypeString).Required().Values("ec"),
 			defkit.Field("apiKey", defkit.ParamTypeString).Default(""),
 			defkit.Field("name", defkit.ParamTypeString).Default("ec-provider"),
 		)).
@@ -107,14 +107,14 @@ func ApplyTerraformProvider() *defkit.WorkflowStepDefinition {
 			defkit.Field("credentials", defkit.ParamTypeString).Required(),
 			defkit.Field("region", defkit.ParamTypeString).Required(),
 			defkit.Field("project", defkit.ParamTypeString).Required(),
-			defkit.Field("type", defkit.ParamTypeString).Required().Enum("gcp"),
+			defkit.Field("type", defkit.ParamTypeString).Required().Values("gcp"),
 			defkit.Field("name", defkit.ParamTypeString).Default("gcp-provider"),
 		)).
 		Helper("TencentProvider", defkit.Struct("TencentProvider").WithFields(
 			defkit.Field("secretID", defkit.ParamTypeString).Required(),
 			defkit.Field("secretKey", defkit.ParamTypeString).Required(),
 			defkit.Field("region", defkit.ParamTypeString).Required(),
-			defkit.Field("type", defkit.ParamTypeString).Required().Enum("tencent"),
+			defkit.Field("type", defkit.ParamTypeString).Required().Values("tencent"),
 			defkit.Field("name", defkit.ParamTypeString).Default("tencent-provider"),
 		)).
 		Helper("UCloudProvider", defkit.Struct("UCloudProvider").WithFields(
@@ -122,7 +122,7 @@ func ApplyTerraformProvider() *defkit.WorkflowStepDefinition {
 			defkit.Field("privateKey", defkit.ParamTypeString).Required(),
 			defkit.Field("projectID", defkit.ParamTypeString).Required(),
 			defkit.Field("region", defkit.ParamTypeString).Required(),
-			defkit.Field("type", defkit.ParamTypeString).Required().Enum("ucloud"),
+			defkit.Field("type", defkit.ParamTypeString).Required().Values("ucloud"),
 			defkit.Field("name", defkit.ParamTypeString).Default("ucloud-provider"),
 		)).
 		Template(func(tpl *defkit.WorkflowStepTemplate) {

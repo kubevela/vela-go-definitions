@@ -28,7 +28,7 @@ func TopologySpreadConstraints() *defkit.TraitDefinition {
 		defkit.StringKeyMap("matchLabels"),
 		defkit.Array("matchExpressions").WithFields(
 			defkit.String("key").Required(),
-			defkit.String("operator").Default("In").Enum("In", "NotIn", "Exists", "DoesNotExist"),
+			defkit.String("operator").Default("In").Values("In", "NotIn", "Exists", "DoesNotExist"),
 			defkit.Array("values").Of(defkit.ParamTypeString),
 		),
 	)
@@ -38,15 +38,15 @@ func TopologySpreadConstraints() *defkit.TraitDefinition {
 		WithFields(
 			defkit.Int("maxSkew").Description("Describe the degree to which Pods may be unevenly distributed").Required(),
 			defkit.String("topologyKey").Description("Specify the key of node labels").Required(),
-			defkit.String("whenUnsatisfiable").Default("DoNotSchedule").Enum("DoNotSchedule", "ScheduleAnyway").
+			defkit.String("whenUnsatisfiable").Default("DoNotSchedule").Values("DoNotSchedule", "ScheduleAnyway").
 				Description("Indicate how to deal with a Pod if it doesn't satisfy the spread constraint"),
 			defkit.Map("labelSelector").Description("labelSelector to find matching Pods").Required().WithSchemaRef("labSelector"),
 			defkit.Int("minDomains").Description("Indicate a minimum number of eligible domains"),
 			defkit.Array("matchLabelKeys").Of(defkit.ParamTypeString).
 				Description("A list of pod label keys to select the pods over which spreading will be calculated"),
-			defkit.String("nodeAffinityPolicy").Default("Honor").ForceOptional().Enum("Honor", "Ignore").
+			defkit.String("nodeAffinityPolicy").Default("Honor").ForceOptional().Values("Honor", "Ignore").
 				Description("Indicate how we will treat Pod's nodeAffinity/nodeSelector when calculating pod topology spread skew"),
-			defkit.String("nodeTaintsPolicy").Default("Honor").ForceOptional().Enum("Honor", "Ignore").
+			defkit.String("nodeTaintsPolicy").Default("Honor").ForceOptional().Values("Honor", "Ignore").
 				Description("Indicate how we will treat node taints when calculating pod topology spread skew"),
 		)
 

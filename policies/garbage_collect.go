@@ -34,10 +34,10 @@ func GarbageCollect() *defkit.PolicyDefinition {
 		defkit.Field("strategy", defkit.ParamTypeString).
 			Description("Specify the strategy for target resource to recycle").
 			Default("onAppUpdate").
-			Enum("onAppUpdate", "onAppDelete", "never"),
+			Values("onAppUpdate", "onAppDelete", "never"),
 		defkit.Field("propagation", defkit.ParamTypeString).
 			Description("Specify the deletion propagation strategy for target resource to delete").
-			Enum("orphan", "cascading").
+			Values("orphan", "cascading").
 			Optional(),
 	)
 

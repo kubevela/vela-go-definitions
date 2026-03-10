@@ -26,7 +26,7 @@ func Request() *defkit.WorkflowStepDefinition {
 	url := defkit.String("url").Required()
 	method := defkit.String("method").
 		Default("GET").
-		Enum("GET", "POST", "PUT", "DELETE")
+		Values("GET", "POST", "PUT", "DELETE")
 	body := defkit.Object("body")
 	header := defkit.StringKeyMap("header")
 

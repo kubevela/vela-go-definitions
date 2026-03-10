@@ -28,7 +28,7 @@ func InitContainer() *defkit.TraitDefinition {
 	// Parameters
 	name := defkit.String("name").Required().Description("Specify the name of init container")
 	image := defkit.String("image").Required().Description("Specify the image of init container")
-	imagePullPolicy := defkit.String("imagePullPolicy").Default("IfNotPresent").Enum("IfNotPresent", "Always", "Never").Description("Specify image pull policy for your service")
+	imagePullPolicy := defkit.String("imagePullPolicy").Default("IfNotPresent").Values("IfNotPresent", "Always", "Never").Description("Specify image pull policy for your service")
 	cmd := defkit.Array("cmd").Of(defkit.ParamTypeString).Optional().Description("Specify the commands run in the init container")
 	args := defkit.Array("args").Of(defkit.ParamTypeString).Optional().Description("Specify the args run in the init container")
 	env := defkit.Array("env").WithFields(

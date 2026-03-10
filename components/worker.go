@@ -84,7 +84,7 @@ func Worker() *defkit.ComponentDefinition {
 			defkit.List("emptyDir").Description("Mount EmptyDir type volume").WithFields(
 				defkit.String("name").Required(),
 				defkit.String("mountPath").Required(),
-				defkit.Enum("medium").Enum("", "Memory").Default(""),
+				defkit.Enum("medium").Values("", "Memory").Default(""),
 			),
 			defkit.List("hostPath").Description("Mount HostPath type volume").WithFields(
 				defkit.String("name").Required(),
@@ -127,7 +127,7 @@ func Worker() *defkit.ComponentDefinition {
 						),
 					),
 					defkit.Variant("emptyDir").WithFields(
-						defkit.Field("medium", defkit.ParamTypeString).Default("").Enum("", "Memory"),
+						defkit.Field("medium", defkit.ParamTypeString).Default("").Values("", "Memory"),
 					),
 				),
 		)

@@ -30,7 +30,7 @@ func CronTask() *defkit.ComponentDefinition {
 	suspend := defkit.Bool("suspend").Default(false).Description("suspend subsequent executions")
 	concurrencyPolicy := defkit.String("concurrencyPolicy").
 		Default("Allow").
-		Enum("Allow", "Forbid", "Replace").
+		Values("Allow", "Forbid", "Replace").
 		Description("Specifies how to treat concurrent executions of a Job")
 	successfulJobsHistoryLimit := defkit.Int("successfulJobsHistoryLimit").Default(3).
 		Description("The number of successful finished jobs to retain")
@@ -39,7 +39,7 @@ func CronTask() *defkit.ComponentDefinition {
 	count := defkit.Int("count").Default(1).Description("Specify number of tasks to run in parallel").Short("c")
 	image := defkit.String("image").Required().Description("Which image would you like to use for your service").Short("i")
 	imagePullPolicy := defkit.String("imagePullPolicy").
-		Enum("Always", "Never", "IfNotPresent").
+		Values("Always", "Never", "IfNotPresent").
 		Description("Specify image pull policy for your service")
 	imagePullSecrets := defkit.StringList("imagePullSecrets").Description("Specify image pull secrets for your service")
 	restart := defkit.String("restart").Default("Never").Description("Define the job restart policy, the value can only be Never or OnFailure. By default, it's Never.")
@@ -100,7 +100,7 @@ func CronTask() *defkit.ComponentDefinition {
 						),
 					),
 					defkit.Variant("emptyDir").WithFields(
-						defkit.Field("medium", defkit.ParamTypeString).Default("").Enum("", "Memory"),
+						defkit.Field("medium", defkit.ParamTypeString).Default("").Values("", "Memory"),
 					),
 				),
 		)
@@ -204,7 +204,7 @@ func CronTaskVolumeMountsParam() defkit.Param {
 				defkit.String("name").Required(),
 				defkit.String("mountPath").Required(),
 				defkit.String("subPath"),
-				defkit.Enum("medium").Enum("", "Memory").Default(""),
+				defkit.Enum("medium").Values("", "Memory").Default(""),
 			),
 			defkit.List("hostPath").Description("Mount HostPath type volume").WithFields(
 				defkit.String("name").Required(),

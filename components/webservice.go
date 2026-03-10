@@ -32,7 +32,7 @@ func Webservice() *defkit.ComponentDefinition {
 
 	// Use Enum for imagePullPolicy to generate proper CUE enum type
 	imagePullPolicy := defkit.Enum("imagePullPolicy").
-		Enum("Always", "Never", "IfNotPresent").
+		Values("Always", "Never", "IfNotPresent").
 		Description("Specify image pull policy for your service")
 
 	imagePullSecrets := defkit.StringList("imagePullSecrets").
@@ -51,13 +51,13 @@ func Webservice() *defkit.ComponentDefinition {
 			defkit.Int("port").Required().Description("Number of port to expose on the pod's IP address"),
 			defkit.Int("containerPort").Description("Number of container port to connect to, defaults to port"),
 			defkit.String("name").Description("Name of the port"),
-			defkit.Enum("protocol").Enum("TCP", "UDP", "SCTP").Default("TCP").Description("Protocol for port. Must be UDP, TCP, or SCTP"),
+			defkit.Enum("protocol").Values("TCP", "UDP", "SCTP").Default("TCP").Description("Protocol for port. Must be UDP, TCP, or SCTP"),
 			defkit.Bool("expose").Default(false).Description("Specify if the port should be exposed"),
 			defkit.Int("nodePort").Description("exposed node port. Only Valid when exposeType is NodePort"),
 		)
 
 	exposeType := defkit.Enum("exposeType").
-		Enum("ClusterIP", "NodePort", "LoadBalancer").
+		Values("ClusterIP", "NodePort", "LoadBalancer").
 		Default("ClusterIP").
 		Ignore().
 		Description(`Specify what kind of Service you want. options: "ClusterIP", "NodePort", "LoadBalancer"`)
@@ -137,7 +137,7 @@ func Webservice() *defkit.ComponentDefinition {
 				defkit.String("name").Required(),
 				defkit.String("mountPath").Required(),
 				defkit.String("subPath"),
-				defkit.Enum("medium").Enum("", "Memory").Default(""),
+				defkit.Enum("medium").Values("", "Memory").Default(""),
 			),
 			defkit.List("hostPath").Description("Mount HostPath type volume").WithFields(
 				defkit.String("name").Required(),
@@ -182,7 +182,7 @@ func Webservice() *defkit.ComponentDefinition {
 						),
 					),
 					defkit.Variant("emptyDir").WithFields(
-						defkit.Field("medium", defkit.ParamTypeString).Default("").Enum("", "Memory"),
+						defkit.Field("medium", defkit.ParamTypeString).Default("").Values("", "Memory"),
 					),
 				),
 		)

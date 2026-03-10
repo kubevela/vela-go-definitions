@@ -37,7 +37,7 @@ func Gateway() *defkit.TraitDefinition {
 	secretName := defkit.String("secretName").Optional().Description("Specify the secret name you want to quote to use tls.")
 	gatewayHost := defkit.String("gatewayHost").Optional().Description("Specify the host of the ingress gateway, which is used to generate the endpoints when the host is empty.")
 	name := defkit.String("name").Optional().Description("Specify a unique name for this gateway, required to support multiple gateway traits on a component")
-	pathType := defkit.String("pathType").Default("ImplementationSpecific").Enum("ImplementationSpecific", "Prefix", "Exact").Description(`Specify a pathType for the ingress rules, defaults to "ImplementationSpecific"`)
+	pathType := defkit.String("pathType").Default("ImplementationSpecific").Values("ImplementationSpecific", "Prefix", "Exact").Description(`Specify a pathType for the ingress rules, defaults to "ImplementationSpecific"`)
 	annotations := defkit.Map("annotations").Of(defkit.ParamTypeString).Optional().Description("Specify the annotations to be added to the ingress")
 	labels := defkit.Map("labels").Of(defkit.ParamTypeString).Optional().Description("Specify the labels to be added to the ingress")
 	existingServiceName := defkit.String("existingServiceName").Optional().Description("If specified, use an existing Service rather than creating one")

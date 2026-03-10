@@ -30,7 +30,7 @@ func ResourceUpdate() *defkit.PolicyDefinition {
 		defkit.Field("op", defkit.ParamTypeString).
 			Description("Specify the op for updating target resources").
 			Default("patch").
-			Enum("patch", "replace"),
+			Values("patch", "replace"),
 		defkit.Field("recreateFields", defkit.ParamTypeArray).
 			Description("Specify which fields would trigger recreation when updated").
 			Of(defkit.ParamTypeString).

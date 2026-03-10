@@ -29,7 +29,7 @@ func CollectServiceEndpoints() *defkit.WorkflowStepDefinition {
 	port := defkit.Int("port").Optional().Description("Filter the port of the endpoints")
 	portName := defkit.String("portName").Optional().Description("Filter the port name of the endpoints")
 	outer := defkit.Bool("outer").Optional().Description("Filter the endpoint that are only outer")
-	protocal := defkit.Enum("protocal").Enum("http", "https").Default("http").Description("The protocal of endpoint url")
+	protocal := defkit.Enum("protocal").Values("http", "https").Default("http").Description("The protocal of endpoint url")
 
 	hasName := defkit.PathExists("parameter.name")
 	noName := defkit.Eq(defkit.Reference("parameter.name"), defkit.Reference("_|_"))

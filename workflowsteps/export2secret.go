@@ -41,7 +41,7 @@ func Export2Secret() *defkit.WorkflowStepDefinition {
 		Description("Specify the cluster of the secret")
 	kind := defkit.String("kind").
 		Default("generic").
-		Enum("docker-registry", "generic").
+		Values("docker-registry", "generic").
 		Description("Specify the kind of the secret")
 	dockerRegistry := defkit.Struct("dockerRegistry").
 		Description("Specify the docker data").

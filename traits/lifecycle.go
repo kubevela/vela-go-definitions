@@ -61,7 +61,7 @@ func lifecycleHandlerHelper() defkit.Param {
 				defkit.Field("path", defkit.ParamTypeString),
 				defkit.Field("port", defkit.ParamTypeInt).WithSchemaRef("Port").Required(),
 				defkit.Field("host", defkit.ParamTypeString),
-				defkit.Field("scheme", defkit.ParamTypeString).Default("HTTP").Enum("HTTP", "HTTPS"),
+				defkit.Field("scheme", defkit.ParamTypeString).Default("HTTP").Values("HTTP", "HTTPS"),
 				defkit.Field("httpHeaders", defkit.ParamTypeArray).
 					Nested(defkit.Struct("httpHeaders").WithFields(
 						defkit.Field("name", defkit.ParamTypeString).Required(),

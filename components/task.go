@@ -28,7 +28,7 @@ func Task() *defkit.ComponentDefinition {
 	count := defkit.Int("count").Default(1).Description("Specify number of tasks to run in parallel").Short("c")
 	image := defkit.String("image").Required().Description("Which image would you like to use for your service").Short("i")
 	imagePullPolicy := defkit.String("imagePullPolicy").
-		Enum("Always", "Never", "IfNotPresent").
+		Values("Always", "Never", "IfNotPresent").
 		Description("Specify image pull policy for your service")
 	imagePullSecrets := defkit.StringList("imagePullSecrets").Description("Specify image pull secrets for your service")
 	restart := defkit.String("restart").Default("Never").
@@ -88,7 +88,7 @@ func Task() *defkit.ComponentDefinition {
 						),
 					),
 					defkit.Variant("emptyDir").WithFields(
-						defkit.Field("medium", defkit.ParamTypeString).Default("").Enum("", "Memory"),
+						defkit.Field("medium", defkit.ParamTypeString).Default("").Values("", "Memory"),
 					),
 				),
 		)

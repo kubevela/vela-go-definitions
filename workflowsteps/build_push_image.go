@@ -58,7 +58,7 @@ func BuildPushImage() *defkit.WorkflowStepDefinition {
 				)),
 		)
 	verbosity := defkit.Enum("verbosity").
-		Enum("info", "panic", "fatal", "error", "warn", "debug", "trace").
+		Values("info", "panic", "fatal", "error", "warn", "debug", "trace").
 		Default("info").
 		Description("Specify the verbosity level")
 	context := defkit.Object("context").
