@@ -2351,10 +2351,393 @@ let _namespacePrivileges = [
         <div><div class="section-title">Resource Builders</div></div>
       </div>
       <p class="section-desc">Fluent builders for constructing Kubernetes resource manifests. Path syntax supports dot-notation, array indices, and bracket notation.</p>
-      <div class="placeholder-box">
-        <div class="pl-icon"><span class="material-icons-round">hourglass_empty</span></div>
-        <p>Full API reference for <strong>NewResource</strong>, <strong>Set/SetIf</strong>, <strong>ForEach/ForEachWith</strong>, <strong>ItemBuilder</strong>, conditional versioning — coming in Phase 3.</p>
-        <div class="pl-phase">Phase 3</div>
+      <!-- ── CONSTRUCTORS ───────────────────────── -->
+      <h3 style="font-size:1rem;font-weight:700;margin:0 0 1rem;color:var(--text);">Constructors</h3>
+
+      <!-- defkit.NewResource -->
+      <div class="method-card">
+        <div class="method-header">
+          <code class="method-sig">defkit.NewResource(apiVersion, kind string) *Resource</code>
+          <div class="method-meta">
+            <div class="method-title">NewResource</div>
+            <div class="method-desc">Creates a typed Kubernetes resource builder with a fixed apiVersion and kind. Chain <code>.Set()</code>, <code>.SetIf()</code>, <code>.If()/.EndIf()</code>, and <code>.SpreadIf()</code> to populate the resource fields. Pass the result to <code>tpl.Output()</code> or <code>tpl.Outputs()</code>.</div>
+          </div>
+        </div>
+        <div class="method-body">
+          <div class="method-applies"><span class="applies-label">Applies to:</span><span class="pill pill-all">All Definition Types</span></div>
+          <div class="code-pair">
+            <div class="code-block">
+              <div class="code-label go"><span class="dot"></span>Go — defkit</div>
+              <pre class="language-go"><code>vela  := defkit.VelaCtx()
+min   := defkit.Int("min").Default(1)
+max   := defkit.Int("max").Default(10)
+
+hpa := defkit.NewResource("autoscaling/v1", "HorizontalPodAutoscaler").
+    Set("metadata.name", vela.Name()).
+    Set("spec.minReplicas", min).
+    Set("spec.maxReplicas", max)
+
+tpl.Outputs("hpa", hpa)</code></pre>
+            </div>
+            <div class="code-block">
+              <div class="code-label cue"><span class="dot"></span>CUE — generated</div>
+              <pre class="language-cue"><code>outputs: hpa: {
+    apiVersion: "autoscaling/v1"
+    kind:       "HorizontalPodAutoscaler"
+    metadata: name: context.name
+    spec: {
+        minReplicas: parameter.min
+        maxReplicas: parameter.max
+    }
+}</code></pre>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- NewResourceWithConditionalVersion -->
+      <div class="method-card">
+        <div class="method-header">
+          <code class="method-sig">defkit.NewResourceWithConditionalVersion(kind string) *Resource</code>
+          <div class="method-meta">
+            <div class="method-title">NewResourceWithConditionalVersion</div>
+            <div class="method-desc">Creates a resource whose <code>apiVersion</code> is determined at runtime based on cluster version. Chain <code>.VersionIf(condition, apiVersion)</code> clauses to map version ranges to the correct API group. Generates a CUE conditional block — the first matching condition wins.</div>
+          </div>
+        </div>
+        <div class="method-body">
+          <div class="method-applies"><span class="applies-label">Applies to:</span><span class="pill pill-all">All Definition Types</span></div>
+          <div class="code-pair">
+            <div class="code-block">
+              <div class="code-label go"><span class="dot"></span>Go — defkit</div>
+              <pre class="language-go"><code>vela := defkit.VelaCtx()
+
+hpa := defkit.NewResourceWithConditionalVersion("HorizontalPodAutoscaler").
+    VersionIf(defkit.Lt(vela.ClusterVersion().Minor(), defkit.Lit(23)), "autoscaling/v2beta2").
+    VersionIf(defkit.Ge(vela.ClusterVersion().Minor(), defkit.Lit(23)), "autoscaling/v2").
+    Set("metadata.name", vela.Name())</code></pre>
+            </div>
+            <div class="code-block">
+              <div class="code-label cue"><span class="dot"></span>CUE — generated</div>
+              <pre class="language-cue"><code>outputs: hpa: {
+    apiVersion: {
+        if context.clusterVersion.minor &lt; 23 { "autoscaling/v2beta2" }
+        if context.clusterVersion.minor &gt;= 23 { "autoscaling/v2" }
+    }
+    kind: "HorizontalPodAutoscaler"
+    metadata: name: context.name
+}</code></pre>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── FIELD SETTERS ───────────────────────── -->
+      <h3 style="font-size:1rem;font-weight:700;margin:2rem 0 1rem;color:var(--text);">Field Setters</h3>
+
+      <!-- Set / SetIf / SpreadIf -->
+      <div class="method-card">
+        <div class="method-header">
+          <code class="method-sig">.Set(path, value) / .SetIf(cond, path, value) / .SpreadIf(cond, path, value)</code>
+          <div class="method-meta">
+            <div class="method-title">Set / SetIf / SpreadIf</div>
+            <div class="method-desc"><code>.Set()</code> always sets the field. <code>.SetIf()</code> wraps the assignment in an <code>if cond</code> guard. <code>.SpreadIf()</code> spreads a map value (e.g., labels object) into a path conditionally — the CUE output uses the merge shorthand rather than assignment.</div>
+          </div>
+        </div>
+        <div class="method-body">
+          <div class="method-applies"><span class="applies-label">Applies to:</span><span class="pill pill-all">All Definition Types</span></div>
+          <div class="code-pair">
+            <div class="code-block">
+              <div class="code-label go"><span class="dot"></span>Go — defkit</div>
+              <pre class="language-go"><code>image       := defkit.String("image")
+annotations := defkit.StringKeyMap("annotations")
+labels      := defkit.StringKeyMap("labels")
+
+job := defkit.NewResource("batch/v1", "Job").
+    Set("spec.template.spec.containers[0].image", image).
+    SetIf(annotations.IsSet(),
+        "spec.template.metadata.annotations", annotations).
+    SpreadIf(labels.IsSet(),
+        "spec.template.metadata.labels", labels)</code></pre>
+            </div>
+            <div class="code-block">
+              <div class="code-label cue"><span class="dot"></span>CUE — generated</div>
+              <pre class="language-cue"><code>spec: template: spec: containers: [{
+    image: parameter.image
+}]
+if parameter.annotations != _|_ {
+    spec: template: metadata: annotations: parameter.annotations
+}
+if parameter.labels != _|_ {
+    spec: template: metadata: labels: parameter.labels
+}</code></pre>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- If / EndIf -->
+      <div class="method-card">
+        <div class="method-header">
+          <code class="method-sig">.If(cond) ... .EndIf()</code>
+          <div class="method-meta">
+            <div class="method-title">If / EndIf</div>
+            <div class="method-desc">Wraps multiple consecutive <code>.Set()</code> calls in a single CUE <code>if cond { ... }</code> block. Use when several fields should only be set together under the same condition, avoiding repetitive <code>.SetIf()</code> calls.</div>
+          </div>
+        </div>
+        <div class="method-body">
+          <div class="method-applies"><span class="applies-label">Applies to:</span><span class="pill pill-all">All Definition Types</span></div>
+          <div class="code-pair">
+            <div class="code-block">
+              <div class="code-label go"><span class="dot"></span>Go — defkit</div>
+              <pre class="language-go"><code>cpu    := defkit.String("cpu")
+memory := defkit.String("memory")
+
+job := defkit.NewResource("batch/v1", "Job").
+    If(cpu.IsSet()).
+        Set("spec.template.spec.containers[0].resources.limits.cpu", cpu).
+        Set("spec.template.spec.containers[0].resources.requests.cpu", cpu).
+    EndIf().
+    If(memory.IsSet()).
+        Set("spec.template.spec.containers[0].resources.limits.memory", memory).
+        Set("spec.template.spec.containers[0].resources.requests.memory", memory).
+    EndIf()</code></pre>
+            </div>
+            <div class="code-block">
+              <div class="code-label cue"><span class="dot"></span>CUE — generated</div>
+              <pre class="language-cue"><code>if parameter.cpu != _|_ {
+    spec: template: spec: containers: [{
+        resources: {
+            limits:   { cpu: parameter.cpu }
+            requests: { cpu: parameter.cpu }
+        }
+    }]
+}
+if parameter.memory != _|_ {
+    spec: template: spec: containers: [{
+        resources: {
+            limits:   { memory: parameter.memory }
+            requests: { memory: parameter.memory }
+        }
+    }]
+}</code></pre>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── ARRAY BUILDERS ──────────────────────── -->
+      <h3 style="font-size:1rem;font-weight:700;margin:2rem 0 1rem;color:var(--text);">Array Builders</h3>
+
+      <!-- defkit.NewArray / NewArrayElement -->
+      <div class="method-card">
+        <div class="method-header">
+          <code class="method-sig">defkit.NewArray() / defkit.NewArrayElement()</code>
+          <div class="method-meta">
+            <div class="method-title">NewArray / NewArrayElement</div>
+            <div class="method-desc"><code>defkit.NewArray()</code> builds a CUE list literal. Chain <code>.Item(elem)</code> to append always-present elements, <code>.ItemIf(cond, elem)</code> for conditional elements, and <code>.ForEachGuarded(cond, param, template)</code> to append elements for each value in an array parameter. <code>defkit.NewArrayElement()</code> builds one element object using <code>.Set()</code> and <code>.SetIf()</code>.</div>
+          </div>
+        </div>
+        <div class="method-body">
+          <div class="method-applies"><span class="applies-label">Applies to:</span><span class="pill pill-all">All Definition Types</span></div>
+          <div class="code-pair">
+            <div class="code-block">
+              <div class="code-label go"><span class="dot"></span>Go — defkit</div>
+              <pre class="language-go"><code>mem := defkit.Struct("mem").Optional()
+podCustomMetrics := defkit.Array("podCustomMetrics").Optional()
+
+cpuMetric := defkit.NewArrayElement().
+    Set("type", defkit.Lit("Resource")).
+    Set("resource", defkit.NewArrayElement().
+        Set("name", defkit.Lit("cpu")).
+        Set("target", defkit.NewArrayElement().
+            Set("type", defkit.Lit("Utilization")).
+            Set("averageUtilization", defkit.Reference("parameter.cpu.value"))))
+
+customElem := defkit.NewArrayElement().
+    Set("name", defkit.Reference("m.name")).
+    Set("value", defkit.Reference("m.value"))
+
+metrics := defkit.NewArray().
+    Item(cpuMetric).
+    ItemIf(mem.IsSet(), memMetric).
+    ForEachGuarded(podCustomMetrics.IsSet(), podCustomMetrics, customElem)</code></pre>
+            </div>
+            <div class="code-block">
+              <div class="code-label cue"><span class="dot"></span>CUE — generated</div>
+              <pre class="language-cue"><code>[
+    {
+        type: "Resource"
+        resource: {
+            name: "cpu"
+            target: {
+                type: "Utilization"
+                averageUtilization: parameter.cpu.value
+            }
+        }
+    },
+    if parameter.mem != _|_ { { type: "Resource", resource: { name: "memory" } } },
+    if parameter.podCustomMetrics != _|_ {
+        for m in parameter.podCustomMetrics {
+            { name: m.name, value: m.value }
+        }
+    },
+]</code></pre>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── LIST COMPREHENSIONS ─────────────────── -->
+      <h3 style="font-size:1rem;font-weight:700;margin:2rem 0 1rem;color:var(--text);">List Comprehensions</h3>
+
+      <!-- defkit.Each / defkit.From -->
+      <div class="method-card">
+        <div class="method-header">
+          <code class="method-sig">defkit.Each(param) / defkit.From(param) / defkit.ForEachIn(expr)</code>
+          <div class="method-meta">
+            <div class="method-title">Each / From / ForEachIn</div>
+            <div class="method-desc">Three ways to build CUE list comprehensions from array parameters. <code>defkit.Each()</code> iterates a parameter and maps each item using <code>.Map(FieldMap)</code>. <code>defkit.From()</code> supports chained transformations: <code>.Filter(cond)</code>, <code>.Map(FieldMap)</code>, <code>.Dedupe(field)</code>, <code>.Guard(cond)</code>. <code>defkit.ForEachIn()</code> iterates a <code>LetVariable</code> (for let-bound arrays) using <code>.MapFields(FieldMap)</code>.</div>
+          </div>
+        </div>
+        <div class="method-body">
+          <div class="method-applies"><span class="applies-label">Applies to:</span><span class="pill pill-all">All Definition Types</span></div>
+          <div class="code-pair">
+            <div class="code-block">
+              <div class="code-label go"><span class="dot"></span>Go — defkit</div>
+              <pre class="language-go"><code>volumes    := defkit.List("volumes")
+privileges := defkit.Array("privileges").Optional()
+privRef    := defkit.LetVariable("_privileges")
+
+// defkit.Each — simple field map
+mountMap := defkit.Each(volumes).Map(defkit.FieldMap{
+    "mountPath": defkit.FieldRef("mountPath"),
+    "name":      defkit.FieldRef("name"),
+})
+
+// defkit.From — filter + map + guard
+filtered := defkit.From(privileges).
+    Filter(defkit.FieldEquals("scope", "cluster")).
+    Guard(privileges.IsSet())
+
+// defkit.ForEachIn — iterate a let variable
+rules := defkit.ForEachIn(privRef).MapFields(defkit.FieldMap{
+    "verbs":     defkit.FieldRef("verbs"),
+    "resources": defkit.FieldRef("resources"),
+})</code></pre>
+            </div>
+            <div class="code-block">
+              <div class="code-label cue"><span class="dot"></span>CUE — generated</div>
+              <pre class="language-cue"><code>// defkit.Each
+[for v in parameter.volumes {
+    mountPath: v.mountPath
+    name:      v.name
+}]
+
+// defkit.From with filter + guard
+if parameter.privileges != _|_ {
+    [for p in parameter.privileges if p.scope == "cluster" { p }]
+}
+
+// defkit.ForEachIn (iterates let variable)
+[for r in _privileges {
+    verbs:     r.verbs
+    resources: r.resources
+}]</code></pre>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── FIELD HELPERS ───────────────────────── -->
+      <h3 style="font-size:1rem;font-weight:700;margin:2rem 0 1rem;color:var(--text);">Field Helpers</h3>
+
+      <!-- FieldRef / FieldMap / FieldEquals -->
+      <div class="method-card">
+        <div class="method-header">
+          <code class="method-sig">defkit.FieldRef(name) / defkit.FieldMap{} / defkit.FieldEquals(field, value)</code>
+          <div class="method-meta">
+            <div class="method-title">FieldRef / FieldMap / FieldEquals</div>
+            <div class="method-desc"><code>defkit.FieldRef(name)</code> references the named field from the current iteration element (used inside <code>Each</code>/<code>From</code> <code>Map</code> operations). <code>defkit.FieldMap</code> is a <code>map[string]Value</code> type specifying field-to-value mappings for comprehension output. <code>defkit.FieldEquals(field, value)</code> produces a filter predicate for <code>defkit.From().Filter()</code>.</div>
+          </div>
+        </div>
+        <div class="method-body">
+          <div class="method-applies"><span class="applies-label">Applies to:</span><span class="pill pill-all">All Definition Types</span></div>
+          <div class="code-pair">
+            <div class="code-block">
+              <div class="code-label go"><span class="dot"></span>Go — defkit</div>
+              <pre class="language-go"><code>// FieldRef: references iteration element field
+defkit.FieldRef("name")       // → item.name in CUE
+defkit.FieldRef("mountPath")  // → item.mountPath in CUE
+
+// FieldMap: output shape for comprehension
+defkit.FieldMap{
+    "verbs":           defkit.FieldRef("verbs"),
+    "apiGroups":       defkit.FieldRef("apiGroups"),
+    "nonResourceURLs": defkit.FieldRef("nonResourceURLs"),
+}
+
+// FieldEquals: filter predicate
+privileges := defkit.Array("privileges").Optional()
+filtered := defkit.From(privileges).
+    Filter(defkit.FieldEquals("scope", "cluster"))</code></pre>
+            </div>
+            <div class="code-block">
+              <div class="code-label cue"><span class="dot"></span>CUE — generated</div>
+              <pre class="language-cue"><code>// FieldRef inside Map
+[for item in list {
+    name:      item.name
+    mountPath: item.mountPath
+}]
+
+// FieldMap output shape
+[for r in list {
+    verbs:           r.verbs
+    apiGroups:       r.apiGroups
+    nonResourceURLs: r.nonResourceURLs
+}]
+
+// FieldEquals filter
+[for p in parameter.privileges if p.scope == "cluster" { p }]</code></pre>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- defkit.ItemFieldIsSet -->
+      <div class="method-card">
+        <div class="method-header">
+          <code class="method-sig">defkit.ItemFieldIsSet(fieldName string)</code>
+          <div class="method-meta">
+            <div class="method-title">ItemFieldIsSet</div>
+            <div class="method-desc">Returns a condition that is true when the named field exists on the current iteration element. Used with <code>.PickIf()</code> in the <code>tpl.Helper()</code> builder to conditionally include optional fields in the derived array. Generates a CUE <code>if item.field != _|_</code> guard in the comprehension body.</div>
+          </div>
+        </div>
+        <div class="method-body">
+          <div class="method-applies"><span class="applies-label">Applies to:</span><span class="pill pill-all">All Definition Types</span></div>
+          <div class="code-pair">
+            <div class="code-block">
+              <div class="code-label go"><span class="dot"></span>Go — defkit</div>
+              <pre class="language-go"><code>volumeMounts := defkit.Object("volumeMounts")
+
+// ItemFieldIsSet: used in Helper .PickIf()
+mountsArray := tpl.Helper("mountsArray").
+    FromFields(volumeMounts, "pvc", "configMap").
+    Pick("name", "mountPath").
+    PickIf(defkit.ItemFieldIsSet("subPath"), "subPath").
+    PickIf(defkit.ItemFieldIsSet("readOnly"), "readOnly").
+    Build()</code></pre>
+            </div>
+            <div class="code-block">
+              <div class="code-label cue"><span class="dot"></span>CUE — generated</div>
+              <pre class="language-cue"><code>let mountsArray = [for v in ... {
+    name:      v.name
+    mountPath: v.mountPath
+    if v.subPath != _|_ { subPath: v.subPath }    // PickIf
+    if v.readOnly != _|_ { readOnly: v.readOnly }  // PickIf
+}]</code></pre>
+            </div>
+          </div>
+        </div>
       </div>
     </section>
 
