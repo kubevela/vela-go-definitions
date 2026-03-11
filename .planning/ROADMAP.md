@@ -22,7 +22,10 @@ Four phases build a single-page HTML reference for the defkit Go API. Each phase
   2. Clicking a sidebar link scrolls to the correct content section
   3. Code blocks render with syntax highlighting (Go and CUE visually distinct)
   4. Page is usable on a standard desktop viewport without horizontal scrolling
-**Plans**: TBD
+**Plans**: 1 plan
+
+Plans:
+- [ ] 01-01-PLAN.md — HTML shell: layout, sidebar, Prism.js syntax highlighting, 8 placeholder sections
 
 ### Phase 2: Definition + Parameter API
 **Goal**: All four definition builder constructors and every parameter type are documented with Go and CUE examples
@@ -68,7 +71,7 @@ Four phases build a single-page HTML reference for the defkit Go API. Each phase
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Page Shell | 0/TBD | Not started | - |
+| 1. Page Shell | 0/1 | Not started | - |
 | 2. Definition + Parameter API | 0/TBD | Not started | - |
 | 3. Template + Resource + Value + VelaCtx | 0/TBD | Not started | - |
 | 4. Full Examples | 0/TBD | Not started | - |
