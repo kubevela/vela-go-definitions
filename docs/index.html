@@ -5,372 +5,448 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>defkit API Reference — KubeVela Definition SDK</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
   <style>
     :root {
-      --bg:            #0f172a;
-      --surface:       #1e293b;
-      --surface-2:     #162032;
-      --surface-hover: #2d3f55;
-      --border:        #334155;
-      --border-subtle: rgba(51,65,85,0.5);
-      --text:          #e2e8f0;
-      --text-muted:    #94a3b8;
-      --text-faint:    #64748b;
-      --blue:   #3b82f6; --blue-dim:   rgba(59,130,246,0.15);
-      --green:  #22c55e; --green-dim:  rgba(34,197,94,0.15);
-      --purple: #a855f7; --purple-dim: rgba(168,85,247,0.15);
-      --orange: #f97316; --orange-dim: rgba(249,115,22,0.15);
-      --cyan:   #06b6d4; --cyan-dim:   rgba(6,182,212,0.15);
-      --pink:   #ec4899; --pink-dim:   rgba(236,72,153,0.15);
-      --yellow: #eab308; --yellow-dim: rgba(234,179,8,0.15);
-      --sidebar-w: 272px;
+      --md-bg:                #141218;
+      --md-surface:           #1D1B20;
+      --md-surface-cont:      #211F26;
+      --md-surface-high:      #2B2930;
+      --md-surface-hover:     #36343b;
+      --md-on-surface:        #E6E1E5;
+      --md-on-surface-var:    #CAC4D0;
+      --md-outline:           #938F99;
+      --md-outline-var:       #49454F;
+
+      --md-primary:           #D0BCFF;
+      --md-on-primary:        #381E72;
+      --md-primary-cont:      #4F378B;
+
+      --c-blue:   #82B1FF; --c-blue-dim:   rgba(130,177,255,0.12);
+      --c-teal:   #80CBC4; --c-teal-dim:   rgba(128,203,196,0.12);
+      --c-orange: #FFCC80; --c-orange-dim: rgba(255,204,128,0.12);
+      --c-pink:   #F48FB1; --c-pink-dim:   rgba(244,143,177,0.12);
+      --c-cyan:   #80DEEA; --c-cyan-dim:   rgba(128,222,234,0.12);
+      --c-purple: #CE93D8; --c-purple-dim: rgba(206,147,216,0.12);
+      --c-green:  #A5D6A7; --c-green-dim:  rgba(165,214,167,0.12);
+      --c-yellow: #FFF176; --c-yellow-dim: rgba(255,241,118,0.12);
+
+      --sidebar-w: 260px;
     }
+
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     html { scroll-behavior: smooth; }
     body {
-      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-      background: var(--bg); color: var(--text);
-      line-height: 1.65; font-size: 0.9rem;
+      font-family: 'Roboto', -apple-system, sans-serif;
+      background: var(--md-bg);
+      color: var(--md-on-surface);
+      line-height: 1.6;
+      font-size: 0.9rem;
+      font-weight: 400;
     }
 
     /* ── SIDEBAR ─────────────────────────────── */
     #sidebar {
       position: fixed; top: 0; left: 0;
       width: var(--sidebar-w); height: 100vh;
-      background: var(--surface-2);
-      border-right: 1px solid var(--border);
+      background: var(--md-surface);
+      border-right: 1px solid var(--md-outline-var);
       overflow-y: auto; z-index: 200;
       display: flex; flex-direction: column;
     }
     .sidebar-header {
-      padding: 1.5rem 1.25rem 1rem;
-      border-bottom: 1px solid var(--border);
-      background: linear-gradient(160deg, #162032, #1a1040 120%);
-      position: relative; overflow: hidden;
-    }
-    .sidebar-header::after {
-      content: ''; position: absolute;
-      bottom: -40px; right: -40px;
-      width: 120px; height: 120px;
-      background: radial-gradient(circle, rgba(168,85,247,0.2) 0%, transparent 70%);
+      padding: 1.25rem 1rem 1rem;
+      border-bottom: 1px solid var(--md-outline-var);
     }
     .sidebar-logo {
-      display: inline-flex; align-items: center; gap: 0.5rem;
-      margin-bottom: 0.4rem;
+      display: flex; align-items: center; gap: 0.75rem;
+      margin-bottom: 0.5rem;
     }
     .logo-icon {
-      width: 28px; height: 28px; border-radius: 7px;
-      background: linear-gradient(135deg, var(--blue), var(--purple));
+      width: 36px; height: 36px; border-radius: 10px;
+      background: var(--md-primary-cont);
       display: flex; align-items: center; justify-content: center;
-      font-size: 0.75rem; font-weight: 800; color: #fff;
     }
-    .sidebar-title { font-size: 1rem; font-weight: 700; color: #c7d2fe; }
-    .sidebar-subtitle { font-size: 0.7rem; color: var(--text-faint); margin-top: 0.2rem; }
-    .sidebar-version {
-      display: inline-flex; align-items: center; gap: 0.3rem;
-      background: var(--purple-dim); border: 1px solid rgba(168,85,247,0.25);
-      color: #c084fc; font-size: 0.65rem; font-weight: 600;
-      letter-spacing: 0.07em; text-transform: uppercase;
-      padding: 0.15rem 0.55rem; border-radius: 99px; margin-top: 0.6rem;
+    .logo-icon .material-icons-round {
+      font-size: 20px; color: var(--md-primary);
     }
-    .sidebar-nav { padding: 0.75rem 0; flex: 1; }
-    .nav-group { margin-bottom: 0.25rem; }
+    .sidebar-title {
+      font-size: 1rem; font-weight: 700;
+      color: var(--md-primary); letter-spacing: 0.01em;
+    }
+    .sidebar-subtitle {
+      font-size: 0.72rem; color: var(--md-outline);
+      margin-left: 0.25rem;
+    }
+    .sidebar-chip {
+      display: inline-flex; align-items: center; gap: 0.35rem;
+      background: var(--c-purple-dim);
+      border: 1px solid rgba(206,147,216,0.25);
+      color: var(--c-purple);
+      font-size: 0.68rem; font-weight: 500;
+      padding: 0.2rem 0.6rem; border-radius: 99px;
+      margin-top: 0.5rem;
+    }
+    .sidebar-nav { padding: 0.5rem 0; flex: 1; }
+    .nav-group { margin-bottom: 0.5rem; }
     .nav-group-label {
-      padding: 0.5rem 1.25rem 0.25rem;
-      font-size: 0.63rem; font-weight: 700; letter-spacing: 0.1em;
-      text-transform: uppercase; color: var(--text-faint);
+      padding: 0.65rem 1rem 0.3rem;
+      font-size: 0.65rem; font-weight: 500;
+      letter-spacing: 0.12em; text-transform: uppercase;
+      color: var(--md-outline);
     }
     .nav-link {
       display: flex; align-items: center; gap: 0.6rem;
-      padding: 0.42rem 1.25rem;
-      color: var(--text-muted); text-decoration: none;
-      font-size: 0.82rem; font-weight: 500;
-      border-left: 2px solid transparent;
+      padding: 0.45rem 1rem;
+      color: var(--md-on-surface-var);
+      text-decoration: none;
+      font-size: 0.82rem; font-weight: 400;
+      border-radius: 0 99px 99px 0;
+      margin-right: 0.75rem;
       transition: all 0.15s;
     }
-    .nav-link:hover { color: var(--text); background: rgba(255,255,255,0.04); }
+    .nav-link .material-icons-round { font-size: 18px; opacity: 0.7; flex-shrink: 0; }
+    .nav-link:hover {
+      background: var(--md-surface-high);
+      color: var(--md-on-surface);
+    }
     .nav-link.active {
-      color: var(--blue); border-left-color: var(--blue);
-      background: rgba(59,130,246,0.08);
+      background: var(--c-purple-dim);
+      color: var(--md-primary);
+      font-weight: 500;
     }
-    .nav-dot {
-      width: 5px; height: 5px; border-radius: 50%;
-      background: currentColor; opacity: 0.6; flex-shrink: 0;
-    }
-    .nav-badge {
-      margin-left: auto; font-size: 0.62rem; font-weight: 700;
-      padding: 0.1rem 0.4rem; border-radius: 4px;
-    }
+    .nav-link.active .material-icons-round { opacity: 1; color: var(--md-primary); }
 
     /* ── MAIN ─────────────────────────────────── */
     #main { margin-left: var(--sidebar-w); min-height: 100vh; }
 
     /* ── PAGE HEADER ─────────────────────────── */
     .page-header {
-      background: linear-gradient(135deg, #0f172a 0%, #1a1040 45%, #0a1628 100%);
-      border-bottom: 1px solid var(--border);
-      padding: 3rem 3rem 2.5rem;
+      background: var(--md-surface-cont);
+      border-bottom: 1px solid var(--md-outline-var);
+      padding: 2.5rem 2.5rem 2rem;
       position: relative; overflow: hidden;
     }
     .page-header::before {
-      content: ''; position: absolute; top: -80px; right: -80px;
-      width: 400px; height: 400px;
-      background: radial-gradient(circle, rgba(168,85,247,0.14) 0%, transparent 65%);
+      content: ''; position: absolute; top: 0; right: 0;
+      width: 350px; height: 100%;
+      background: linear-gradient(135deg, transparent, rgba(208,188,255,0.05));
+      pointer-events: none;
     }
-    .page-header::after {
-      content: ''; position: absolute; bottom: -60px; left: 30%;
-      width: 500px; height: 250px;
-      background: radial-gradient(circle, rgba(59,130,246,0.09) 0%, transparent 65%);
-    }
-    .header-badge {
+    .header-eyebrow {
       display: inline-flex; align-items: center; gap: 0.4rem;
-      background: var(--purple-dim); border: 1px solid rgba(168,85,247,0.3);
-      color: #c084fc; font-size: 0.68rem; font-weight: 600;
-      letter-spacing: 0.09em; text-transform: uppercase;
-      padding: 0.2rem 0.7rem; border-radius: 99px; margin-bottom: 0.9rem;
+      background: var(--c-purple-dim);
+      border: 1px solid rgba(206,147,216,0.3);
+      color: var(--c-purple);
+      font-size: 0.7rem; font-weight: 500;
+      padding: 0.2rem 0.65rem 0.2rem 0.4rem;
+      border-radius: 99px; margin-bottom: 0.85rem;
     }
+    .header-eyebrow .material-icons-round { font-size: 14px; }
     .page-title {
-      font-size: 2.4rem; font-weight: 800; line-height: 1.15;
-      background: linear-gradient(135deg, #60a5fa, #a78bfa 40%, #f472b6);
-      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
-      margin-bottom: 0.6rem;
+      font-size: 2.2rem; font-weight: 300; line-height: 1.2;
+      color: var(--md-on-surface); margin-bottom: 0.5rem;
+      letter-spacing: -0.01em;
     }
+    .page-title strong { font-weight: 700; color: var(--md-primary); }
     .page-desc {
-      color: var(--text-muted); font-size: 1rem; max-width: 640px; margin-bottom: 2rem;
+      color: var(--md-on-surface-var);
+      font-size: 0.95rem; max-width: 600px; margin-bottom: 1.75rem;
+      font-weight: 300;
     }
-    .stats-row { display: flex; gap: 0.75rem; flex-wrap: wrap; position: relative; z-index: 1; }
+    .stats-row { display: flex; gap: 0.6rem; flex-wrap: wrap; position: relative; z-index: 1; }
     .stat-card {
-      background: rgba(255,255,255,0.04); border: 1px solid var(--border);
-      border-radius: 10px; padding: 0.8rem 1.3rem;
-      display: flex; flex-direction: column; gap: 0.1rem; min-width: 110px;
+      background: var(--md-surface-high);
+      border: 1px solid var(--md-outline-var);
+      border-radius: 12px; padding: 0.75rem 1.2rem;
+      display: flex; align-items: center; gap: 0.75rem;
+      min-width: 120px;
     }
-    .stat-value { font-size: 1.7rem; font-weight: 800; line-height: 1; }
-    .stat-label { font-size: 0.67rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.07em; }
-    .stat-card.blue .stat-value  { color: var(--blue); }
-    .stat-card.green .stat-value { color: var(--green); }
-    .stat-card.purple .stat-value{ color: var(--purple); }
-    .stat-card.orange .stat-value{ color: var(--orange); }
-    .stat-card.cyan .stat-value  { color: var(--cyan); }
+    .stat-card .material-icons-round { font-size: 22px; }
+    .stat-info { display: flex; flex-direction: column; }
+    .stat-value { font-size: 1.5rem; font-weight: 700; line-height: 1; }
+    .stat-label { font-size: 0.65rem; color: var(--md-outline); text-transform: uppercase; letter-spacing: 0.08em; margin-top: 0.15rem; }
+    .stat-card.blue  .material-icons-round, .stat-card.blue  .stat-value { color: var(--c-blue); }
+    .stat-card.teal  .material-icons-round, .stat-card.teal  .stat-value { color: var(--c-teal); }
+    .stat-card.purple .material-icons-round, .stat-card.purple .stat-value { color: var(--c-purple); }
+    .stat-card.orange .material-icons-round, .stat-card.orange .stat-value { color: var(--c-orange); }
+    .stat-card.cyan  .material-icons-round, .stat-card.cyan  .stat-value { color: var(--c-cyan); }
 
     /* ── CONTENT ─────────────────────────────── */
-    .content { padding: 2.5rem 3rem; max-width: 1100px; }
-    .section { margin-bottom: 4rem; }
+    .content { padding: 2rem 2.5rem; max-width: 1080px; }
+    .section { margin-bottom: 3.5rem; }
     .section-header {
       display: flex; align-items: center; gap: 0.75rem;
-      padding-bottom: 0.75rem; margin-bottom: 1.75rem;
-      border-bottom: 1px solid var(--border);
+      padding-bottom: 0.75rem; margin-bottom: 1.5rem;
+      border-bottom: 1px solid var(--md-outline-var);
     }
     .section-icon {
-      width: 36px; height: 36px; border-radius: 9px;
+      width: 40px; height: 40px; border-radius: 12px;
       display: flex; align-items: center; justify-content: center;
-      font-size: 1.1rem; flex-shrink: 0;
+      flex-shrink: 0;
     }
-    .section-title { font-size: 1.35rem; font-weight: 700; }
-    .section-desc { color: var(--text-muted); font-size: 0.88rem; margin-bottom: 2rem; max-width: 700px; }
+    .section-icon .material-icons-round { font-size: 22px; }
+    .section-title { font-size: 1.3rem; font-weight: 500; color: var(--md-on-surface); }
+    .section-desc {
+      color: var(--md-on-surface-var);
+      font-size: 0.88rem; margin-bottom: 1.75rem;
+      max-width: 680px; line-height: 1.65; font-weight: 300;
+    }
 
     /* ── OVERVIEW CARDS ──────────────────────── */
     .overview-grid {
-      display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-      gap: 1rem; margin-bottom: 2.5rem;
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 0.875rem; margin-bottom: 2rem;
     }
     .overview-card {
-      background: var(--surface); border: 1px solid var(--border);
-      border-radius: 12px; padding: 1.25rem;
-      transition: border-color 0.18s, transform 0.18s;
+      background: var(--md-surface-cont);
+      border: 1px solid var(--md-outline-var);
+      border-radius: 16px; padding: 1.25rem;
+      transition: background 0.15s, transform 0.15s;
     }
-    .overview-card:hover { border-color: var(--surface-hover); transform: translateY(-1px); }
-    .card-icon { font-size: 1.6rem; margin-bottom: 0.6rem; }
-    .card-title { font-size: 0.9rem; font-weight: 700; margin-bottom: 0.3rem; }
-    .card-desc { font-size: 0.8rem; color: var(--text-muted); line-height: 1.55; }
+    .overview-card:hover { background: var(--md-surface-high); transform: translateY(-1px); }
+    .card-icon-wrap {
+      width: 42px; height: 42px; border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      margin-bottom: 0.75rem;
+    }
+    .card-icon-wrap .material-icons-round { font-size: 22px; }
+    .card-title { font-size: 0.88rem; font-weight: 500; margin-bottom: 0.35rem; }
+    .card-desc { font-size: 0.78rem; color: var(--md-on-surface-var); line-height: 1.55; font-weight: 300; }
 
     /* ── FLOW DIAGRAM ────────────────────────── */
-    .flow-section { margin-bottom: 2.5rem; }
-    .flow-title { font-size: 1rem; font-weight: 700; margin-bottom: 1.25rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.07em; font-size: 0.75rem; }
+    .flow-section { margin-bottom: 2rem; }
+    .flow-title {
+      font-size: 0.68rem; font-weight: 500; letter-spacing: 0.1em;
+      text-transform: uppercase; color: var(--md-outline); margin-bottom: 1rem;
+    }
     .flow-diagram {
-      background: var(--surface); border: 1px solid var(--border);
-      border-radius: 14px; padding: 2rem; overflow-x: auto;
+      background: var(--md-surface-cont);
+      border: 1px solid var(--md-outline-var);
+      border-radius: 16px; padding: 1.75rem; overflow-x: auto;
     }
-    .flow-steps {
-      display: flex; align-items: center; gap: 0;
-      min-width: 700px;
-    }
-    .flow-step {
-      flex: 1; display: flex; flex-direction: column; align-items: center;
-      gap: 0.6rem; position: relative;
-    }
+    .flow-steps { display: flex; align-items: center; min-width: 660px; }
+    .flow-step { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 0.5rem; }
     .flow-step-box {
-      background: var(--surface-2); border: 1px solid var(--border);
-      border-radius: 10px; padding: 0.9rem 1rem;
-      text-align: center; width: 100%; max-width: 140px;
+      background: var(--md-surface-high);
+      border: 1px solid var(--md-outline-var);
+      border-radius: 12px; padding: 0.85rem 0.75rem;
+      text-align: center; width: 100%; max-width: 130px;
       position: relative; z-index: 1;
-      transition: border-color 0.18s;
     }
-    .flow-step-box:hover { border-color: var(--text-faint); }
-    .flow-step-icon { font-size: 1.4rem; margin-bottom: 0.35rem; }
-    .flow-step-name { font-size: 0.78rem; font-weight: 700; }
-    .flow-step-sub { font-size: 0.67rem; color: var(--text-faint); margin-top: 0.15rem; }
-    .flow-arrow {
-      flex-shrink: 0; width: 40px; display: flex; align-items: center;
-      justify-content: center; color: var(--text-faint); font-size: 1.1rem;
-      padding-bottom: 1.6rem;
-    }
-    .flow-step.blue  .flow-step-box { border-color: rgba(59,130,246,0.4);  background: rgba(59,130,246,0.06); }
-    .flow-step.green .flow-step-box { border-color: rgba(34,197,94,0.4);   background: rgba(34,197,94,0.06); }
-    .flow-step.purple.flow-step-box { border-color: rgba(168,85,247,0.4);  background: rgba(168,85,247,0.06); }
-    .flow-step.orange.flow-step-box { border-color: rgba(249,115,22,0.4);  background: rgba(249,115,22,0.06); }
-    .flow-step.cyan  .flow-step-box { border-color: rgba(6,182,212,0.4);   background: rgba(6,182,212,0.06); }
-    .flow-step.blue   .flow-step-name { color: #60a5fa; }
-    .flow-step.green  .flow-step-name { color: #4ade80; }
-    .flow-step.purple .flow-step-name { color: #c084fc; }
-    .flow-step.orange .flow-step-name { color: #fb923c; }
-    .flow-step.cyan   .flow-step-name { color: #22d3ee; }
+    .flow-step-icon .material-icons-round { font-size: 26px; display: block; margin-bottom: 0.4rem; }
+    .flow-step-name { font-size: 0.75rem; font-weight: 500; }
+    .flow-step-sub { font-size: 0.65rem; color: var(--md-outline); margin-top: 0.1rem; }
+    .flow-arrow { flex-shrink: 0; width: 36px; display: flex; align-items: center; justify-content: center; color: var(--md-outline); padding-bottom: 1.4rem; }
+    .flow-arrow .material-icons-round { font-size: 20px; }
+    .flow-step.blue   .flow-step-box { border-color: rgba(130,177,255,0.35); }
+    .flow-step.blue   .flow-step-icon .material-icons-round { color: var(--c-blue); }
+    .flow-step.blue   .flow-step-name { color: var(--c-blue); }
+    .flow-step.purple .flow-step-box { border-color: rgba(206,147,216,0.35); }
+    .flow-step.purple .flow-step-icon .material-icons-round { color: var(--c-purple); }
+    .flow-step.purple .flow-step-name { color: var(--c-purple); }
+    .flow-step.teal   .flow-step-box { border-color: rgba(128,203,196,0.35); }
+    .flow-step.teal   .flow-step-icon .material-icons-round { color: var(--c-teal); }
+    .flow-step.teal   .flow-step-name { color: var(--c-teal); }
+    .flow-step.orange .flow-step-box { border-color: rgba(255,204,128,0.35); }
+    .flow-step.orange .flow-step-icon .material-icons-round { color: var(--c-orange); }
+    .flow-step.orange .flow-step-name { color: var(--c-orange); }
+    .flow-step.cyan   .flow-step-box { border-color: rgba(128,222,234,0.35); }
+    .flow-step.cyan   .flow-step-icon .material-icons-round { color: var(--c-cyan); }
+    .flow-step.cyan   .flow-step-name { color: var(--c-cyan); }
+    .flow-step.green  .flow-step-box { border-color: rgba(165,214,167,0.35); }
+    .flow-step.green  .flow-step-icon .material-icons-round { color: var(--c-green); }
+    .flow-step.green  .flow-step-name { color: var(--c-green); }
 
     /* ── COMPARISON TABLE ────────────────────── */
     .comparison-table { width: 100%; border-collapse: collapse; font-size: 0.83rem; margin-bottom: 2rem; }
     .comparison-table th {
       text-align: left; padding: 0.55rem 1rem;
-      background: var(--surface-2); color: var(--text-muted);
-      font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em;
-      border-bottom: 1px solid var(--border);
+      background: var(--md-surface-cont); color: var(--md-on-surface-var);
+      font-size: 0.7rem; font-weight: 500; text-transform: uppercase;
+      letter-spacing: 0.06em; border-bottom: 1px solid var(--md-outline-var);
     }
     .comparison-table td {
-      padding: 0.55rem 1rem; border-bottom: 1px solid var(--border-subtle);
+      padding: 0.55rem 1rem;
+      border-bottom: 1px solid rgba(73,69,79,0.4);
       vertical-align: top;
     }
     .comparison-table tr:last-child td { border-bottom: none; }
     .comparison-table tr:hover td { background: rgba(255,255,255,0.02); }
-    .comparison-table .mono { font-family: 'JetBrains Mono', monospace; font-size: 0.76rem; }
-    .check { color: var(--green); }
-    .cross { color: var(--text-faint); }
-    .neutral { color: var(--text-muted); }
+    .comparison-table .mono { font-family: 'Roboto Mono', monospace; font-size: 0.76rem; }
+    .check { color: var(--c-teal); }
+    .cross { color: var(--md-outline); }
+    .neutral { color: var(--md-on-surface-var); }
 
     /* ── API METHOD CARDS ────────────────────── */
     .method-card {
-      background: var(--surface); border: 1px solid var(--border);
-      border-radius: 12px; margin-bottom: 1.25rem; overflow: hidden;
-      transition: border-color 0.18s;
+      background: var(--md-surface-cont);
+      border: 1px solid var(--md-outline-var);
+      border-radius: 16px; margin-bottom: 1rem; overflow: hidden;
+      transition: border-color 0.15s, box-shadow 0.15s;
     }
-    .method-card:hover { border-color: #475569; }
+    .method-card:hover {
+      border-color: var(--md-outline);
+      box-shadow: 0 2px 12px rgba(0,0,0,0.3);
+    }
     .method-header {
-      padding: 1rem 1.25rem; border-bottom: 1px solid var(--border);
+      padding: 1rem 1.25rem;
+      border-bottom: 1px solid var(--md-outline-var);
       display: flex; align-items: flex-start; gap: 1rem;
     }
     .method-sig {
-      font-family: 'JetBrains Mono', monospace; font-size: 0.82rem; font-weight: 600;
-      color: #93c5fd; background: var(--bg);
-      border: 1px solid var(--border); border-radius: 6px;
-      padding: 0.25rem 0.65rem; white-space: nowrap; flex-shrink: 0; margin-top: 0.1rem;
+      font-family: 'Roboto Mono', monospace;
+      font-size: 0.78rem; font-weight: 500;
+      color: var(--md-primary);
+      background: rgba(208,188,255,0.08);
+      border: 1px solid rgba(208,188,255,0.2);
+      border-radius: 8px;
+      padding: 0.25rem 0.6rem;
+      white-space: nowrap; flex-shrink: 0; margin-top: 0.1rem;
     }
     .method-meta { flex: 1; }
-    .method-title { font-size: 0.95rem; font-weight: 700; margin-bottom: 0.2rem; }
-    .method-desc { font-size: 0.82rem; color: var(--text-muted); line-height: 1.5; }
+    .method-title { font-size: 0.95rem; font-weight: 500; margin-bottom: 0.2rem; }
+    .method-desc { font-size: 0.82rem; color: var(--md-on-surface-var); line-height: 1.5; font-weight: 300; }
     .method-body { padding: 1.25rem; }
-    .method-applies {
-      display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;
-      margin-bottom: 0.85rem;
-    }
-    .applies-label { font-size: 0.7rem; color: var(--text-faint); }
+    .method-applies { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 0.85rem; }
+    .applies-label { font-size: 0.7rem; color: var(--md-outline); }
 
     /* ── TYPE PILLS ──────────────────────────── */
     .pill {
-      font-size: 0.67rem; font-weight: 600; padding: 0.15rem 0.55rem;
-      border-radius: 99px; display: inline-flex; align-items: center; gap: 0.3rem;
+      font-size: 0.67rem; font-weight: 500;
+      padding: 0.15rem 0.6rem;
+      border-radius: 99px;
+      display: inline-flex; align-items: center; gap: 0.3rem;
     }
-    .pill-component { background: var(--blue-dim);   color: #60a5fa; }
-    .pill-trait     { background: var(--orange-dim);  color: #fb923c; }
-    .pill-policy    { background: var(--pink-dim);    color: #f472b6; }
-    .pill-workflow  { background: var(--cyan-dim);    color: #22d3ee; }
-    .pill-param     { background: var(--yellow-dim);  color: #fbbf24; }
-    .pill-all       { background: var(--purple-dim);  color: #c084fc; }
-    .pill-template  { background: var(--green-dim);   color: #4ade80; }
+    .pill-component { background: var(--c-blue-dim);   color: var(--c-blue); }
+    .pill-trait     { background: var(--c-orange-dim);  color: var(--c-orange); }
+    .pill-policy    { background: var(--c-pink-dim);    color: var(--c-pink); }
+    .pill-workflow  { background: var(--c-cyan-dim);    color: var(--c-cyan); }
+    .pill-param     { background: var(--c-yellow-dim);  color: var(--c-yellow); }
+    .pill-all       { background: var(--c-purple-dim);  color: var(--c-purple); }
+    .pill-template  { background: var(--c-green-dim);   color: var(--c-green); }
 
     /* ── CODE BLOCKS ─────────────────────────── */
-    .code-pair {
-      display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;
-      margin-top: 0.75rem;
-    }
+    .code-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-top: 0.75rem; }
     @media (max-width: 800px) { .code-pair { grid-template-columns: 1fr; } }
-    .code-block { border-radius: 9px; overflow: hidden; border: 1px solid var(--border); }
+    .code-block { border-radius: 12px; overflow: hidden; border: 1px solid var(--md-outline-var); }
     .code-label {
-      padding: 0.3rem 0.85rem; font-size: 0.67rem; font-weight: 700;
+      padding: 0.35rem 0.9rem;
+      font-size: 0.65rem; font-weight: 500;
       letter-spacing: 0.07em; text-transform: uppercase;
       display: flex; align-items: center; gap: 0.4rem;
-      border-bottom: 1px solid var(--border);
+      border-bottom: 1px solid var(--md-outline-var);
     }
-    .code-label.go  { background: rgba(59,130,246,0.1); color: #93c5fd; }
-    .code-label.cue { background: rgba(34,197,94,0.1);  color: #86efac; }
+    .code-label.go  { background: rgba(130,177,255,0.1); color: var(--c-blue); }
+    .code-label.cue { background: rgba(165,214,167,0.1); color: var(--c-green); }
     .code-label .dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; opacity: 0.8; }
     .code-block pre[class*="language-"] {
-      margin: 0; border-radius: 0; background: #0d1117 !important;
-      font-family: 'JetBrains Mono', monospace !important; font-size: 0.77rem !important;
+      margin: 0; border-radius: 0; background: #0D0D10 !important;
+      font-family: 'Roboto Mono', monospace !important; font-size: 0.77rem !important;
     }
     .code-block pre { margin: 0; }
 
     /* ── INTEGRATION DIAGRAM ─────────────────── */
     .integration-grid {
-      display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem;
-      margin-bottom: 2rem;
+      display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.875rem; margin-bottom: 1.75rem;
     }
     @media (max-width: 900px) { .integration-grid { grid-template-columns: 1fr; } }
     .integration-card {
-      background: var(--surface); border: 1px solid var(--border);
-      border-radius: 12px; padding: 1.25rem;
+      background: var(--md-surface-cont);
+      border: 1px solid var(--md-outline-var);
+      border-radius: 16px; padding: 1.25rem;
+      transition: background 0.15s;
     }
-    .int-icon { font-size: 1.5rem; margin-bottom: 0.5rem; }
-    .int-title { font-size: 0.88rem; font-weight: 700; margin-bottom: 0.4rem; }
-    .int-desc { font-size: 0.78rem; color: var(--text-muted); line-height: 1.5; }
+    .integration-card:hover { background: var(--md-surface-high); }
+    .int-icon-wrap {
+      width: 40px; height: 40px; border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      margin-bottom: 0.6rem;
+    }
+    .int-icon-wrap .material-icons-round { font-size: 22px; }
+    .int-title { font-size: 0.88rem; font-weight: 500; margin-bottom: 0.35rem; }
+    .int-desc { font-size: 0.78rem; color: var(--md-on-surface-var); line-height: 1.5; font-weight: 300; }
     .int-tag {
       display: inline-block; margin-top: 0.6rem;
-      font-size: 0.65rem; font-weight: 600; padding: 0.1rem 0.4rem;
-      border-radius: 4px; font-family: 'JetBrains Mono', monospace;
+      font-size: 0.65rem; font-weight: 500;
+      padding: 0.15rem 0.45rem; border-radius: 6px;
+      font-family: 'Roboto Mono', monospace;
     }
 
     /* ── QUICKSTART ──────────────────────────── */
     .quickstart-steps { display: flex; flex-direction: column; gap: 0; }
     .qs-step {
       display: flex; gap: 1.25rem; padding: 1.25rem 0;
-      border-bottom: 1px solid var(--border-subtle);
+      border-bottom: 1px solid rgba(73,69,79,0.4);
     }
     .qs-step:last-child { border-bottom: none; }
     .qs-num {
-      width: 28px; height: 28px; border-radius: 50%;
-      background: var(--blue-dim); border: 1px solid rgba(59,130,246,0.3);
-      color: var(--blue); font-size: 0.78rem; font-weight: 700;
-      display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 0.1rem;
+      width: 32px; height: 32px; border-radius: 50%;
+      background: var(--c-blue-dim);
+      border: 1px solid rgba(130,177,255,0.3);
+      color: var(--c-blue); font-size: 0.82rem; font-weight: 700;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; margin-top: 0.05rem;
     }
-    .qs-title { font-size: 0.9rem; font-weight: 700; margin-bottom: 0.3rem; }
-    .qs-desc { font-size: 0.82rem; color: var(--text-muted); margin-bottom: 0.6rem; }
+    .qs-title { font-size: 0.9rem; font-weight: 500; margin-bottom: 0.3rem; }
+    .qs-desc { font-size: 0.82rem; color: var(--md-on-surface-var); margin-bottom: 0.6rem; font-weight: 300; }
 
     /* ── PLACEHOLDER ─────────────────────────── */
     .placeholder-box {
-      background: var(--surface); border: 1px dashed var(--border);
-      border-radius: 12px; padding: 2.5rem;
-      text-align: center; color: var(--text-faint);
+      background: var(--md-surface-cont);
+      border: 1px dashed var(--md-outline-var);
+      border-radius: 16px; padding: 2.5rem;
+      text-align: center; color: var(--md-outline);
     }
     .placeholder-box p { font-size: 0.85rem; }
-    .placeholder-box .pl-icon { font-size: 2rem; margin-bottom: 0.75rem; }
+    .placeholder-box .pl-icon .material-icons-round { font-size: 2.5rem; margin-bottom: 0.75rem; opacity: 0.5; }
     .placeholder-box .pl-phase {
-      display: inline-flex; background: var(--purple-dim); border: 1px solid rgba(168,85,247,0.25);
-      color: #c084fc; font-size: 0.7rem; font-weight: 600; padding: 0.2rem 0.65rem;
-      border-radius: 99px; margin-top: 0.5rem;
+      display: inline-flex;
+      background: var(--c-purple-dim);
+      border: 1px solid rgba(206,147,216,0.25);
+      color: var(--c-purple);
+      font-size: 0.7rem; font-weight: 500;
+      padding: 0.2rem 0.65rem; border-radius: 99px; margin-top: 0.5rem;
     }
 
     /* ── INFO BOX ────────────────────────────── */
     .info-box {
-      background: rgba(59,130,246,0.07); border: 1px solid rgba(59,130,246,0.25);
-      border-radius: 10px; padding: 1rem 1.25rem;
-      font-size: 0.83rem; color: #93c5fd; margin-bottom: 1.5rem;
+      background: rgba(130,177,255,0.07);
+      border: 1px solid rgba(130,177,255,0.25);
+      border-radius: 12px; padding: 0.9rem 1.1rem;
+      font-size: 0.83rem; color: var(--c-blue);
+      margin-bottom: 1.5rem;
       display: flex; gap: 0.75rem; align-items: flex-start;
     }
-    .info-box .icon { flex-shrink: 0; font-size: 1rem; margin-top: 0.1rem; }
+    .info-box .material-icons-round { flex-shrink: 0; font-size: 18px; margin-top: 0.1rem; }
+
+    /* ── SUBSECTION HEADERS ──────────────────── */
+    .subsection-title {
+      font-size: 0.82rem; font-weight: 500; color: var(--md-on-surface-var);
+      text-transform: uppercase; letter-spacing: 0.08em;
+      margin: 2rem 0 1rem;
+      display: flex; align-items: center; gap: 0.5rem;
+    }
+    .subsection-title .material-icons-round { font-size: 16px; }
+
+    /* ── PARAM TYPE GROUP ────────────────────── */
+    .param-group { margin-bottom: 2rem; }
+    .param-group-header {
+      display: flex; align-items: center; gap: 0.6rem;
+      padding: 0.6rem 0.85rem;
+      background: var(--md-surface-high);
+      border-radius: 10px; margin-bottom: 0.75rem;
+    }
+    .param-group-header .material-icons-round { font-size: 18px; }
+    .param-group-label { font-size: 0.82rem; font-weight: 500; }
 
     /* ── SCROLLBAR ───────────────────────────── */
     ::-webkit-scrollbar { width: 6px; height: 6px; }
     ::-webkit-scrollbar-track { background: transparent; }
-    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
-    ::-webkit-scrollbar-thumb:hover { background: #475569; }
+    ::-webkit-scrollbar-thumb { background: var(--md-outline-var); border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--md-outline); }
   </style>
 </head>
 <body>
@@ -381,61 +457,61 @@
 <nav id="sidebar">
   <div class="sidebar-header">
     <div class="sidebar-logo">
-      <div class="logo-icon">dk</div>
+      <div class="logo-icon"><span class="material-icons-round">hub</span></div>
       <span class="sidebar-title">defkit</span>
     </div>
     <div class="sidebar-subtitle">KubeVela Definition SDK for Go</div>
-    <div class="sidebar-version">● API Reference</div>
+    <div class="sidebar-chip"><span class="material-icons-round" style="font-size:12px;">book</span> API Reference</div>
   </div>
 
   <div class="sidebar-nav">
 
     <div class="nav-group">
       <div class="nav-group-label">Introduction</div>
-      <a href="#overview"      class="nav-link active"><span class="nav-dot"></span>Overview</a>
-      <a href="#quickstart"    class="nav-link"><span class="nav-dot"></span>Quick Start</a>
-      <a href="#architecture"  class="nav-link"><span class="nav-dot"></span>Architecture &amp; Flow</a>
-      <a href="#integration"   class="nav-link"><span class="nav-dot"></span>Integration</a>
+      <a href="#overview"      class="nav-link active"><span class="material-icons-round">auto_stories</span>Overview</a>
+      <a href="#quickstart"    class="nav-link"><span class="material-icons-round">rocket_launch</span>Quick Start</a>
+      <a href="#architecture"  class="nav-link"><span class="material-icons-round">account_tree</span>Architecture &amp; Flow</a>
+      <a href="#integration"   class="nav-link"><span class="material-icons-round">hub</span>Integration</a>
     </div>
 
     <div class="nav-group">
       <div class="nav-group-label">Definition Builders</div>
-      <a href="#definition-builders" class="nav-link"><span class="nav-dot"></span>NewComponent</a>
-      <a href="#definition-builders" class="nav-link"><span class="nav-dot"></span>NewTrait</a>
-      <a href="#definition-builders" class="nav-link"><span class="nav-dot"></span>NewPolicy</a>
-      <a href="#definition-builders" class="nav-link"><span class="nav-dot"></span>NewWorkflowStep</a>
+      <a href="#definition-builders" class="nav-link"><span class="material-icons-round">widgets</span>NewComponent</a>
+      <a href="#definition-builders" class="nav-link"><span class="material-icons-round">layers</span>NewTrait</a>
+      <a href="#definition-builders" class="nav-link"><span class="material-icons-round">policy</span>NewPolicy</a>
+      <a href="#definition-builders" class="nav-link"><span class="material-icons-round">alt_route</span>NewWorkflowStep</a>
     </div>
 
     <div class="nav-group">
       <div class="nav-group-label">Parameter API</div>
-      <a href="#parameter-builders" class="nav-link"><span class="nav-dot"></span>Scalar Types</a>
-      <a href="#parameter-builders" class="nav-link"><span class="nav-dot"></span>Collection Types</a>
-      <a href="#parameter-builders" class="nav-link"><span class="nav-dot"></span>Complex Types</a>
-      <a href="#parameter-builders" class="nav-link"><span class="nav-dot"></span>Chain Methods</a>
+      <a href="#parameter-builders" class="nav-link"><span class="material-icons-round">text_fields</span>Scalar Types</a>
+      <a href="#parameter-builders" class="nav-link"><span class="material-icons-round">data_array</span>Collection Types</a>
+      <a href="#parameter-builders" class="nav-link"><span class="material-icons-round">schema</span>Complex Types</a>
+      <a href="#parameter-builders" class="nav-link"><span class="material-icons-round">link</span>Chain Methods</a>
     </div>
 
     <div class="nav-group">
       <div class="nav-group-label">Template API</div>
-      <a href="#template-methods" class="nav-link"><span class="nav-dot"></span>Output Methods</a>
-      <a href="#template-methods" class="nav-link"><span class="nav-dot"></span>Patch Methods</a>
-      <a href="#template-methods" class="nav-link"><span class="nav-dot"></span>Helper Builder</a>
-      <a href="#template-methods" class="nav-link"><span class="nav-dot"></span>Raw CUE Blocks</a>
+      <a href="#template-methods" class="nav-link"><span class="material-icons-round">output</span>Output Methods</a>
+      <a href="#template-methods" class="nav-link"><span class="material-icons-round">edit_note</span>Patch Methods</a>
+      <a href="#template-methods" class="nav-link"><span class="material-icons-round">handyman</span>Helper Builder</a>
+      <a href="#template-methods" class="nav-link"><span class="material-icons-round">code_blocks</span>Raw CUE Blocks</a>
     </div>
 
     <div class="nav-group">
       <div class="nav-group-label">Resource &amp; Values</div>
-      <a href="#resource-builders"  class="nav-link"><span class="nav-dot"></span>Resource Builders</a>
-      <a href="#value-expressions"  class="nav-link"><span class="nav-dot"></span>Value Expressions</a>
-      <a href="#velactx"            class="nav-link"><span class="nav-dot"></span>VelaCtx</a>
-      <a href="#health-status"      class="nav-link"><span class="nav-dot"></span>Health &amp; Status DSL</a>
+      <a href="#resource-builders"  class="nav-link"><span class="material-icons-round">build_circle</span>Resource Builders</a>
+      <a href="#value-expressions"  class="nav-link"><span class="material-icons-round">functions</span>Value Expressions</a>
+      <a href="#velactx"            class="nav-link"><span class="material-icons-round">settings_input_component</span>VelaCtx</a>
+      <a href="#health-status"      class="nav-link"><span class="material-icons-round">monitor_heart</span>Health &amp; Status DSL</a>
     </div>
 
     <div class="nav-group">
       <div class="nav-group-label">Examples</div>
-      <a href="#full-examples" class="nav-link"><span class="nav-dot"></span>Component Example</a>
-      <a href="#full-examples" class="nav-link"><span class="nav-dot"></span>Trait Example</a>
-      <a href="#full-examples" class="nav-link"><span class="nav-dot"></span>Policy Example</a>
-      <a href="#full-examples" class="nav-link"><span class="nav-dot"></span>WorkflowStep Example</a>
+      <a href="#full-examples" class="nav-link"><span class="material-icons-round">widgets</span>Component Example</a>
+      <a href="#full-examples" class="nav-link"><span class="material-icons-round">layers</span>Trait Example</a>
+      <a href="#full-examples" class="nav-link"><span class="material-icons-round">policy</span>Policy Example</a>
+      <a href="#full-examples" class="nav-link"><span class="material-icons-round">alt_route</span>WorkflowStep Example</a>
     </div>
 
   </div>
@@ -448,15 +524,30 @@
 
   <!-- PAGE HEADER -->
   <header class="page-header">
-    <div class="header-badge">● KubeVela SDK</div>
-    <h1 class="page-title">defkit API Reference</h1>
+    <div class="header-eyebrow"><span class="material-icons-round">hub</span> KubeVela SDK</div>
+    <h1 class="page-title"><strong>defkit</strong> API Reference</h1>
     <p class="page-desc">The Go fluent SDK for authoring KubeVela X-Definitions. Write type-safe, testable, IDE-friendly definitions in Go — compiled transparently to CUE.</p>
     <div class="stats-row">
-      <div class="stat-card blue">  <div class="stat-value">4</div>  <div class="stat-label">Def Types</div></div>
-      <div class="stat-card green"> <div class="stat-value">48</div> <div class="stat-label">API Methods</div></div>
-      <div class="stat-card purple"><div class="stat-value">13+</div><div class="stat-label">Param Types</div></div>
-      <div class="stat-card orange"><div class="stat-value">104</div><div class="stat-label">Definitions</div></div>
-      <div class="stat-card cyan">  <div class="stat-value">Go</div> <div class="stat-label">Language</div></div>
+      <div class="stat-card blue">
+        <span class="material-icons-round">category</span>
+        <div class="stat-info"><div class="stat-value">4</div><div class="stat-label">Def Types</div></div>
+      </div>
+      <div class="stat-card teal">
+        <span class="material-icons-round">api</span>
+        <div class="stat-info"><div class="stat-value">48</div><div class="stat-label">API Methods</div></div>
+      </div>
+      <div class="stat-card purple">
+        <span class="material-icons-round">tune</span>
+        <div class="stat-info"><div class="stat-value">13+</div><div class="stat-label">Param Types</div></div>
+      </div>
+      <div class="stat-card orange">
+        <span class="material-icons-round">widgets</span>
+        <div class="stat-info"><div class="stat-value">104</div><div class="stat-label">Definitions</div></div>
+      </div>
+      <div class="stat-card cyan">
+        <span class="material-icons-round">code</span>
+        <div class="stat-info"><div class="stat-value">Go</div><div class="stat-label">Language</div></div>
+      </div>
     </div>
   </header>
 
@@ -468,7 +559,7 @@
     ══════════════════════════════════ -->
     <section id="overview" class="section">
       <div class="section-header">
-        <div class="section-icon" style="background:var(--blue-dim);">📖</div>
+        <div class="section-icon" style="background:var(--c-blue-dim);"><span class="material-icons-round" style="color:var(--c-blue);">auto_stories</span></div>
         <div>
           <div class="section-title">What is defkit?</div>
         </div>
@@ -477,45 +568,45 @@
 
       <div class="overview-grid">
         <div class="overview-card">
-          <div class="card-icon">🛡️</div>
+          <div class="card-icon-wrap" style="background:var(--c-blue-dim);"><span class="material-icons-round" style="color:var(--c-blue);">security</span></div>
           <div class="card-title">Type Safety</div>
           <div class="card-desc">Catch configuration errors at Go compile time, not at Kubernetes deploy time. Full type inference for all parameter types.</div>
         </div>
         <div class="overview-card">
-          <div class="card-icon">💡</div>
+          <div class="card-icon-wrap" style="background:var(--c-yellow-dim);"><span class="material-icons-round" style="color:var(--c-yellow);">lightbulb</span></div>
           <div class="card-title">IDE Support</div>
           <div class="card-desc">Full autocompletion, inline documentation, and refactoring in any Go IDE. No CUE plugin required.</div>
         </div>
         <div class="overview-card">
-          <div class="card-icon">🧪</div>
+          <div class="card-icon-wrap" style="background:var(--c-teal-dim);"><span class="material-icons-round" style="color:var(--c-teal);">science</span></div>
           <div class="card-title">Testable</div>
           <div class="card-desc">Unit-test definitions with standard <code>go test</code> and Gomega matchers. No cluster needed for unit tests.</div>
         </div>
         <div class="overview-card">
-          <div class="card-icon">📦</div>
+          <div class="card-icon-wrap" style="background:var(--c-orange-dim);"><span class="material-icons-round" style="color:var(--c-orange);">inventory_2</span></div>
           <div class="card-title">Distributable</div>
           <div class="card-desc">Share definitions as standard Go packages via <code>go get</code>. Version-controlled alongside your platform code.</div>
         </div>
         <div class="overview-card">
-          <div class="card-icon">🔄</div>
+          <div class="card-icon-wrap" style="background:var(--c-purple-dim);"><span class="material-icons-round" style="color:var(--c-purple);">sync_alt</span></div>
           <div class="card-title">CUE Compatible</div>
           <div class="card-desc">Produces the same CUE output consumed by the KubeVela controller. Mix Go-authored and CUE-authored definitions freely.</div>
         </div>
         <div class="overview-card">
-          <div class="card-icon">⚡</div>
+          <div class="card-icon-wrap" style="background:var(--c-cyan-dim);"><span class="material-icons-round" style="color:var(--c-cyan);">bolt</span></div>
           <div class="card-title">Fluent API</div>
           <div class="card-desc">Method-chaining builder pattern makes definitions readable and concise. No YAML, no CUE schema wrestling.</div>
         </div>
       </div>
 
       <div class="info-box">
-        <span class="icon">ℹ️</span>
+        <span class="material-icons-round">info</span>
         <span>Both defkit (Go) and the native CUE approach produce identical output consumed by the KubeVela controller. Choose defkit when your team is Go-proficient or when definitions require complex conditional logic and unit testing.</span>
       </div>
 
       <!-- Go vs CUE comparison -->
-      <h3 style="font-size:0.95rem; font-weight:700; margin-bottom:1rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.07em; font-size:0.75rem;">When to Use Go vs CUE</h3>
-      <table class="comparison-table" style="border:1px solid var(--border); border-radius:10px; overflow:hidden; margin-bottom:2.5rem;">
+      <h3 style="font-size:0.95rem; font-weight:700; margin-bottom:1rem; color:var(--md-on-surface-var); text-transform:uppercase; letter-spacing:0.07em; font-size:0.75rem;">When to Use Go vs CUE</h3>
+      <table class="comparison-table" style="border:1px solid var(--md-outline-var); border-radius:10px; overflow:hidden; margin-bottom:2.5rem;">
         <thead>
           <tr>
             <th>Scenario</th>
@@ -563,7 +654,7 @@
     ══════════════════════════════════ -->
     <section id="quickstart" class="section">
       <div class="section-header">
-        <div class="section-icon" style="background:var(--green-dim);">🚀</div>
+        <div class="section-icon" style="background:var(--c-teal-dim);"><span class="material-icons-round" style="color:var(--c-teal);">rocket_launch</span></div>
         <div><div class="section-title">Quick Start</div></div>
       </div>
       <p class="section-desc">From zero to a working KubeVela ComponentDefinition in 4 steps.</p>
@@ -682,7 +773,7 @@ vela def apply-module ./my-platform --conflict overwrite</code></pre>
     ══════════════════════════════════ -->
     <section id="architecture" class="section">
       <div class="section-header">
-        <div class="section-icon" style="background:var(--purple-dim);">🏗️</div>
+        <div class="section-icon" style="background:var(--c-purple-dim);"><span class="material-icons-round" style="color:var(--c-purple);">account_tree</span></div>
         <div><div class="section-title">Architecture &amp; Data Flow</div></div>
       </div>
       <p class="section-desc">defkit sits between your Go platform code and the KubeVela controller. It compiles Go method chains into CUE templates, which the controller evaluates at runtime to produce Kubernetes resources.</p>
@@ -694,47 +785,47 @@ vela def apply-module ./my-platform --conflict overwrite</code></pre>
 
             <div class="flow-step blue">
               <div class="flow-step-box">
-                <div class="flow-step-icon">📝</div>
+                <div class="flow-step-icon"><span class="material-icons-round">edit</span></div>
                 <div class="flow-step-name">Go Code</div>
                 <div class="flow-step-sub">defkit fluent API</div>
               </div>
             </div>
 
-            <div class="flow-arrow">→</div>
+            <div class="flow-arrow"><span class="material-icons-round">arrow_forward</span></div>
 
             <div class="flow-step purple">
               <div class="flow-step-box">
-                <div class="flow-step-icon">⚙️</div>
+                <div class="flow-step-icon"><span class="material-icons-round">settings_suggest</span></div>
                 <div class="flow-step-name">defkit SDK</div>
                 <div class="flow-step-sub">Compiles to CUE</div>
               </div>
             </div>
 
-            <div class="flow-arrow">→</div>
+            <div class="flow-arrow"><span class="material-icons-round">arrow_forward</span></div>
 
-            <div class="flow-step green">
+            <div class="flow-step teal">
               <div class="flow-step-box">
-                <div class="flow-step-icon">📄</div>
+                <div class="flow-step-icon"><span class="material-icons-round">description</span></div>
                 <div class="flow-step-name">CUE Template</div>
                 <div class="flow-step-sub">X-Definition YAML</div>
               </div>
             </div>
 
-            <div class="flow-arrow">→</div>
+            <div class="flow-arrow"><span class="material-icons-round">arrow_forward</span></div>
 
             <div class="flow-step orange">
               <div class="flow-step-box">
-                <div class="flow-step-icon">🎮</div>
+                <div class="flow-step-icon"><span class="material-icons-round">cloud_sync</span></div>
                 <div class="flow-step-name">KubeVela</div>
                 <div class="flow-step-sub">Controller evaluates</div>
               </div>
             </div>
 
-            <div class="flow-arrow">→</div>
+            <div class="flow-arrow"><span class="material-icons-round">arrow_forward</span></div>
 
             <div class="flow-step cyan">
               <div class="flow-step-box">
-                <div class="flow-step-icon">☸️</div>
+                <div class="flow-step-icon"><span class="material-icons-round">dns</span></div>
                 <div class="flow-step-name">Kubernetes</div>
                 <div class="flow-step-sub">Resources applied</div>
               </div>
@@ -743,44 +834,44 @@ vela def apply-module ./my-platform --conflict overwrite</code></pre>
           </div>
 
           <!-- Second row: Application author flow -->
-          <div style="margin-top:1.5rem; padding-top:1.5rem; border-top:1px solid var(--border);">
-            <div style="font-size:0.72rem; color:var(--text-faint); text-transform:uppercase; letter-spacing:0.07em; margin-bottom:1rem;">Application Author Flow (Runtime)</div>
+          <div style="margin-top:1.5rem; padding-top:1.5rem; border-top:1px solid var(--md-outline-var);">
+            <div style="font-size:0.72rem; color:var(--md-outline); text-transform:uppercase; letter-spacing:0.07em; margin-bottom:1rem;">Application Author Flow (Runtime)</div>
             <div class="flow-steps">
               <div class="flow-step blue">
                 <div class="flow-step-box">
-                  <div class="flow-step-icon">👤</div>
+                  <div class="flow-step-icon"><span class="material-icons-round">person</span></div>
                   <div class="flow-step-name">App Author</div>
                   <div class="flow-step-sub">Application YAML</div>
                 </div>
               </div>
-              <div class="flow-arrow">→</div>
+              <div class="flow-arrow"><span class="material-icons-round">arrow_forward</span></div>
               <div class="flow-step purple">
                 <div class="flow-step-box">
-                  <div class="flow-step-icon">🔍</div>
+                  <div class="flow-step-icon"><span class="material-icons-round">data_object</span></div>
                   <div class="flow-step-name">CUE Eval</div>
                   <div class="flow-step-sub">Params injected</div>
                 </div>
               </div>
-              <div class="flow-arrow">→</div>
-              <div class="flow-step green">
+              <div class="flow-arrow"><span class="material-icons-round">arrow_forward</span></div>
+              <div class="flow-step teal">
                 <div class="flow-step-box">
-                  <div class="flow-step-icon">📋</div>
+                  <div class="flow-step-icon"><span class="material-icons-round">list_alt</span></div>
                   <div class="flow-step-name">Rendered</div>
                   <div class="flow-step-sub">K8s manifests</div>
                 </div>
               </div>
-              <div class="flow-arrow">→</div>
+              <div class="flow-arrow"><span class="material-icons-round">arrow_forward</span></div>
               <div class="flow-step orange">
                 <div class="flow-step-box">
-                  <div class="flow-step-icon">🔄</div>
+                  <div class="flow-step-icon"><span class="material-icons-round">track_changes</span></div>
                   <div class="flow-step-name">ResourceTracker</div>
                   <div class="flow-step-sub">Lifecycle mgmt</div>
                 </div>
               </div>
-              <div class="flow-arrow">→</div>
+              <div class="flow-arrow"><span class="material-icons-round">arrow_forward</span></div>
               <div class="flow-step cyan">
                 <div class="flow-step-box">
-                  <div class="flow-step-icon">✅</div>
+                  <div class="flow-step-icon"><span class="material-icons-round">favorite</span></div>
                   <div class="flow-step-name">Health Check</div>
                   <div class="flow-step-sub">Status evaluated</div>
                 </div>
@@ -791,7 +882,7 @@ vela def apply-module ./my-platform --conflict overwrite</code></pre>
       </div>
 
       <!-- Module structure -->
-      <h3 style="font-size:0.75rem; font-weight:700; margin-bottom:1rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.07em;">Module Structure</h3>
+      <h3 style="font-size:0.75rem; font-weight:700; margin-bottom:1rem; color:var(--md-on-surface-var); text-transform:uppercase; letter-spacing:0.07em;">Module Structure</h3>
       <div class="code-block" style="margin-bottom:2rem;">
         <div class="code-label go"><span class="dot"></span>directory layout</div>
         <pre class="language-bash"><code>my-platform/
@@ -816,7 +907,7 @@ vela def apply-module ./my-platform --conflict overwrite</code></pre>
       </div>
 
       <!-- Registration pattern -->
-      <h3 style="font-size:0.75rem; font-weight:700; margin-bottom:1rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.07em;">Registration Pattern</h3>
+      <h3 style="font-size:0.75rem; font-weight:700; margin-bottom:1rem; color:var(--md-on-surface-var); text-transform:uppercase; letter-spacing:0.07em;">Registration Pattern</h3>
       <div class="code-pair" style="margin-bottom:2rem;">
         <div class="code-block">
           <div class="code-label go"><span class="dot"></span>definition file</div>
@@ -865,52 +956,52 @@ func main() {
     ══════════════════════════════════ -->
     <section id="integration" class="section">
       <div class="section-header">
-        <div class="section-icon" style="background:var(--cyan-dim);">🔗</div>
+        <div class="section-icon" style="background:var(--c-cyan-dim);"><span class="material-icons-round" style="color:var(--c-cyan);">hub</span></div>
         <div><div class="section-title">Integration</div></div>
       </div>
       <p class="section-desc">defkit integrates with the KubeVela ecosystem through well-defined extension points. Each definition type maps to a Kubernetes CRD managed by the KubeVela controller.</p>
 
       <div class="integration-grid">
         <div class="integration-card">
-          <div class="int-icon">🧩</div>
+          <div class="int-icon-wrap" style="background:var(--c-blue-dim);"><span class="material-icons-round" style="color:var(--c-blue);">widgets</span></div>
           <div class="int-title">ComponentDefinition</div>
           <div class="int-desc">Defines a workload type. Maps Go template to Kubernetes resources (Deployment, StatefulSet, Job, etc.). End users reference by name in Application YAML.</div>
-          <div class="int-tag" style="background:var(--blue-dim);color:#60a5fa;">core.oam.dev/v1beta1</div>
+          <div class="int-tag" style="background:var(--c-blue-dim);color:var(--c-blue);">core.oam.dev/v1beta1</div>
         </div>
         <div class="integration-card">
-          <div class="int-icon">🎛️</div>
+          <div class="int-icon-wrap" style="background:var(--c-orange-dim);"><span class="material-icons-round" style="color:var(--c-orange);">layers</span></div>
           <div class="int-title">TraitDefinition</div>
           <div class="int-desc">Patches or augments a workload. Uses CUE patch semantics to modify the primary output (e.g., inject env vars, set replica count, add sidecars).</div>
-          <div class="int-tag" style="background:var(--orange-dim);color:#fb923c;">core.oam.dev/v1beta1</div>
+          <div class="int-tag" style="background:var(--c-orange-dim);color:var(--c-orange);">core.oam.dev/v1beta1</div>
         </div>
         <div class="integration-card">
-          <div class="int-icon">📜</div>
+          <div class="int-icon-wrap" style="background:var(--c-pink-dim);"><span class="material-icons-round" style="color:var(--c-pink);">policy</span></div>
           <div class="int-title">PolicyDefinition</div>
           <div class="int-desc">Controls deployment topology and behavior. Used for multi-cluster override, garbage collection rules, and apply-once semantics.</div>
-          <div class="int-tag" style="background:var(--pink-dim);color:#f472b6;">core.oam.dev/v1alpha1</div>
+          <div class="int-tag" style="background:var(--c-pink-dim);color:var(--c-pink);">core.oam.dev/v1alpha1</div>
         </div>
         <div class="integration-card">
-          <div class="int-icon">⚡</div>
+          <div class="int-icon-wrap" style="background:var(--c-cyan-dim);"><span class="material-icons-round" style="color:var(--c-cyan);">alt_route</span></div>
           <div class="int-title">WorkflowStepDefinition</div>
           <div class="int-desc">Defines automation steps for the application workflow engine. Steps run sequentially or in parallel as part of Application deployment.</div>
-          <div class="int-tag" style="background:var(--cyan-dim);color:#22d3ee;">core.oam.dev/v1beta1</div>
+          <div class="int-tag" style="background:var(--c-cyan-dim);color:var(--c-cyan);">core.oam.dev/v1beta1</div>
         </div>
         <div class="integration-card">
-          <div class="int-icon">🔍</div>
+          <div class="int-icon-wrap" style="background:var(--c-green-dim);"><span class="material-icons-round" style="color:var(--c-green);">monitor_heart</span></div>
           <div class="int-title">Health Evaluation</div>
           <div class="int-desc">defkit's Health DSL generates <code>status.customStatus</code> and <code>status.healthPolicy</code> CUE blocks. The controller uses these to determine component health state.</div>
-          <div class="int-tag" style="background:var(--green-dim);color:#4ade80;">HealthPolicy CUE</div>
+          <div class="int-tag" style="background:var(--c-green-dim);color:var(--c-green);">HealthPolicy CUE</div>
         </div>
         <div class="integration-card">
-          <div class="int-icon">🌐</div>
+          <div class="int-icon-wrap" style="background:var(--c-purple-dim);"><span class="material-icons-round" style="color:var(--c-purple);">terminal</span></div>
           <div class="int-title">vela CLI Integration</div>
           <div class="int-desc">The <code>vela def</code> subcommands handle compilation, validation, and deployment. <code>apply-module</code> compiles Go → CUE → YAML and applies to cluster in one step.</div>
-          <div class="int-tag" style="background:var(--purple-dim);color:#c084fc;">vela def apply-module</div>
+          <div class="int-tag" style="background:var(--c-purple-dim);color:var(--c-purple);">vela def apply-module</div>
         </div>
       </div>
 
       <!-- Definition type pills reference -->
-      <h3 style="font-size:0.75rem; font-weight:700; margin-bottom:1rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.07em;">Definition Type Color Codes</h3>
+      <h3 style="font-size:0.75rem; font-weight:700; margin-bottom:1rem; color:var(--md-on-surface-var); text-transform:uppercase; letter-spacing:0.07em;">Definition Type Color Codes</h3>
       <div style="display:flex; gap:0.6rem; flex-wrap:wrap; margin-bottom:2rem;">
         <span class="pill pill-component">● Component</span>
         <span class="pill pill-trait">● Trait</span>
@@ -920,7 +1011,7 @@ func main() {
         <span class="pill pill-template">● Template</span>
         <span class="pill pill-all">● All Types</span>
       </div>
-      <p style="font-size:0.8rem;color:var(--text-muted);">These color codes are used throughout the API reference to indicate which definition type each method applies to.</p>
+      <p style="font-size:0.8rem;color:var(--md-on-surface-var);">These color codes are used throughout the API reference to indicate which definition type each method applies to.</p>
     </section>
 
     <!-- ══════════════════════════════════
@@ -928,7 +1019,7 @@ func main() {
     ══════════════════════════════════ -->
     <section id="definition-builders" class="section">
       <div class="section-header">
-        <div class="section-icon" style="background:var(--blue-dim);">🏭</div>
+        <div class="section-icon" style="background:var(--c-blue-dim);"><span class="material-icons-round" style="color:var(--c-blue);">construction</span></div>
         <div>
           <div class="section-title">Definition Builders</div>
         </div>
@@ -948,22 +1039,22 @@ func main() {
             <span class="applies-label">Type:</span>
             <span class="pill pill-component">Component</span>
           </div>
-          <p style="font-size:0.82rem;color:var(--text-muted);margin-bottom:0.75rem;">Chain methods available on <code>*ComponentDefinition</code>:</p>
+          <p style="font-size:0.82rem;color:var(--md-on-surface-var);margin-bottom:0.75rem;">Chain methods available on <code>*ComponentDefinition</code>:</p>
           <table style="width:100%;border-collapse:collapse;font-size:0.8rem;margin-bottom:1rem;">
-            <thead><tr style="border-bottom:1px solid var(--border);">
-              <th style="text-align:left;padding:0.35rem 0.5rem;color:var(--text-muted);font-weight:600;">Method</th>
-              <th style="text-align:left;padding:0.35rem 0.5rem;color:var(--text-muted);font-weight:600;">Description</th>
+            <thead><tr style="border-bottom:1px solid var(--md-outline-var);">
+              <th style="text-align:left;padding:0.35rem 0.5rem;color:var(--md-on-surface-var);font-weight:600;">Method</th>
+              <th style="text-align:left;padding:0.35rem 0.5rem;color:var(--md-on-surface-var);font-weight:600;">Description</th>
             </tr></thead>
             <tbody>
-              <tr style="border-bottom:1px solid var(--border-subtle);"><td style="padding:0.35rem 0.5rem;"><code style="color:#93c5fd;">.Description(text)</code></td><td style="padding:0.35rem 0.5rem;color:var(--text-muted);">Human-readable description shown in <code>vela show</code>.</td></tr>
-              <tr style="border-bottom:1px solid var(--border-subtle);"><td style="padding:0.35rem 0.5rem;"><code style="color:#93c5fd;">.Workload(apiVersion, kind)</code></td><td style="padding:0.35rem 0.5rem;color:var(--text-muted);">Sets the fixed Kubernetes workload GVK. Use when the workload type is always the same (e.g., apps/v1, Deployment).</td></tr>
-              <tr style="border-bottom:1px solid var(--border-subtle);"><td style="padding:0.35rem 0.5rem;"><code style="color:#93c5fd;">.AutodetectWorkload()</code></td><td style="padding:0.35rem 0.5rem;color:var(--text-muted);">Omits workload GVK — KubeVela detects it from the template output. Use for k8s-objects, ref-objects.</td></tr>
-              <tr style="border-bottom:1px solid var(--border-subtle);"><td style="padding:0.35rem 0.5rem;"><code style="color:#93c5fd;">.Params(params...)</code></td><td style="padding:0.35rem 0.5rem;color:var(--text-muted);">Registers one or more parameter definitions built with the parameter builder functions.</td></tr>
-              <tr style="border-bottom:1px solid var(--border-subtle);"><td style="padding:0.35rem 0.5rem;"><code style="color:#93c5fd;">.Template(func(tpl))</code></td><td style="padding:0.35rem 0.5rem;color:var(--text-muted);">Assigns the CUE template function that builds runtime Kubernetes resources.</td></tr>
-              <tr style="border-bottom:1px solid var(--border-subtle);"><td style="padding:0.35rem 0.5rem;"><code style="color:#93c5fd;">.Helper(name, param)</code></td><td style="padding:0.35rem 0.5rem;color:var(--text-muted);">Registers a helper variable available inside the template function.</td></tr>
-              <tr style="border-bottom:1px solid var(--border-subtle);"><td style="padding:0.35rem 0.5rem;"><code style="color:#93c5fd;">.CustomStatus(status)</code></td><td style="padding:0.35rem 0.5rem;color:var(--text-muted);">Attaches a custom status DSL expression to the definition.</td></tr>
-              <tr style="border-bottom:1px solid var(--border-subtle);"><td style="padding:0.35rem 0.5rem;"><code style="color:#93c5fd;">.HealthPolicy(health)</code></td><td style="padding:0.35rem 0.5rem;color:var(--text-muted);">Attaches a health evaluation DSL expression. Use preset builders like <code>DeploymentHealth()</code>.</td></tr>
-              <tr><td style="padding:0.35rem 0.5rem;"><code style="color:#93c5fd;">.WithImports(imports...)</code></td><td style="padding:0.35rem 0.5rem;color:var(--text-muted);">Adds CUE package import paths required by the template body.</td></tr>
+              <tr style="border-bottom:1px solid rgba(73,69,79,0.4);"><td style="padding:0.35rem 0.5rem;"><code style="color:var(--md-primary);">.Description(text)</code></td><td style="padding:0.35rem 0.5rem;color:var(--md-on-surface-var);">Human-readable description shown in <code>vela show</code>.</td></tr>
+              <tr style="border-bottom:1px solid rgba(73,69,79,0.4);"><td style="padding:0.35rem 0.5rem;"><code style="color:var(--md-primary);">.Workload(apiVersion, kind)</code></td><td style="padding:0.35rem 0.5rem;color:var(--md-on-surface-var);">Sets the fixed Kubernetes workload GVK. Use when the workload type is always the same (e.g., apps/v1, Deployment).</td></tr>
+              <tr style="border-bottom:1px solid rgba(73,69,79,0.4);"><td style="padding:0.35rem 0.5rem;"><code style="color:var(--md-primary);">.AutodetectWorkload()</code></td><td style="padding:0.35rem 0.5rem;color:var(--md-on-surface-var);">Omits workload GVK — KubeVela detects it from the template output. Use for k8s-objects, ref-objects.</td></tr>
+              <tr style="border-bottom:1px solid rgba(73,69,79,0.4);"><td style="padding:0.35rem 0.5rem;"><code style="color:var(--md-primary);">.Params(params...)</code></td><td style="padding:0.35rem 0.5rem;color:var(--md-on-surface-var);">Registers one or more parameter definitions built with the parameter builder functions.</td></tr>
+              <tr style="border-bottom:1px solid rgba(73,69,79,0.4);"><td style="padding:0.35rem 0.5rem;"><code style="color:var(--md-primary);">.Template(func(tpl))</code></td><td style="padding:0.35rem 0.5rem;color:var(--md-on-surface-var);">Assigns the CUE template function that builds runtime Kubernetes resources.</td></tr>
+              <tr style="border-bottom:1px solid rgba(73,69,79,0.4);"><td style="padding:0.35rem 0.5rem;"><code style="color:var(--md-primary);">.Helper(name, param)</code></td><td style="padding:0.35rem 0.5rem;color:var(--md-on-surface-var);">Registers a helper variable available inside the template function.</td></tr>
+              <tr style="border-bottom:1px solid rgba(73,69,79,0.4);"><td style="padding:0.35rem 0.5rem;"><code style="color:var(--md-primary);">.CustomStatus(status)</code></td><td style="padding:0.35rem 0.5rem;color:var(--md-on-surface-var);">Attaches a custom status DSL expression to the definition.</td></tr>
+              <tr style="border-bottom:1px solid rgba(73,69,79,0.4);"><td style="padding:0.35rem 0.5rem;"><code style="color:var(--md-primary);">.HealthPolicy(health)</code></td><td style="padding:0.35rem 0.5rem;color:var(--md-on-surface-var);">Attaches a health evaluation DSL expression. Use preset builders like <code>DeploymentHealth()</code>.</td></tr>
+              <tr><td style="padding:0.35rem 0.5rem;"><code style="color:var(--md-primary);">.WithImports(imports...)</code></td><td style="padding:0.35rem 0.5rem;color:var(--md-on-surface-var);">Adds CUE package import paths required by the template body.</td></tr>
             </tbody>
           </table>
           <div class="code-pair">
@@ -1013,22 +1104,22 @@ parameter: {
             <span class="applies-label">Type:</span>
             <span class="pill pill-trait">Trait</span>
           </div>
-          <p style="font-size:0.82rem;color:var(--text-muted);margin-bottom:0.75rem;">Chain methods available on <code>*TraitDefinition</code>:</p>
+          <p style="font-size:0.82rem;color:var(--md-on-surface-var);margin-bottom:0.75rem;">Chain methods available on <code>*TraitDefinition</code>:</p>
           <table style="width:100%;border-collapse:collapse;font-size:0.8rem;margin-bottom:1rem;">
-            <thead><tr style="border-bottom:1px solid var(--border);">
-              <th style="text-align:left;padding:0.35rem 0.5rem;color:var(--text-muted);font-weight:600;">Method</th>
-              <th style="text-align:left;padding:0.35rem 0.5rem;color:var(--text-muted);font-weight:600;">Description</th>
+            <thead><tr style="border-bottom:1px solid var(--md-outline-var);">
+              <th style="text-align:left;padding:0.35rem 0.5rem;color:var(--md-on-surface-var);font-weight:600;">Method</th>
+              <th style="text-align:left;padding:0.35rem 0.5rem;color:var(--md-on-surface-var);font-weight:600;">Description</th>
             </tr></thead>
             <tbody>
-              <tr style="border-bottom:1px solid var(--border-subtle);"><td style="padding:0.35rem 0.5rem;"><code style="color:#fb923c;">.Description(text)</code></td><td style="padding:0.35rem 0.5rem;color:var(--text-muted);">Human-readable description of the trait's purpose.</td></tr>
-              <tr style="border-bottom:1px solid var(--border-subtle);"><td style="padding:0.35rem 0.5rem;"><code style="color:#fb923c;">.AppliesTo(workloads...)</code></td><td style="padding:0.35rem 0.5rem;color:var(--text-muted);">Restricts which component types this trait can attach to (e.g., <code>"webservice"</code>, <code>"daemon"</code>). Omit for universal traits.</td></tr>
-              <tr style="border-bottom:1px solid var(--border-subtle);"><td style="padding:0.35rem 0.5rem;"><code style="color:#fb923c;">.ConflictsWith(traits...)</code></td><td style="padding:0.35rem 0.5rem;color:var(--text-muted);">Declares mutual exclusion with other named traits.</td></tr>
-              <tr style="border-bottom:1px solid var(--border-subtle);"><td style="padding:0.35rem 0.5rem;"><code style="color:#fb923c;">.PodDisruptive(bool)</code></td><td style="padding:0.35rem 0.5rem;color:var(--text-muted);">Marks the trait as pod-disruptive (triggers pod restart when changed).</td></tr>
-              <tr style="border-bottom:1px solid var(--border-subtle);"><td style="padding:0.35rem 0.5rem;"><code style="color:#fb923c;">.Stage(stage)</code></td><td style="padding:0.35rem 0.5rem;color:var(--text-muted);">Sets the dispatch stage for ordering trait application.</td></tr>
-              <tr style="border-bottom:1px solid var(--border-subtle);"><td style="padding:0.35rem 0.5rem;"><code style="color:#fb923c;">.Labels(map)</code></td><td style="padding:0.35rem 0.5rem;color:var(--text-muted);">Attaches metadata labels to the TraitDefinition CRD.</td></tr>
-              <tr style="border-bottom:1px solid var(--border-subtle);"><td style="padding:0.35rem 0.5rem;"><code style="color:#fb923c;">.Params(params...)</code></td><td style="padding:0.35rem 0.5rem;color:var(--text-muted);">Registers typed parameter definitions.</td></tr>
-              <tr style="border-bottom:1px solid var(--border-subtle);"><td style="padding:0.35rem 0.5rem;"><code style="color:#fb923c;">.Template(func(tpl))</code></td><td style="padding:0.35rem 0.5rem;color:var(--text-muted);">Assigns the patch template function. For container mutation use <code>tpl.UsePatchContainer(config)</code> inside.</td></tr>
-              <tr><td style="padding:0.35rem 0.5rem;"><code style="color:#fb923c;">.Helper(name, param)</code></td><td style="padding:0.35rem 0.5rem;color:var(--text-muted);">Registers a helper variable for use in the template function.</td></tr>
+              <tr style="border-bottom:1px solid rgba(73,69,79,0.4);"><td style="padding:0.35rem 0.5rem;"><code style="color:#fb923c;">.Description(text)</code></td><td style="padding:0.35rem 0.5rem;color:var(--md-on-surface-var);">Human-readable description of the trait's purpose.</td></tr>
+              <tr style="border-bottom:1px solid rgba(73,69,79,0.4);"><td style="padding:0.35rem 0.5rem;"><code style="color:#fb923c;">.AppliesTo(workloads...)</code></td><td style="padding:0.35rem 0.5rem;color:var(--md-on-surface-var);">Restricts which component types this trait can attach to (e.g., <code>"webservice"</code>, <code>"daemon"</code>). Omit for universal traits.</td></tr>
+              <tr style="border-bottom:1px solid rgba(73,69,79,0.4);"><td style="padding:0.35rem 0.5rem;"><code style="color:#fb923c;">.ConflictsWith(traits...)</code></td><td style="padding:0.35rem 0.5rem;color:var(--md-on-surface-var);">Declares mutual exclusion with other named traits.</td></tr>
+              <tr style="border-bottom:1px solid rgba(73,69,79,0.4);"><td style="padding:0.35rem 0.5rem;"><code style="color:#fb923c;">.PodDisruptive(bool)</code></td><td style="padding:0.35rem 0.5rem;color:var(--md-on-surface-var);">Marks the trait as pod-disruptive (triggers pod restart when changed).</td></tr>
+              <tr style="border-bottom:1px solid rgba(73,69,79,0.4);"><td style="padding:0.35rem 0.5rem;"><code style="color:#fb923c;">.Stage(stage)</code></td><td style="padding:0.35rem 0.5rem;color:var(--md-on-surface-var);">Sets the dispatch stage for ordering trait application.</td></tr>
+              <tr style="border-bottom:1px solid rgba(73,69,79,0.4);"><td style="padding:0.35rem 0.5rem;"><code style="color:#fb923c;">.Labels(map)</code></td><td style="padding:0.35rem 0.5rem;color:var(--md-on-surface-var);">Attaches metadata labels to the TraitDefinition CRD.</td></tr>
+              <tr style="border-bottom:1px solid rgba(73,69,79,0.4);"><td style="padding:0.35rem 0.5rem;"><code style="color:#fb923c;">.Params(params...)</code></td><td style="padding:0.35rem 0.5rem;color:var(--md-on-surface-var);">Registers typed parameter definitions.</td></tr>
+              <tr style="border-bottom:1px solid rgba(73,69,79,0.4);"><td style="padding:0.35rem 0.5rem;"><code style="color:#fb923c;">.Template(func(tpl))</code></td><td style="padding:0.35rem 0.5rem;color:var(--md-on-surface-var);">Assigns the patch template function. For container mutation use <code>tpl.UsePatchContainer(config)</code> inside.</td></tr>
+              <tr><td style="padding:0.35rem 0.5rem;"><code style="color:#fb923c;">.Helper(name, param)</code></td><td style="padding:0.35rem 0.5rem;color:var(--md-on-surface-var);">Registers a helper variable for use in the template function.</td></tr>
             </tbody>
           </table>
           <div class="code-pair">
@@ -1078,16 +1169,16 @@ func init() { defkit.Register(Env()) }</code></pre>
             <span class="applies-label">Type:</span>
             <span class="pill pill-policy">Policy</span>
           </div>
-          <p style="font-size:0.82rem;color:var(--text-muted);margin-bottom:0.75rem;">Chain methods available on <code>*PolicyDefinition</code>:</p>
+          <p style="font-size:0.82rem;color:var(--md-on-surface-var);margin-bottom:0.75rem;">Chain methods available on <code>*PolicyDefinition</code>:</p>
           <table style="width:100%;border-collapse:collapse;font-size:0.8rem;margin-bottom:1rem;">
-            <thead><tr style="border-bottom:1px solid var(--border);">
-              <th style="text-align:left;padding:0.35rem 0.5rem;color:var(--text-muted);font-weight:600;">Method</th>
-              <th style="text-align:left;padding:0.35rem 0.5rem;color:var(--text-muted);font-weight:600;">Description</th>
+            <thead><tr style="border-bottom:1px solid var(--md-outline-var);">
+              <th style="text-align:left;padding:0.35rem 0.5rem;color:var(--md-on-surface-var);font-weight:600;">Method</th>
+              <th style="text-align:left;padding:0.35rem 0.5rem;color:var(--md-on-surface-var);font-weight:600;">Description</th>
             </tr></thead>
             <tbody>
-              <tr style="border-bottom:1px solid var(--border-subtle);"><td style="padding:0.35rem 0.5rem;"><code style="color:#f472b6;">.Description(text)</code></td><td style="padding:0.35rem 0.5rem;color:var(--text-muted);">Human-readable description of the policy behavior.</td></tr>
-              <tr style="border-bottom:1px solid var(--border-subtle);"><td style="padding:0.35rem 0.5rem;"><code style="color:#f472b6;">.Params(params...)</code></td><td style="padding:0.35rem 0.5rem;color:var(--text-muted);">Registers typed parameter definitions for the policy.</td></tr>
-              <tr><td style="padding:0.35rem 0.5rem;"><code style="color:#f472b6;">.Helper(name, param)</code></td><td style="padding:0.35rem 0.5rem;color:var(--text-muted);">Registers a named helper variable for the template body.</td></tr>
+              <tr style="border-bottom:1px solid rgba(73,69,79,0.4);"><td style="padding:0.35rem 0.5rem;"><code style="color:#f472b6;">.Description(text)</code></td><td style="padding:0.35rem 0.5rem;color:var(--md-on-surface-var);">Human-readable description of the policy behavior.</td></tr>
+              <tr style="border-bottom:1px solid rgba(73,69,79,0.4);"><td style="padding:0.35rem 0.5rem;"><code style="color:#f472b6;">.Params(params...)</code></td><td style="padding:0.35rem 0.5rem;color:var(--md-on-surface-var);">Registers typed parameter definitions for the policy.</td></tr>
+              <tr><td style="padding:0.35rem 0.5rem;"><code style="color:#f472b6;">.Helper(name, param)</code></td><td style="padding:0.35rem 0.5rem;color:var(--md-on-surface-var);">Registers a named helper variable for the template body.</td></tr>
             </tbody>
           </table>
           <div class="code-pair">
@@ -1135,19 +1226,19 @@ func init() { defkit.Register(ApplyOnce()) }</code></pre>
             <span class="applies-label">Type:</span>
             <span class="pill pill-workflow">WorkflowStep</span>
           </div>
-          <p style="font-size:0.82rem;color:var(--text-muted);margin-bottom:0.75rem;">Chain methods available on <code>*WorkflowStepDefinition</code>:</p>
+          <p style="font-size:0.82rem;color:var(--md-on-surface-var);margin-bottom:0.75rem;">Chain methods available on <code>*WorkflowStepDefinition</code>:</p>
           <table style="width:100%;border-collapse:collapse;font-size:0.8rem;margin-bottom:1rem;">
-            <thead><tr style="border-bottom:1px solid var(--border);">
-              <th style="text-align:left;padding:0.35rem 0.5rem;color:var(--text-muted);font-weight:600;">Method</th>
-              <th style="text-align:left;padding:0.35rem 0.5rem;color:var(--text-muted);font-weight:600;">Description</th>
+            <thead><tr style="border-bottom:1px solid var(--md-outline-var);">
+              <th style="text-align:left;padding:0.35rem 0.5rem;color:var(--md-on-surface-var);font-weight:600;">Method</th>
+              <th style="text-align:left;padding:0.35rem 0.5rem;color:var(--md-on-surface-var);font-weight:600;">Description</th>
             </tr></thead>
             <tbody>
-              <tr style="border-bottom:1px solid var(--border-subtle);"><td style="padding:0.35rem 0.5rem;"><code style="color:#22d3ee;">.Description(text)</code></td><td style="padding:0.35rem 0.5rem;color:var(--text-muted);">Human-readable description of what the step does.</td></tr>
-              <tr style="border-bottom:1px solid var(--border-subtle);"><td style="padding:0.35rem 0.5rem;"><code style="color:#22d3ee;">.Category(name)</code></td><td style="padding:0.35rem 0.5rem;color:var(--text-muted);">Groups the step under a category in the KubeVela UI and CLI.</td></tr>
-              <tr style="border-bottom:1px solid var(--border-subtle);"><td style="padding:0.35rem 0.5rem;"><code style="color:#22d3ee;">.Scope(scope)</code></td><td style="padding:0.35rem 0.5rem;color:var(--text-muted);">Sets execution scope. Typically <code>"Application"</code> for delivery steps.</td></tr>
-              <tr style="border-bottom:1px solid var(--border-subtle);"><td style="padding:0.35rem 0.5rem;"><code style="color:#22d3ee;">.Params(params...)</code></td><td style="padding:0.35rem 0.5rem;color:var(--text-muted);">Registers typed parameter definitions for the step.</td></tr>
-              <tr style="border-bottom:1px solid var(--border-subtle);"><td style="padding:0.35rem 0.5rem;"><code style="color:#22d3ee;">.Template(func(tpl))</code></td><td style="padding:0.35rem 0.5rem;color:var(--text-muted);">Assigns the CUE template function executed when the step runs.</td></tr>
-              <tr><td style="padding:0.35rem 0.5rem;"><code style="color:#22d3ee;">.WithImports(imports...)</code></td><td style="padding:0.35rem 0.5rem;color:var(--text-muted);">Adds CUE package import paths used by the template body.</td></tr>
+              <tr style="border-bottom:1px solid rgba(73,69,79,0.4);"><td style="padding:0.35rem 0.5rem;"><code style="color:#22d3ee;">.Description(text)</code></td><td style="padding:0.35rem 0.5rem;color:var(--md-on-surface-var);">Human-readable description of what the step does.</td></tr>
+              <tr style="border-bottom:1px solid rgba(73,69,79,0.4);"><td style="padding:0.35rem 0.5rem;"><code style="color:#22d3ee;">.Category(name)</code></td><td style="padding:0.35rem 0.5rem;color:var(--md-on-surface-var);">Groups the step under a category in the KubeVela UI and CLI.</td></tr>
+              <tr style="border-bottom:1px solid rgba(73,69,79,0.4);"><td style="padding:0.35rem 0.5rem;"><code style="color:#22d3ee;">.Scope(scope)</code></td><td style="padding:0.35rem 0.5rem;color:var(--md-on-surface-var);">Sets execution scope. Typically <code>"Application"</code> for delivery steps.</td></tr>
+              <tr style="border-bottom:1px solid rgba(73,69,79,0.4);"><td style="padding:0.35rem 0.5rem;"><code style="color:#22d3ee;">.Params(params...)</code></td><td style="padding:0.35rem 0.5rem;color:var(--md-on-surface-var);">Registers typed parameter definitions for the step.</td></tr>
+              <tr style="border-bottom:1px solid rgba(73,69,79,0.4);"><td style="padding:0.35rem 0.5rem;"><code style="color:#22d3ee;">.Template(func(tpl))</code></td><td style="padding:0.35rem 0.5rem;color:var(--md-on-surface-var);">Assigns the CUE template function executed when the step runs.</td></tr>
+              <tr><td style="padding:0.35rem 0.5rem;"><code style="color:#22d3ee;">.WithImports(imports...)</code></td><td style="padding:0.35rem 0.5rem;color:var(--md-on-surface-var);">Adds CUE package import paths used by the template body.</td></tr>
             </tbody>
           </table>
           <div class="code-pair">
@@ -1178,7 +1269,7 @@ func init() { defkit.Register(ApplyComponent()) }</code></pre>
       </div>
 
       <!-- Special methods subsection -->
-      <h3 style="font-size:1rem;font-weight:700;margin:2rem 0 1rem;color:var(--text);">Special Methods</h3>
+      <h3 style="font-size:1rem;font-weight:700;margin:2rem 0 1rem;color:var(--md-on-surface);">Special Methods</h3>
 
       <!-- AutodetectWorkload -->
       <div class="method-card">
@@ -1307,12 +1398,12 @@ return defkit.NewComponent("k8s-objects").
     ══════════════════════════════════ -->
     <section id="parameter-builders" class="section">
       <div class="section-header">
-        <div class="section-icon" style="background:var(--yellow-dim);">🔧</div>
+        <div class="section-icon" style="background:var(--c-orange-dim);"><span class="material-icons-round" style="color:var(--c-orange);">tune</span></div>
         <div><div class="section-title">Parameter Builders</div></div>
       </div>
       <p class="section-desc">Construct typed parameters that map directly to CUE types. Parameters are defined once and referenced in template functions by the captured Go variable.</p>
       <!-- ── SCALAR TYPES ───────────────────────── -->
-      <h3 style="font-size:1rem;font-weight:700;margin:0 0 1rem;color:var(--text);">Scalar Types</h3>
+      <h3 style="font-size:1rem;font-weight:700;margin:0 0 1rem;color:var(--md-on-surface);">Scalar Types</h3>
 
       <!-- String -->
       <div class="method-card">
@@ -1395,7 +1486,7 @@ debug:  *false | bool</code></pre>
       </div>
 
       <!-- ── COLLECTION TYPES ────────────────────── -->
-      <h3 style="font-size:1rem;font-weight:700;margin:2rem 0 1rem;color:var(--text);">Collection Types</h3>
+      <h3 style="font-size:1rem;font-weight:700;margin:2rem 0 1rem;color:var(--md-on-surface);">Collection Types</h3>
 
       <!-- StringList -->
       <div class="method-card">
@@ -1547,7 +1638,7 @@ annotations?: [string]: string</code></pre>
       </div>
 
       <!-- ── COMPLEX TYPES ───────────────────────── -->
-      <h3 style="font-size:1rem;font-weight:700;margin:2rem 0 1rem;color:var(--text);">Complex Types</h3>
+      <h3 style="font-size:1rem;font-weight:700;margin:2rem 0 1rem;color:var(--md-on-surface);">Complex Types</h3>
 
       <!-- Enum -->
       <div class="method-card">
@@ -1647,8 +1738,8 @@ ports := defkit.Array("ports").Of(portStruct)</code></pre>
       </div>
 
       <!-- ── CHAIN METHODS ───────────────────────── -->
-      <h3 style="font-size:1rem;font-weight:700;margin:2rem 0 1rem;color:var(--text);">Chain Methods</h3>
-      <p style="font-size:0.82rem;color:var(--text-muted);margin-bottom:1.25rem;">All parameter constructors return <code>*Param</code> — chain these methods to configure validation, defaults, and metadata. Methods are composable in any order.</p>
+      <h3 style="font-size:1rem;font-weight:700;margin:2rem 0 1rem;color:var(--md-on-surface);">Chain Methods</h3>
+      <p style="font-size:0.82rem;color:var(--md-on-surface-var);margin-bottom:1.25rem;">All parameter constructors return <code>*Param</code> — chain these methods to configure validation, defaults, and metadata. Methods are composable in any order.</p>
 
       <!-- Required / Optional / ForceOptional -->
       <div class="method-card">
@@ -1894,12 +1985,12 @@ parameter: {
     ══════════════════════════════════ -->
     <section id="template-methods" class="section">
       <div class="section-header">
-        <div class="section-icon" style="background:var(--green-dim);">📤</div>
+        <div class="section-icon" style="background:var(--c-green-dim);"><span class="material-icons-round" style="color:var(--c-green);">code</span></div>
         <div><div class="section-title">Template Methods</div></div>
       </div>
       <p class="section-desc">The <code>*defkit.Template</code> context object passed to the template function. Manages output resources, patch operations, and named helpers.</p>
       <div class="placeholder-box">
-        <div class="pl-icon">📋</div>
+        <div class="pl-icon"><span class="material-icons-round">hourglass_empty</span></div>
         <p>Full API reference for <strong>tpl.Output</strong>, <strong>tpl.Patch</strong>, <strong>tpl.UsePatchContainer</strong>, <strong>tpl.Helper</strong>, raw CUE block methods — coming in Phase 3.</p>
         <div class="pl-phase">Phase 3</div>
       </div>
@@ -1910,12 +2001,12 @@ parameter: {
     ══════════════════════════════════ -->
     <section id="resource-builders" class="section">
       <div class="section-header">
-        <div class="section-icon" style="background:var(--orange-dim);">🏗️</div>
+        <div class="section-icon" style="background:var(--c-teal-dim);"><span class="material-icons-round" style="color:var(--c-teal);">build_circle</span></div>
         <div><div class="section-title">Resource Builders</div></div>
       </div>
       <p class="section-desc">Fluent builders for constructing Kubernetes resource manifests. Path syntax supports dot-notation, array indices, and bracket notation.</p>
       <div class="placeholder-box">
-        <div class="pl-icon">📋</div>
+        <div class="pl-icon"><span class="material-icons-round">hourglass_empty</span></div>
         <p>Full API reference for <strong>NewResource</strong>, <strong>Set/SetIf</strong>, <strong>ForEach/ForEachWith</strong>, <strong>ItemBuilder</strong>, conditional versioning — coming in Phase 3.</p>
         <div class="pl-phase">Phase 3</div>
       </div>
@@ -1926,12 +2017,12 @@ parameter: {
     ══════════════════════════════════ -->
     <section id="value-expressions" class="section">
       <div class="section-header">
-        <div class="section-icon" style="background:var(--purple-dim);">💎</div>
+        <div class="section-icon" style="background:var(--c-yellow-dim);"><span class="material-icons-round" style="color:var(--c-yellow);">functions</span></div>
         <div><div class="section-title">Value Expressions</div></div>
       </div>
       <p class="section-desc">Deferred-evaluation value constructors and condition builders. Values are compiled into CUE expressions — not evaluated immediately in Go.</p>
       <div class="placeholder-box">
-        <div class="pl-icon">📋</div>
+        <div class="pl-icon"><span class="material-icons-round">hourglass_empty</span></div>
         <p>Full API reference for <strong>Lit</strong>, <strong>Reference</strong>, <strong>Interpolation</strong>, comparison operators, logical operators, string operations, <strong>Let</strong> bindings — coming in Phase 3.</p>
         <div class="pl-phase">Phase 3</div>
       </div>
@@ -1942,12 +2033,12 @@ parameter: {
     ══════════════════════════════════ -->
     <section id="velactx" class="section">
       <div class="section-header">
-        <div class="section-icon" style="background:var(--cyan-dim);">🌐</div>
+        <div class="section-icon" style="background:var(--c-pink-dim);"><span class="material-icons-round" style="color:var(--c-pink);">settings_input_component</span></div>
         <div><div class="section-title">VelaCtx</div></div>
       </div>
       <p class="section-desc">Runtime context accessors. <code>defkit.VelaCtx()</code> returns a context object that compiles to CUE <code>context.*</code> references, evaluated by the controller at deploy time.</p>
       <div class="placeholder-box">
-        <div class="pl-icon">📋</div>
+        <div class="pl-icon"><span class="material-icons-round">hourglass_empty</span></div>
         <p>Full API reference for <strong>VelaCtx().Name()</strong>, <strong>AppName()</strong>, <strong>Namespace()</strong>, <strong>Revision()</strong>, <strong>ClusterVersion()</strong> — coming in Phase 3.</p>
         <div class="pl-phase">Phase 3</div>
       </div>
@@ -1958,12 +2049,12 @@ parameter: {
     ══════════════════════════════════ -->
     <section id="health-status" class="section">
       <div class="section-header">
-        <div class="section-icon" style="background:var(--green-dim);">❤️</div>
+        <div class="section-icon" style="background:var(--c-green-dim);"><span class="material-icons-round" style="color:var(--c-green);">monitor_heart</span></div>
         <div><div class="section-title">Health &amp; Status DSL</div></div>
       </div>
       <p class="section-desc">Builder DSL for defining health evaluation logic and custom status. Generates the <code>status.healthPolicy</code> and <code>status.customStatus</code> CUE blocks consumed by the controller.</p>
       <div class="placeholder-box">
-        <div class="pl-icon">📋</div>
+        <div class="pl-icon"><span class="material-icons-round">hourglass_empty</span></div>
         <p>Full API reference for <strong>Health()</strong>, <strong>Status()</strong>, preset builders (<strong>DeploymentHealth</strong>, <strong>DaemonSetHealth</strong>, <strong>JobHealth</strong>) — coming in Phase 3.</p>
         <div class="pl-phase">Phase 3</div>
       </div>
@@ -1974,12 +2065,12 @@ parameter: {
     ══════════════════════════════════ -->
     <section id="full-examples" class="section">
       <div class="section-header">
-        <div class="section-icon" style="background:var(--pink-dim);">📚</div>
+        <div class="section-icon" style="background:var(--c-purple-dim);"><span class="material-icons-round" style="color:var(--c-purple);">article</span></div>
         <div><div class="section-title">Full Examples</div></div>
       </div>
       <p class="section-desc">Complete end-to-end definition examples — one per definition type — showing real-world usage patterns with full Go code, CUE output, and inline annotations.</p>
       <div class="placeholder-box">
-        <div class="pl-icon">📋</div>
+        <div class="pl-icon"><span class="material-icons-round">hourglass_empty</span></div>
         <p>Complete worked examples for <strong>Component</strong> (webservice-like), <strong>Trait</strong> (env patch), <strong>Policy</strong> (override), and <strong>WorkflowStep</strong> — coming in Phase 4.</p>
         <div class="pl-phase">Phase 4</div>
       </div>
