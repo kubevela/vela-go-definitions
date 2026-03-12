@@ -76,10 +76,6 @@ func VelaCli() *defkit.WorkflowStepDefinition {
 		defkit.PathExists("job.$returns.value.status"),
 		defkit.PathExists("job.$returns.value.status.failed"),
 	)
-	hasJobSucceededStatus := defkit.And(
-		defkit.PathExists("job.$returns.value.status"),
-		defkit.PathExists("job.$returns.value.status.succeeded"),
-	)
 
 	stepName := defkit.Reference("context.stepName")
 	stepSessionID := defkit.Reference("context.stepSessionID")
@@ -192,19 +188,16 @@ func VelaCli() *defkit.WorkflowStepDefinition {
 				SetIf(
 					failCondition,
 					"breakWorkflow",
-					defkit.Reference(`builtin.#Fail & {
-	$params: message: "failed to execute vela command"
-}`),
+					defkit.Fail(defkit.Reference(`"failed to execute vela command"`)),
 				),
 			)
 
-			tpl.Builtin("wait", "builtin.#ConditionalWait").
-				Build()
-			tpl.Builtin("wait", "builtin.#ConditionalWait").
-				WithParams(map[string]defkit.Value{
-					"continue": defkit.Reference("job.$returns.value.status.succeeded > 0"),
-				}).
-				If(hasJobSucceededStatus)
+			tpl.Set("wait", defkit.WaitUntil(
+				defkit.Reference("job.$returns.value.status.succeeded > 0"),
+			).Guard(
+				defkit.Reference("job.$returns.value.status"),
+				defkit.Reference("job.$returns.value.status.succeeded"),
+			))
 		})
 }
 
