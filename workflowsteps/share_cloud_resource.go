@@ -45,6 +45,7 @@ func ShareCloudResource() *defkit.WorkflowStepDefinition {
 		Params(placements, policy, env).
 		Template(func(tpl *defkit.WorkflowStepTemplate) {
 			tpl.Builtin("app", "op.#ShareCloudResource").
+				WithDirectFields().
 				WithParams(map[string]defkit.Value{
 					"env":        env,
 					"policy":     policy,
