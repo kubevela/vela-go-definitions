@@ -23,15 +23,15 @@ import (
 // Webhook creates the webhook workflow step definition.
 // This step sends a POST request to the specified Webhook URL. If no request body is specified, the current Application body will be sent by default.
 func Webhook() *defkit.WorkflowStepDefinition {
-	// url is a discriminated union: either {value: string} or {secretRef: {name, key}}
-	url := defkit.OneOf("url").
+	// url is a closed struct disjunction: either {value: string} or {secretRef: {name, key}}
+	url := defkit.ClosedUnion("url").
 		Required().
 		Description("Specify the webhook url").
-		Variants(
-			defkit.Variant("value").WithFields(
+		Options(
+			defkit.ClosedStruct().WithFields(
 				defkit.Field("value", defkit.ParamTypeString).Required(),
 			),
-			defkit.Variant("secretRef").WithFields(
+			defkit.ClosedStruct().WithFields(
 				defkit.Field("secretRef", defkit.ParamTypeStruct).Required().Nested(
 					defkit.Struct("secretRef").WithFields(
 						defkit.Field("name", defkit.ParamTypeString).Required().Description("name is the name of the secret"),
@@ -52,53 +52,29 @@ func Webhook() *defkit.WorkflowStepDefinition {
 	)
 
 	dataValue := defkit.NewArrayElement().
-		SetIf(noData, "read", defkit.Reference(`kube.#Read & {
-	$params: value: {
-		apiVersion: "core.oam.dev/v1beta1"
-		kind:       "Application"
-		metadata: {
-			name:      context.name
-			namespace: context.namespace
-		}
-	}
-}`)).
+		SetIf(noData, "read", defkit.KubeRead("core.oam.dev/v1beta1", "Application").
+			Name(defkit.Reference("context.name")).
+			Namespace(defkit.Reference("context.namespace")),
+		).
 		SetIf(noData, "value", defkit.Reference("json.Marshal(read.$returns.value)")).
 		SetIf(hasData, "value", defkit.Reference("json.Marshal(parameter.data)"))
 
 	webhookValue := defkit.NewArrayElement().
-		SetIf(hasURLValue, "req", defkit.Reference(`http.#HTTPDo & {
-	$params: {
-		method: "POST"
-		url: parameter.url.value
-		request: {
-			body: data.value
-			header: "Content-Type": "application/json"
-		}
-	}
-}`)).
-		SetIf(useSecretURL, "read", defkit.Reference(`kube.#Read & {
-	$params: value: {
-		apiVersion: "v1"
-		kind:       "Secret"
-		metadata: {
-			name:      parameter.url.secretRef.name
-			namespace: context.namespace
-		}
-	}
-}`)).
-		SetIf(useSecretURL, "stringValue", defkit.Reference(`util.#ConvertString & {
-	$params: bt: base64.Decode(null, read.$returns.value.data[parameter.url.secretRef.key])
-}`)).
-		SetIf(useSecretURL, "req", defkit.Reference(`http.#HTTPDo & {
-	$params: {
-		method: "POST"
-		url: stringValue.$returns.str
-		request: {
-			body: data.value
-			header: "Content-Type": "application/json"
-		}
-	}
-}`))
+		SetIf(hasURLValue, "req", defkit.HTTPPost(defkit.Reference("parameter.url.value")).
+			Body(defkit.Reference("data.value")).
+			Header("Content-Type", "application/json"),
+		).
+		SetIf(useSecretURL, "read", defkit.KubeRead("v1", "Secret").
+			Name(defkit.Reference("parameter.url.secretRef.name")).
+			Namespace(defkit.Reference("context.namespace")),
+		).
+		SetIf(useSecretURL, "stringValue", defkit.ConvertString(
+			defkit.Reference("base64.Decode(null, read.$returns.value.data[parameter.url.secretRef.key])"),
+		)).
+		SetIf(useSecretURL, "req", defkit.HTTPPost(defkit.Reference("stringValue.$returns.str")).
+			Body(defkit.Reference("data.value")).
+			Header("Content-Type", "application/json"),
+		)
 
 	return defkit.NewWorkflowStep("webhook").
 		Description("Send a POST request to the specified Webhook URL. If no request body is specified, the current Application body will be sent by default.").

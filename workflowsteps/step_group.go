@@ -25,8 +25,8 @@ import (
 func StepGroup() *defkit.WorkflowStepDefinition {
 	return defkit.NewWorkflowStep("step-group").
 		Description("A special step that you can declare 'subSteps' in it, 'subSteps' is an array containing any step type whose valid parameters do not include the `step-group` step type itself. The sub steps were executed in parallel.").
-		Category("Process Control")
-	// Note: This workflow step has no parameters - subSteps are handled by the vela runtime
+		Category("Process Control").
+		TemplateBody("// no parameters, the nop only to make the template not empty or it's invalid\nnop: {}")
 }
 
 func init() {
