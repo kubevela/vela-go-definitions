@@ -66,8 +66,8 @@ var _ = Describe("Override Policy", func() {
 		})
 
 		Describe("components parameter", func() {
-			It("should be required", func() {
-				Expect(policy.GetParams()[0]).To(BeRequired())
+			It("should be mandatory", func() {
+				Expect(policy.GetParams()[0].IsMandatory()).To(BeTrue())
 			})
 
 			It("should be an ArrayParam", func() {
@@ -136,7 +136,7 @@ var _ = Describe("Override Policy", func() {
 				It("should be required", func() {
 					f := traitParam.GetField("type")
 					Expect(f).NotTo(BeNil())
-					Expect(f.IsRequired()).To(BeTrue())
+					Expect(f.IsMandatory()).To(BeTrue())
 				})
 
 				It("should be string type", func() {
@@ -154,7 +154,7 @@ var _ = Describe("Override Policy", func() {
 				It("should be optional", func() {
 					f := traitParam.GetField("properties")
 					Expect(f).NotTo(BeNil())
-					Expect(f.IsRequired()).To(BeFalse())
+					Expect(f.IsMandatory()).To(BeFalse())
 				})
 
 				It("should be map type", func() {
@@ -207,7 +207,7 @@ var _ = Describe("Override Policy", func() {
 				It("should be optional", func() {
 					f := patchParam.GetField("name")
 					Expect(f).NotTo(BeNil())
-					Expect(f.IsRequired()).To(BeFalse())
+					Expect(f.IsMandatory()).To(BeFalse())
 				})
 
 				It("should be string type", func() {
@@ -227,7 +227,7 @@ var _ = Describe("Override Policy", func() {
 				It("should be optional", func() {
 					f := patchParam.GetField("type")
 					Expect(f).NotTo(BeNil())
-					Expect(f.IsRequired()).To(BeFalse())
+					Expect(f.IsMandatory()).To(BeFalse())
 				})
 
 				It("should be string type", func() {
@@ -245,7 +245,7 @@ var _ = Describe("Override Policy", func() {
 				It("should be optional", func() {
 					f := patchParam.GetField("properties")
 					Expect(f).NotTo(BeNil())
-					Expect(f.IsRequired()).To(BeFalse())
+					Expect(f.IsMandatory()).To(BeFalse())
 				})
 
 				It("should be map type", func() {
@@ -263,7 +263,7 @@ var _ = Describe("Override Policy", func() {
 				It("should be optional", func() {
 					f := patchParam.GetField("traits")
 					Expect(f).NotTo(BeNil())
-					Expect(f.IsRequired()).To(BeFalse())
+					Expect(f.IsMandatory()).To(BeFalse())
 				})
 
 				It("should be array type", func() {

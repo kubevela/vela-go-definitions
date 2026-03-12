@@ -25,7 +25,7 @@ import (
 func PodSecurityContext() *defkit.TraitDefinition {
 	// Define parameters with nested struct for profile types
 	appArmorProfile := defkit.Map("appArmorProfile").Description("Specify the AppArmor profile for the pod").WithFields(
-		defkit.String("type").Required().Values("RuntimeDefault", "Unconfined", "Localhost"),
+		defkit.String("type").Mandatory().Values("RuntimeDefault", "Unconfined", "Localhost"),
 		defkit.String("localhostProfile").Description("localhostProfile is required when type is 'Localhost'"),
 	)
 	fsGroup := defkit.Int("fsGroup")
@@ -33,7 +33,7 @@ func PodSecurityContext() *defkit.TraitDefinition {
 	runAsUser := defkit.Int("runAsUser").Description("Specify the UID to run the entrypoint of the container process")
 	runAsNonRoot := defkit.Bool("runAsNonRoot").Description("Specify if the container runs as a non-root user").Default(true)
 	seccompProfile := defkit.Map("seccompProfile").Description("Specify the seccomp profile for the pod").WithFields(
-		defkit.String("type").Required().Values("RuntimeDefault", "Unconfined", "Localhost"),
+		defkit.String("type").Mandatory().Values("RuntimeDefault", "Unconfined", "Localhost"),
 		defkit.String("localhostProfile").Description("localhostProfile is required when type is 'Localhost'"),
 	)
 

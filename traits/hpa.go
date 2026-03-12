@@ -30,7 +30,7 @@ func HPA() *defkit.TraitDefinition {
 	max := defkit.Int("max").Default(10).Description("Specify the maximum number of of replicas to which the autoscaler can scale up")
 	targetAPIVersion := defkit.String("targetAPIVersion").Default("apps/v1").Description("Specify the apiVersion of scale target")
 	targetKind := defkit.String("targetKind").Default("Deployment").Description("Specify the kind of scale target")
-	cpu := defkit.Struct("cpu").Required().WithFields(
+	cpu := defkit.Struct("cpu").Mandatory().WithFields(
 		defkit.Field("type", defkit.ParamTypeString).Default("Utilization").Values("Utilization", "AverageValue").Description("Specify resource metrics in terms of percentage(\"Utilization\") or direct value(\"AverageValue\")"),
 		defkit.Field("value", defkit.ParamTypeInt).Default(50).Description("Specify the value of CPU utilization or averageValue"),
 	)
@@ -39,8 +39,8 @@ func HPA() *defkit.TraitDefinition {
 		defkit.Field("value", defkit.ParamTypeInt).Default(50).Description("Specify  the value of MEM utilization or averageValue"),
 	).Optional()
 	podCustomMetrics := defkit.Array("podCustomMetrics").WithFields(
-		defkit.String("name").Required().Description("Specify name of custom metrics"),
-		defkit.String("value").Required().Description("Specify target value of custom metrics"),
+		defkit.String("name").Mandatory().Description("Specify name of custom metrics"),
+		defkit.String("value").Mandatory().Description("Specify target value of custom metrics"),
 	).Optional().Description("Specify custom metrics of pod type")
 
 	// Nested field references

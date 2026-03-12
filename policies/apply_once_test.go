@@ -133,7 +133,7 @@ var _ = Describe("ApplyOnce Policy", func() {
 					f := strategyParam.GetField("affect")
 					Expect(f).NotTo(BeNil())
 					Expect(f.FieldType()).To(Equal(defkit.ParamTypeString))
-					Expect(f.IsRequired()).To(BeFalse())
+					Expect(f.IsMandatory()).To(BeFalse())
 				})
 
 				It("should have correct description", func() {
@@ -146,7 +146,7 @@ var _ = Describe("ApplyOnce Policy", func() {
 				It("should be required", func() {
 					f := strategyParam.GetField("path")
 					Expect(f).NotTo(BeNil())
-					Expect(f.IsRequired()).To(BeTrue())
+					Expect(f.IsMandatory()).To(BeTrue())
 				})
 
 				It("should be array type with string elements", func() {
@@ -181,7 +181,7 @@ var _ = Describe("ApplyOnce Policy", func() {
 				It("should be optional", func() {
 					f := ruleParam.GetField("selector")
 					Expect(f).NotTo(BeNil())
-					Expect(f.IsRequired()).To(BeFalse())
+					Expect(f.IsMandatory()).To(BeFalse())
 				})
 
 				It("should reference ResourcePolicyRuleSelector", func() {
@@ -199,7 +199,7 @@ var _ = Describe("ApplyOnce Policy", func() {
 				It("should be required", func() {
 					f := ruleParam.GetField("strategy")
 					Expect(f).NotTo(BeNil())
-					Expect(f.IsRequired()).To(BeTrue())
+					Expect(f.IsMandatory()).To(BeTrue())
 				})
 
 				It("should reference ApplyOnceStrategy", func() {
@@ -234,7 +234,7 @@ var _ = Describe("ApplyOnce Policy", func() {
 					It("should be optional", func() {
 						f := selectorParam.GetField(sf.name)
 						Expect(f).NotTo(BeNil(), "field %s should exist", sf.name)
-						Expect(f.IsRequired()).To(BeFalse())
+						Expect(f.IsMandatory()).To(BeFalse())
 					})
 
 					It("should be array type with string elements", func() {

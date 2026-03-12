@@ -27,7 +27,7 @@ func CleanJobs() *defkit.WorkflowStepDefinition {
 
 	labelselector := defkit.Object("labelselector")
 	namespace := defkit.Object("namespace").
-		Required().
+		Mandatory().
 		WithSchema("*context.namespace | string")
 
 	jobValue := defkit.NewArrayElement().

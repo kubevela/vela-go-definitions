@@ -27,7 +27,7 @@ func Deploy() *defkit.WorkflowStepDefinition {
 		Default(true).
 		Description("If set to false, the workflow will suspend automatically before this step, default to be true.")
 	policies := defkit.StringList("policies").
-		Required().
+		Mandatory().
 		WithSchema("*[] | [...string]").
 		Description("Declare the policies that used for this deployment. If not specified, the components will be deployed to the hub cluster.")
 	parallelism := defkit.Int("parallelism").

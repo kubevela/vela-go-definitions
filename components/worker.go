@@ -24,7 +24,7 @@ import (
 // It describes long-running, scalable, containerized services that running at backend.
 // They do NOT have network endpoint to receive external network traffic.
 func Worker() *defkit.ComponentDefinition {
-	image := defkit.String("image").Required().Description("Which image would you like to use for your service").Short("i")
+	image := defkit.String("image").Mandatory().Description("Which image would you like to use for your service").Short("i")
 	imagePullPolicy := defkit.String("imagePullPolicy").Description("Specify image pull policy for your service")
 	imagePullSecrets := defkit.StringList("imagePullSecrets").Description("Specify image pull secrets for your service")
 	cmd := defkit.StringList("cmd").Description("Commands to run in the container")
@@ -32,19 +32,19 @@ func Worker() *defkit.ComponentDefinition {
 	env := defkit.List("env").
 		Description("Define arguments by using environment variables").
 		WithFields(
-			defkit.String("name").Required().Description("Environment variable name"),
+			defkit.String("name").Mandatory().Description("Environment variable name"),
 			defkit.String("value").Description("The value of the environment variable"),
 			defkit.Object("valueFrom").Description("Specifies a source the value of this var should come from").
 				WithFields(
 					defkit.Object("secretKeyRef").Description("Selects a key of a secret in the pod's namespace").
 						WithFields(
-							defkit.String("name").Required().Description("The name of the secret in the pod's namespace to select from"),
-							defkit.String("key").Required().Description("The key of the secret to select from. Must be a valid secret key"),
+							defkit.String("name").Mandatory().Description("The name of the secret in the pod's namespace to select from"),
+							defkit.String("key").Mandatory().Description("The key of the secret to select from. Must be a valid secret key"),
 						),
 					defkit.Object("configMapKeyRef").Description("Selects a key of a config map in the pod's namespace").
 						WithFields(
-							defkit.String("name").Required().Description("The name of the config map in the pod's namespace to select from"),
-							defkit.String("key").Required().Description("The key of the config map to select from. Must be a valid secret key"),
+							defkit.String("name").Mandatory().Description("The name of the config map in the pod's namespace to select from"),
+							defkit.String("key").Mandatory().Description("The key of the config map to select from. Must be a valid secret key"),
 						),
 				),
 		)
@@ -55,73 +55,73 @@ func Worker() *defkit.ComponentDefinition {
 	volumeMounts := defkit.Object("volumeMounts").
 		WithFields(
 			defkit.List("pvc").Description("Mount PVC type volume").WithFields(
-				defkit.String("name").Required(),
-				defkit.String("mountPath").Required(),
-				defkit.String("claimName").Required().Description("The name of the PVC"),
+				defkit.String("name").Mandatory(),
+				defkit.String("mountPath").Mandatory(),
+				defkit.String("claimName").Mandatory().Description("The name of the PVC"),
 			),
 			defkit.List("configMap").Description("Mount ConfigMap type volume").WithFields(
-				defkit.String("name").Required(),
-				defkit.String("mountPath").Required(),
+				defkit.String("name").Mandatory(),
+				defkit.String("mountPath").Mandatory(),
 				defkit.Int("defaultMode").Default(420),
-				defkit.String("cmName").Required(),
+				defkit.String("cmName").Mandatory(),
 				defkit.List("items").WithFields(
-					defkit.String("key").Required(),
-					defkit.String("path").Required(),
+					defkit.String("key").Mandatory(),
+					defkit.String("path").Mandatory(),
 					defkit.Int("mode").Default(511),
 				),
 			),
 			defkit.List("secret").Description("Mount Secret type volume").WithFields(
-				defkit.String("name").Required(),
-				defkit.String("mountPath").Required(),
+				defkit.String("name").Mandatory(),
+				defkit.String("mountPath").Mandatory(),
 				defkit.Int("defaultMode").Default(420),
-				defkit.String("secretName").Required(),
+				defkit.String("secretName").Mandatory(),
 				defkit.List("items").WithFields(
-					defkit.String("key").Required(),
-					defkit.String("path").Required(),
+					defkit.String("key").Mandatory(),
+					defkit.String("path").Mandatory(),
 					defkit.Int("mode").Default(511),
 				),
 			),
 			defkit.List("emptyDir").Description("Mount EmptyDir type volume").WithFields(
-				defkit.String("name").Required(),
-				defkit.String("mountPath").Required(),
+				defkit.String("name").Mandatory(),
+				defkit.String("mountPath").Mandatory(),
 				defkit.Enum("medium").Values("", "Memory").Default(""),
 			),
 			defkit.List("hostPath").Description("Mount HostPath type volume").WithFields(
-				defkit.String("name").Required(),
-				defkit.String("mountPath").Required(),
-				defkit.String("path").Required(),
+				defkit.String("name").Mandatory(),
+				defkit.String("mountPath").Mandatory(),
+				defkit.String("path").Mandatory(),
 			),
 		)
 
 	volumes := defkit.List("volumes").Description("Deprecated field, use volumeMounts instead.").
 		WithFields(
-			defkit.String("name").Required(),
-			defkit.String("mountPath").Required(),
+			defkit.String("name").Mandatory(),
+			defkit.String("mountPath").Mandatory(),
 			defkit.OneOf("type").
 				Description(`Specify volume type, options: "pvc","configMap","secret","emptyDir", default to emptyDir`).
 				Default("emptyDir").
 				Variants(
 					defkit.Variant("pvc").WithFields(
-						defkit.Field("claimName", defkit.ParamTypeString).Required(),
+						defkit.Field("claimName", defkit.ParamTypeString).Mandatory(),
 					),
 					defkit.Variant("configMap").WithFields(
 						defkit.Field("defaultMode", defkit.ParamTypeInt).Default(420),
-						defkit.Field("cmName", defkit.ParamTypeString).Required(),
+						defkit.Field("cmName", defkit.ParamTypeString).Mandatory(),
 						defkit.Field("items", defkit.ParamTypeArray).Nested(
 							defkit.Struct("").WithFields(
-								defkit.Field("key", defkit.ParamTypeString).Required(),
-								defkit.Field("path", defkit.ParamTypeString).Required(),
+								defkit.Field("key", defkit.ParamTypeString).Mandatory(),
+								defkit.Field("path", defkit.ParamTypeString).Mandatory(),
 								defkit.Field("mode", defkit.ParamTypeInt).Default(511),
 							),
 						),
 					),
 					defkit.Variant("secret").WithFields(
 						defkit.Field("defaultMode", defkit.ParamTypeInt).Default(420),
-						defkit.Field("secretName", defkit.ParamTypeString).Required(),
+						defkit.Field("secretName", defkit.ParamTypeString).Mandatory(),
 						defkit.Field("items", defkit.ParamTypeArray).Nested(
 							defkit.Struct("").WithFields(
-								defkit.Field("key", defkit.ParamTypeString).Required(),
-								defkit.Field("path", defkit.ParamTypeString).Required(),
+								defkit.Field("key", defkit.ParamTypeString).Mandatory(),
+								defkit.Field("path", defkit.ParamTypeString).Mandatory(),
 								defkit.Field("mode", defkit.ParamTypeInt).Default(511),
 							),
 						),
@@ -299,20 +299,20 @@ func workerHealthProbeParam() *defkit.MapParam {
 		WithFields(
 			defkit.Object("exec").Description("Instructions for assessing container health by executing a command. Either this attribute or the httpGet attribute or the tcpSocket attribute MUST be specified. This attribute is mutually exclusive with both the httpGet attribute and the tcpSocket attribute.").
 				WithFields(
-					defkit.StringList("command").Required().Description("A command to be executed inside the container to assess its health. Each space delimited token of the command is a separate array element. Commands exiting 0 are considered to be successful probes, whilst all other exit codes are considered failures."),
+					defkit.StringList("command").Mandatory().Description("A command to be executed inside the container to assess its health. Each space delimited token of the command is a separate array element. Commands exiting 0 are considered to be successful probes, whilst all other exit codes are considered failures."),
 				),
 			defkit.Object("httpGet").Description("Instructions for assessing container health by executing an HTTP GET request. Either this attribute or the exec attribute or the tcpSocket attribute MUST be specified. This attribute is mutually exclusive with both the exec attribute and the tcpSocket attribute.").
 				WithFields(
-					defkit.String("path").Required().Description("The endpoint, relative to the port, to which the HTTP GET request should be directed."),
-					defkit.Int("port").Required().Description("The TCP socket within the container to which the HTTP GET request should be directed."),
+					defkit.String("path").Mandatory().Description("The endpoint, relative to the port, to which the HTTP GET request should be directed."),
+					defkit.Int("port").Mandatory().Description("The TCP socket within the container to which the HTTP GET request should be directed."),
 					defkit.List("httpHeaders").WithFields(
-						defkit.String("name").Required(),
-						defkit.String("value").Required(),
+						defkit.String("name").Mandatory(),
+						defkit.String("value").Mandatory(),
 					),
 				),
 			defkit.Object("tcpSocket").Description("Instructions for assessing container health by probing a TCP socket. Either this attribute or the exec attribute or the httpGet attribute MUST be specified. This attribute is mutually exclusive with both the exec attribute and the httpGet attribute.").
 				WithFields(
-					defkit.Int("port").Required().Description("The TCP socket within the container that should be probed to assess container health."),
+					defkit.Int("port").Mandatory().Description("The TCP socket within the container that should be probed to assess container health."),
 				),
 			defkit.Int("initialDelaySeconds").Default(0).Description("Number of seconds after the container is started before the first probe is initiated."),
 			defkit.Int("periodSeconds").Default(10).Description("How often, in seconds, to execute the probe."),

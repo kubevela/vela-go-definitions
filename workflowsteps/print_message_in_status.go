@@ -23,7 +23,7 @@ import (
 // PrintMessageInStatus creates the print-message-in-status workflow step definition.
 // This step prints a message in workflow step status.
 func PrintMessageInStatus() *defkit.WorkflowStepDefinition {
-	message := defkit.String("message").Required()
+	message := defkit.String("message").Mandatory()
 
 	return defkit.NewWorkflowStep("print-message-in-status").
 		Description("print message in workflow step status").

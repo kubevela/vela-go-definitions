@@ -27,20 +27,20 @@ func TopologySpreadConstraints() *defkit.TraitDefinition {
 	labSelectorParam := defkit.Map("labSelector").WithFields(
 		defkit.StringKeyMap("matchLabels"),
 		defkit.Array("matchExpressions").WithFields(
-			defkit.String("key").Required(),
+			defkit.String("key").Mandatory(),
 			defkit.String("operator").Default("In").Values("In", "NotIn", "Exists", "DoesNotExist"),
 			defkit.Array("values").Of(defkit.ParamTypeString),
 		),
 	)
 
 	// Define constraints array parameter using WithFields for inline struct definition
-	constraints := defkit.Array("constraints").Description("List of topology spread constraints").Required().
+	constraints := defkit.Array("constraints").Description("List of topology spread constraints").Mandatory().
 		WithFields(
-			defkit.Int("maxSkew").Description("Describe the degree to which Pods may be unevenly distributed").Required(),
-			defkit.String("topologyKey").Description("Specify the key of node labels").Required(),
+			defkit.Int("maxSkew").Description("Describe the degree to which Pods may be unevenly distributed").Mandatory(),
+			defkit.String("topologyKey").Description("Specify the key of node labels").Mandatory(),
 			defkit.String("whenUnsatisfiable").Default("DoNotSchedule").Values("DoNotSchedule", "ScheduleAnyway").
 				Description("Indicate how to deal with a Pod if it doesn't satisfy the spread constraint"),
-			defkit.Map("labelSelector").Description("labelSelector to find matching Pods").Required().WithSchemaRef("labSelector"),
+			defkit.Map("labelSelector").Description("labelSelector to find matching Pods").Mandatory().WithSchemaRef("labSelector"),
 			defkit.Int("minDomains").Description("Indicate a minimum number of eligible domains"),
 			defkit.Array("matchLabelKeys").Of(defkit.ParamTypeString).
 				Description("A list of pod label keys to select the pods over which spreading will be calculated"),

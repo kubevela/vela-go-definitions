@@ -26,7 +26,7 @@ func Task() *defkit.ComponentDefinition {
 	labels := defkit.StringKeyMap("labels").Description("Specify the labels in the workload")
 	annotations := defkit.StringKeyMap("annotations").Description("Specify the annotations in the workload")
 	count := defkit.Int("count").Default(1).Description("Specify number of tasks to run in parallel").Short("c")
-	image := defkit.String("image").Required().Description("Which image would you like to use for your service").Short("i")
+	image := defkit.String("image").Mandatory().Description("Which image would you like to use for your service").Short("i")
 	imagePullPolicy := defkit.String("imagePullPolicy").
 		Values("Always", "Never", "IfNotPresent").
 		Description("Specify image pull policy for your service")
@@ -36,19 +36,19 @@ func Task() *defkit.ComponentDefinition {
 	cmd := defkit.StringList("cmd").Description("Commands to run in the container")
 	env := defkit.List("env").Description("Define arguments by using environment variables").
 		WithFields(
-			defkit.String("name").Required().Description("Environment variable name"),
+			defkit.String("name").Mandatory().Description("Environment variable name"),
 			defkit.String("value").Description("The value of the environment variable"),
 			defkit.Object("valueFrom").Description("Specifies a source the value of this var should come from").
 				WithFields(
 					defkit.Object("secretKeyRef").Description("Selects a key of a secret in the pod's namespace").
 						WithFields(
-							defkit.String("name").Required().Description("The name of the secret in the pod's namespace to select from"),
-							defkit.String("key").Required().Description("The key of the secret to select from. Must be a valid secret key"),
+							defkit.String("name").Mandatory().Description("The name of the secret in the pod's namespace to select from"),
+							defkit.String("key").Mandatory().Description("The key of the secret to select from. Must be a valid secret key"),
 						),
 					defkit.Object("configMapKeyRef").Description("Selects a key of a config map in the pod's namespace").
 						WithFields(
-							defkit.String("name").Required().Description("The name of the config map in the pod's namespace to select from"),
-							defkit.String("key").Required().Description("The key of the config map to select from. Must be a valid secret key"),
+							defkit.String("name").Mandatory().Description("The name of the config map in the pod's namespace to select from"),
+							defkit.String("key").Mandatory().Description("The key of the config map to select from. Must be a valid secret key"),
 						),
 				),
 		)
@@ -56,33 +56,33 @@ func Task() *defkit.ComponentDefinition {
 	memory := defkit.String("memory").Description("Specifies the attributes of the memory resource required for the container.")
 	volumes := defkit.List("volumes").Description("Declare volumes and volumeMounts").
 		WithFields(
-			defkit.String("name").Required(),
-			defkit.String("mountPath").Required(),
+			defkit.String("name").Mandatory(),
+			defkit.String("mountPath").Mandatory(),
 			defkit.OneOf("type").
 				Description("Specify volume type, options: \"pvc\",\"configMap\",\"secret\",\"emptyDir\", default to emptyDir").
 				Default("emptyDir").
 				Variants(
 					defkit.Variant("pvc").WithFields(
-						defkit.Field("claimName", defkit.ParamTypeString).Required(),
+						defkit.Field("claimName", defkit.ParamTypeString).Mandatory(),
 					),
 					defkit.Variant("configMap").WithFields(
 						defkit.Field("defaultMode", defkit.ParamTypeInt).Default(420),
-						defkit.Field("cmName", defkit.ParamTypeString).Required(),
+						defkit.Field("cmName", defkit.ParamTypeString).Mandatory(),
 						defkit.Field("items", defkit.ParamTypeArray).Nested(
 							defkit.Struct("").WithFields(
-								defkit.Field("key", defkit.ParamTypeString).Required(),
-								defkit.Field("path", defkit.ParamTypeString).Required(),
+								defkit.Field("key", defkit.ParamTypeString).Mandatory(),
+								defkit.Field("path", defkit.ParamTypeString).Mandatory(),
 								defkit.Field("mode", defkit.ParamTypeInt).Default(511),
 							),
 						),
 					),
 					defkit.Variant("secret").WithFields(
 						defkit.Field("defaultMode", defkit.ParamTypeInt).Default(420),
-						defkit.Field("secretName", defkit.ParamTypeString).Required(),
+						defkit.Field("secretName", defkit.ParamTypeString).Mandatory(),
 						defkit.Field("items", defkit.ParamTypeArray).Nested(
 							defkit.Struct("").WithFields(
-								defkit.Field("key", defkit.ParamTypeString).Required(),
-								defkit.Field("path", defkit.ParamTypeString).Required(),
+								defkit.Field("key", defkit.ParamTypeString).Mandatory(),
+								defkit.Field("path", defkit.ParamTypeString).Mandatory(),
 								defkit.Field("mode", defkit.ParamTypeInt).Default(511),
 							),
 						),

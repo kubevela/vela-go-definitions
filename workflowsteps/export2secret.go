@@ -26,14 +26,14 @@ func Export2Secret() *defkit.WorkflowStepDefinition {
 	vela := defkit.VelaCtx()
 
 	secretName := defkit.String("secretName").
-		Required().
+		Mandatory().
 		Description("Specify the name of the secret")
 	namespace := defkit.String("namespace").
 		Description("Specify the namespace of the secret")
 	secretType := defkit.String("type").
 		Description("Specify the type of the secret")
 	data := defkit.Object("data").
-		Required().
+		Mandatory().
 		Description("Specify the data of secret").
 		WithSchema("{}")
 	cluster := defkit.String("cluster").
@@ -47,10 +47,10 @@ func Export2Secret() *defkit.WorkflowStepDefinition {
 		Description("Specify the docker data").
 		WithFields(
 			defkit.Field("username", defkit.ParamTypeString).
-				Required().
+				Mandatory().
 				Description("Specify the username of the docker registry"),
 			defkit.Field("password", defkit.ParamTypeString).
-				Required().
+				Mandatory().
 				Description("Specify the password of the docker registry"),
 			defkit.Field("server", defkit.ParamTypeString).
 				Default("https://index.docker.io/v1/").

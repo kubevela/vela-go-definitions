@@ -33,7 +33,7 @@ func ApplyOnce() *defkit.PolicyDefinition {
 		defkit.Field("path", defkit.ParamTypeArray).
 			Of(defkit.ParamTypeString).
 			Description("Specify the path of the resource that allow configuration drift").
-			Required(),
+			Mandatory(),
 	)
 
 	// Define helper type for apply-once policy rule
@@ -45,7 +45,7 @@ func ApplyOnce() *defkit.PolicyDefinition {
 		defkit.Field("strategy", defkit.ParamTypeStruct).
 			Description("Specify the strategy for configuring the resource level configuration drift behaviour").
 			WithSchemaRef("ApplyOnceStrategy").
-			Required(),
+			Mandatory(),
 	)
 
 	return defkit.NewPolicy("apply-once").

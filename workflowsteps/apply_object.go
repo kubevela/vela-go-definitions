@@ -24,7 +24,7 @@ import (
 // This step applies raw kubernetes objects for workflow steps.
 func ApplyObject() *defkit.WorkflowStepDefinition {
 	value := defkit.Object("value").
-		Required().
+		Mandatory().
 		Description("Specify Kubernetes native resource object to be applied")
 	cluster := defkit.String("cluster").
 		Default("").

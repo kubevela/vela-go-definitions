@@ -30,7 +30,7 @@ func GarbageCollect() *defkit.PolicyDefinition {
 		defkit.Field("selector", defkit.ParamTypeStruct).
 			Description("Specify how to select the targets of the rule").
 			WithSchemaRef("ResourcePolicyRuleSelector").
-			Required(),
+			Mandatory(),
 		defkit.Field("strategy", defkit.ParamTypeString).
 			Description("Specify the strategy for target resource to recycle").
 			Default("onAppUpdate").

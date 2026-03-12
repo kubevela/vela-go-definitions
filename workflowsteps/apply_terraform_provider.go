@@ -70,59 +70,59 @@ func ApplyTerraformProvider() *defkit.WorkflowStepDefinition {
 		Alias("").
 		WithImports("vela/config", "vela/kube", "vela/builtin", "strings").
 		Helper("AlibabaProvider", defkit.Struct("AlibabaProvider").WithFields(
-			defkit.Field("accessKey", defkit.ParamTypeString).Required(),
-			defkit.Field("secretKey", defkit.ParamTypeString).Required(),
-			defkit.Field("region", defkit.ParamTypeString).Required(),
-			defkit.Field("type", defkit.ParamTypeString).Required().Values("alibaba"),
+			defkit.Field("accessKey", defkit.ParamTypeString).Mandatory(),
+			defkit.Field("secretKey", defkit.ParamTypeString).Mandatory(),
+			defkit.Field("region", defkit.ParamTypeString).Mandatory(),
+			defkit.Field("type", defkit.ParamTypeString).Mandatory().Values("alibaba"),
 			defkit.Field("name", defkit.ParamTypeString).Default("alibaba-provider"),
 		)).
 		Helper("AWSProvider", defkit.Struct("AWSProvider").WithFields(
-			defkit.Field("accessKey", defkit.ParamTypeString).Required(),
-			defkit.Field("secretKey", defkit.ParamTypeString).Required(),
-			defkit.Field("region", defkit.ParamTypeString).Required(),
+			defkit.Field("accessKey", defkit.ParamTypeString).Mandatory(),
+			defkit.Field("secretKey", defkit.ParamTypeString).Mandatory(),
+			defkit.Field("region", defkit.ParamTypeString).Mandatory(),
 			defkit.Field("token", defkit.ParamTypeString).Default(""),
-			defkit.Field("type", defkit.ParamTypeString).Required().Values("aws"),
+			defkit.Field("type", defkit.ParamTypeString).Mandatory().Values("aws"),
 			defkit.Field("name", defkit.ParamTypeString).Default("aws-provider"),
 		)).
 		Helper("AzureProvider", defkit.Struct("AzureProvider").WithFields(
-			defkit.Field("subscriptionID", defkit.ParamTypeString).Required(),
-			defkit.Field("tenantID", defkit.ParamTypeString).Required(),
-			defkit.Field("clientID", defkit.ParamTypeString).Required(),
-			defkit.Field("clientSecret", defkit.ParamTypeString).Required(),
+			defkit.Field("subscriptionID", defkit.ParamTypeString).Mandatory(),
+			defkit.Field("tenantID", defkit.ParamTypeString).Mandatory(),
+			defkit.Field("clientID", defkit.ParamTypeString).Mandatory(),
+			defkit.Field("clientSecret", defkit.ParamTypeString).Mandatory(),
 			defkit.Field("name", defkit.ParamTypeString).Default("azure-provider"),
 		)).
 		Helper("BaiduProvider", defkit.Struct("BaiduProvider").WithFields(
-			defkit.Field("accessKey", defkit.ParamTypeString).Required(),
-			defkit.Field("secretKey", defkit.ParamTypeString).Required(),
-			defkit.Field("region", defkit.ParamTypeString).Required(),
-			defkit.Field("type", defkit.ParamTypeString).Required().Values("baidu"),
+			defkit.Field("accessKey", defkit.ParamTypeString).Mandatory(),
+			defkit.Field("secretKey", defkit.ParamTypeString).Mandatory(),
+			defkit.Field("region", defkit.ParamTypeString).Mandatory(),
+			defkit.Field("type", defkit.ParamTypeString).Mandatory().Values("baidu"),
 			defkit.Field("name", defkit.ParamTypeString).Default("baidu-provider"),
 		)).
 		Helper("ECProvider", defkit.Struct("ECProvider").WithFields(
-			defkit.Field("type", defkit.ParamTypeString).Required().Values("ec"),
+			defkit.Field("type", defkit.ParamTypeString).Mandatory().Values("ec"),
 			defkit.Field("apiKey", defkit.ParamTypeString).Default(""),
 			defkit.Field("name", defkit.ParamTypeString).Default("ec-provider"),
 		)).
 		Helper("GCPProvider", defkit.Struct("GCPProvider").WithFields(
-			defkit.Field("credentials", defkit.ParamTypeString).Required(),
-			defkit.Field("region", defkit.ParamTypeString).Required(),
-			defkit.Field("project", defkit.ParamTypeString).Required(),
-			defkit.Field("type", defkit.ParamTypeString).Required().Values("gcp"),
+			defkit.Field("credentials", defkit.ParamTypeString).Mandatory(),
+			defkit.Field("region", defkit.ParamTypeString).Mandatory(),
+			defkit.Field("project", defkit.ParamTypeString).Mandatory(),
+			defkit.Field("type", defkit.ParamTypeString).Mandatory().Values("gcp"),
 			defkit.Field("name", defkit.ParamTypeString).Default("gcp-provider"),
 		)).
 		Helper("TencentProvider", defkit.Struct("TencentProvider").WithFields(
-			defkit.Field("secretID", defkit.ParamTypeString).Required(),
-			defkit.Field("secretKey", defkit.ParamTypeString).Required(),
-			defkit.Field("region", defkit.ParamTypeString).Required(),
-			defkit.Field("type", defkit.ParamTypeString).Required().Values("tencent"),
+			defkit.Field("secretID", defkit.ParamTypeString).Mandatory(),
+			defkit.Field("secretKey", defkit.ParamTypeString).Mandatory(),
+			defkit.Field("region", defkit.ParamTypeString).Mandatory(),
+			defkit.Field("type", defkit.ParamTypeString).Mandatory().Values("tencent"),
 			defkit.Field("name", defkit.ParamTypeString).Default("tencent-provider"),
 		)).
 		Helper("UCloudProvider", defkit.Struct("UCloudProvider").WithFields(
-			defkit.Field("publicKey", defkit.ParamTypeString).Required(),
-			defkit.Field("privateKey", defkit.ParamTypeString).Required(),
-			defkit.Field("projectID", defkit.ParamTypeString).Required(),
-			defkit.Field("region", defkit.ParamTypeString).Required(),
-			defkit.Field("type", defkit.ParamTypeString).Required().Values("ucloud"),
+			defkit.Field("publicKey", defkit.ParamTypeString).Mandatory(),
+			defkit.Field("privateKey", defkit.ParamTypeString).Mandatory(),
+			defkit.Field("projectID", defkit.ParamTypeString).Mandatory(),
+			defkit.Field("region", defkit.ParamTypeString).Mandatory(),
+			defkit.Field("type", defkit.ParamTypeString).Mandatory().Values("ucloud"),
 			defkit.Field("name", defkit.ParamTypeString).Default("ucloud-provider"),
 		)).
 		Template(func(tpl *defkit.WorkflowStepTemplate) {

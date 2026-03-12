@@ -32,7 +32,7 @@ func ExportData() *defkit.WorkflowStepDefinition {
 		Values("ConfigMap", "Secret").
 		Description("Specify the kind of the export destination")
 	data := defkit.Object("data").
-		Required().
+		Mandatory().
 		Description("Specify the data to export").
 		WithSchema("{}")
 	topology := defkit.String("topology").

@@ -23,7 +23,7 @@ import (
 // ApplyComponent creates the apply-component workflow step definition.
 // This step applies a specific component and its corresponding traits in application.
 func ApplyComponent() *defkit.WorkflowStepDefinition {
-	component := defkit.String("component").Required().Description("Specify the component name to apply")
+	component := defkit.String("component").Mandatory().Description("Specify the component name to apply")
 	cluster := defkit.String("cluster").Default("").Description("Specify the cluster")
 	namespace := defkit.String("namespace").Default("").Description("Specify the namespace")
 

@@ -26,13 +26,13 @@ func ServiceAccount() *defkit.TraitDefinition {
 	vela := defkit.VelaCtx()
 
 	// Parameters
-	name := defkit.String("name").Required().Description("Specify the name of ServiceAccount")
+	name := defkit.String("name").Mandatory().Description("Specify the name of ServiceAccount")
 	create := defkit.Bool("create").Default(false).Description("Specify whether to create new ServiceAccount or not")
 	privileges := defkit.Array("privileges").WithSchemaRef("Privileges").Optional().Description("Specify the privileges of the ServiceAccount, if not empty, RoleBindings(ClusterRoleBindings) will be created")
 
 	// Helper type #Privileges
 	privilegesHelper := defkit.Struct("Privileges").WithFields(
-		defkit.Field("verbs", defkit.ParamTypeArray).Of(defkit.ParamTypeString).Required().Description("Specify the verbs to be allowed for the resource"),
+		defkit.Field("verbs", defkit.ParamTypeArray).Of(defkit.ParamTypeString).Mandatory().Description("Specify the verbs to be allowed for the resource"),
 		defkit.Field("apiGroups", defkit.ParamTypeArray).Of(defkit.ParamTypeString).Optional().Description("Specify the apiGroups of the resource"),
 		defkit.Field("resources", defkit.ParamTypeArray).Of(defkit.ParamTypeString).Optional().Description("Specify the resources to be allowed"),
 		defkit.Field("resourceNames", defkit.ParamTypeArray).Of(defkit.ParamTypeString).Optional().Description("Specify the resourceNames to be allowed"),

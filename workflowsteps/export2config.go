@@ -26,12 +26,12 @@ func Export2Config() *defkit.WorkflowStepDefinition {
 	vela := defkit.VelaCtx()
 
 	configName := defkit.String("configName").
-		Required().
+		Mandatory().
 		Description("Specify the name of the config map")
 	namespace := defkit.String("namespace").
 		Description("Specify the namespace of the config map")
 	data := defkit.Object("data").
-		Required().
+		Mandatory().
 		Description("Specify the data of config map").
 		WithSchema("{}")
 	cluster := defkit.String("cluster").

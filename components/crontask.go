@@ -25,7 +25,7 @@ import (
 func CronTask() *defkit.ComponentDefinition {
 	labels := defkit.StringKeyMap("labels").Description("Specify the labels in the workload")
 	annotations := defkit.StringKeyMap("annotations").Description("Specify the annotations in the workload")
-	schedule := defkit.String("schedule").Required().Description("Specify the schedule in Cron format, see https://en.wikipedia.org/wiki/Cron")
+	schedule := defkit.String("schedule").Mandatory().Description("Specify the schedule in Cron format, see https://en.wikipedia.org/wiki/Cron")
 	startingDeadlineSeconds := defkit.Int("startingDeadlineSeconds").Description("Specify deadline in seconds for starting the job if it misses scheduled")
 	suspend := defkit.Bool("suspend").Default(false).Description("suspend subsequent executions")
 	concurrencyPolicy := defkit.String("concurrencyPolicy").
@@ -37,7 +37,7 @@ func CronTask() *defkit.ComponentDefinition {
 	failedJobsHistoryLimit := defkit.Int("failedJobsHistoryLimit").Default(1).
 		Description("The number of failed finished jobs to retain")
 	count := defkit.Int("count").Default(1).Description("Specify number of tasks to run in parallel").Short("c")
-	image := defkit.String("image").Required().Description("Which image would you like to use for your service").Short("i")
+	image := defkit.String("image").Mandatory().Description("Which image would you like to use for your service").Short("i")
 	imagePullPolicy := defkit.String("imagePullPolicy").
 		Values("Always", "Never", "IfNotPresent").
 		Description("Specify image pull policy for your service")
@@ -46,19 +46,19 @@ func CronTask() *defkit.ComponentDefinition {
 	cmd := defkit.StringList("cmd").Description("Commands to run in the container")
 	env := defkit.List("env").Description("Define arguments by using environment variables").
 		WithFields(
-			defkit.String("name").Required().Description("Environment variable name"),
+			defkit.String("name").Mandatory().Description("Environment variable name"),
 			defkit.String("value").Description("The value of the environment variable"),
 			defkit.Object("valueFrom").Description("Specifies a source the value of this var should come from").
 				WithFields(
 					defkit.Object("secretKeyRef").Description("Selects a key of a secret in the pod's namespace").
 						WithFields(
-							defkit.String("name").Required().Description("The name of the secret in the pod's namespace to select from"),
-							defkit.String("key").Required().Description("The key of the secret to select from. Must be a valid secret key"),
+							defkit.String("name").Mandatory().Description("The name of the secret in the pod's namespace to select from"),
+							defkit.String("key").Mandatory().Description("The key of the secret to select from. Must be a valid secret key"),
 						),
 					defkit.Object("configMapKeyRef").Description("Selects a key of a config map in the pod's namespace").
 						WithFields(
-							defkit.String("name").Required().Description("The name of the config map in the pod's namespace to select from"),
-							defkit.String("key").Required().Description("The key of the config map to select from. Must be a valid secret key"),
+							defkit.String("name").Mandatory().Description("The name of the config map in the pod's namespace to select from"),
+							defkit.String("key").Mandatory().Description("The key of the config map to select from. Must be a valid secret key"),
 						),
 				),
 		)
@@ -68,33 +68,33 @@ func CronTask() *defkit.ComponentDefinition {
 	// Deprecated volumes parameter - discriminated union with type-based conditional fields
 	volumes := defkit.List("volumes").Description("Deprecated field, use volumeMounts instead.").
 		WithFields(
-			defkit.String("name").Required(),
-			defkit.String("mountPath").Required(),
+			defkit.String("name").Mandatory(),
+			defkit.String("mountPath").Mandatory(),
 			defkit.OneOf("type").
 				Description("Specify volume type, options: \"pvc\",\"configMap\",\"secret\",\"emptyDir\", default to emptyDir").
 				Default("emptyDir").
 				Variants(
 					defkit.Variant("pvc").WithFields(
-						defkit.Field("claimName", defkit.ParamTypeString).Required(),
+						defkit.Field("claimName", defkit.ParamTypeString).Mandatory(),
 					),
 					defkit.Variant("configMap").WithFields(
 						defkit.Field("defaultMode", defkit.ParamTypeInt).Default(420),
-						defkit.Field("cmName", defkit.ParamTypeString).Required(),
+						defkit.Field("cmName", defkit.ParamTypeString).Mandatory(),
 						defkit.Field("items", defkit.ParamTypeArray).Nested(
 							defkit.Struct("").WithFields(
-								defkit.Field("key", defkit.ParamTypeString).Required(),
-								defkit.Field("path", defkit.ParamTypeString).Required(),
+								defkit.Field("key", defkit.ParamTypeString).Mandatory(),
+								defkit.Field("path", defkit.ParamTypeString).Mandatory(),
 								defkit.Field("mode", defkit.ParamTypeInt).Default(511),
 							),
 						),
 					),
 					defkit.Variant("secret").WithFields(
 						defkit.Field("defaultMode", defkit.ParamTypeInt).Default(420),
-						defkit.Field("secretName", defkit.ParamTypeString).Required(),
+						defkit.Field("secretName", defkit.ParamTypeString).Mandatory(),
 						defkit.Field("items", defkit.ParamTypeArray).Nested(
 							defkit.Struct("").WithFields(
-								defkit.Field("key", defkit.ParamTypeString).Required(),
-								defkit.Field("path", defkit.ParamTypeString).Required(),
+								defkit.Field("key", defkit.ParamTypeString).Mandatory(),
+								defkit.Field("path", defkit.ParamTypeString).Mandatory(),
 								defkit.Field("mode", defkit.ParamTypeInt).Default(511),
 							),
 						),
@@ -106,8 +106,8 @@ func CronTask() *defkit.ComponentDefinition {
 		)
 	hostAliases := defkit.List("hostAliases").Description("An optional list of hosts and IPs that will be injected into the pod's hosts file").
 		WithFields(
-			defkit.String("ip").Required(),
-			defkit.StringList("hostnames").Required(),
+			defkit.String("ip").Mandatory(),
+			defkit.StringList("hostnames").Mandatory(),
 		)
 	ttlSecondsAfterFinished := defkit.Int("ttlSecondsAfterFinished").Description("Limits the lifetime of a Job that has finished")
 	activeDeadlineSeconds := defkit.Int("activeDeadlineSeconds").Description("The duration in seconds relative to the startTime that the job may be continuously active before the system tries to terminate it")
@@ -143,20 +143,20 @@ func CronTaskHealthProbeParam() *defkit.MapParam {
 		WithFields(
 			defkit.Object("exec").Description("Instructions for assessing container health by executing a command. Either this attribute or the httpGet attribute or the tcpSocket attribute MUST be specified. This attribute is mutually exclusive with both the httpGet attribute and the tcpSocket attribute.").
 				WithFields(
-					defkit.StringList("command").Required().Description("A command to be executed inside the container to assess its health. Each space delimited token of the command is a separate array element. Commands exiting 0 are considered to be successful probes, whilst all other exit codes are considered failures."),
+					defkit.StringList("command").Mandatory().Description("A command to be executed inside the container to assess its health. Each space delimited token of the command is a separate array element. Commands exiting 0 are considered to be successful probes, whilst all other exit codes are considered failures."),
 				),
 			defkit.Object("httpGet").Description("Instructions for assessing container health by executing an HTTP GET request. Either this attribute or the exec attribute or the tcpSocket attribute MUST be specified. This attribute is mutually exclusive with both the exec attribute and the tcpSocket attribute.").
 				WithFields(
-					defkit.String("path").Required().Description("The endpoint, relative to the port, to which the HTTP GET request should be directed."),
-					defkit.Int("port").Required().Description("The TCP socket within the container to which the HTTP GET request should be directed."),
+					defkit.String("path").Mandatory().Description("The endpoint, relative to the port, to which the HTTP GET request should be directed."),
+					defkit.Int("port").Mandatory().Description("The TCP socket within the container to which the HTTP GET request should be directed."),
 					defkit.List("httpHeaders").WithFields(
-						defkit.String("name").Required(),
-						defkit.String("value").Required(),
+						defkit.String("name").Mandatory(),
+						defkit.String("value").Mandatory(),
 					),
 				),
 			defkit.Object("tcpSocket").Description("Instructions for assessing container health by probing a TCP socket. Either this attribute or the exec attribute or the httpGet attribute MUST be specified. This attribute is mutually exclusive with both the exec attribute and the httpGet attribute.").
 				WithFields(
-					defkit.Int("port").Required().Description("The TCP socket within the container that should be probed to assess container health."),
+					defkit.Int("port").Mandatory().Description("The TCP socket within the container that should be probed to assess container health."),
 				),
 			defkit.Int("initialDelaySeconds").Default(0).Description("Number of seconds after the container is started before the first probe is initiated."),
 			defkit.Int("periodSeconds").Default(10).Description("How often, in seconds, to execute the probe."),
@@ -171,46 +171,46 @@ func CronTaskVolumeMountsParam() defkit.Param {
 	return defkit.Object("volumeMounts").
 		WithFields(
 			defkit.List("pvc").Description("Mount PVC type volume").WithFields(
-				defkit.String("name").Required(),
-				defkit.String("mountPath").Required(),
+				defkit.String("name").Mandatory(),
+				defkit.String("mountPath").Mandatory(),
 				defkit.String("subPath"),
-				defkit.String("claimName").Required().Description("The name of the PVC"),
+				defkit.String("claimName").Mandatory().Description("The name of the PVC"),
 			),
 			defkit.List("configMap").Description("Mount ConfigMap type volume").WithFields(
-				defkit.String("name").Required(),
-				defkit.String("mountPath").Required(),
+				defkit.String("name").Mandatory(),
+				defkit.String("mountPath").Mandatory(),
 				defkit.String("subPath"),
 				defkit.Int("defaultMode").Default(420),
-				defkit.String("cmName").Required(),
+				defkit.String("cmName").Mandatory(),
 				defkit.List("items").WithFields(
-					defkit.String("key").Required(),
-					defkit.String("path").Required(),
+					defkit.String("key").Mandatory(),
+					defkit.String("path").Mandatory(),
 					defkit.Int("mode").Default(511),
 				),
 			),
 			defkit.List("secret").Description("Mount Secret type volume").WithFields(
-				defkit.String("name").Required(),
-				defkit.String("mountPath").Required(),
+				defkit.String("name").Mandatory(),
+				defkit.String("mountPath").Mandatory(),
 				defkit.String("subPath"),
 				defkit.Int("defaultMode").Default(420),
-				defkit.String("secretName").Required(),
+				defkit.String("secretName").Mandatory(),
 				defkit.List("items").WithFields(
-					defkit.String("key").Required(),
-					defkit.String("path").Required(),
+					defkit.String("key").Mandatory(),
+					defkit.String("path").Mandatory(),
 					defkit.Int("mode").Default(511),
 				),
 			),
 			defkit.List("emptyDir").Description("Mount EmptyDir type volume").WithFields(
-				defkit.String("name").Required(),
-				defkit.String("mountPath").Required(),
+				defkit.String("name").Mandatory(),
+				defkit.String("mountPath").Mandatory(),
 				defkit.String("subPath"),
 				defkit.Enum("medium").Values("", "Memory").Default(""),
 			),
 			defkit.List("hostPath").Description("Mount HostPath type volume").WithFields(
-				defkit.String("name").Required(),
-				defkit.String("mountPath").Required(),
+				defkit.String("name").Mandatory(),
+				defkit.String("mountPath").Mandatory(),
 				defkit.String("subPath"),
-				defkit.String("path").Required(),
+				defkit.String("path").Mandatory(),
 			),
 		)
 }

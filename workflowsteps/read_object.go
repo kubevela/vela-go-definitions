@@ -30,7 +30,7 @@ func ReadObject() *defkit.WorkflowStepDefinition {
 		Default("Application").
 		Description("Specify the kind of the object, defaults to Application")
 	name := defkit.String("name").
-		Required().
+		Mandatory().
 		Description("Specify the name of the object")
 	namespace := defkit.String("namespace").
 		Default("default").

@@ -25,17 +25,17 @@ import (
 func Webhook() *defkit.WorkflowStepDefinition {
 	// url is a discriminated union: either {value: string} or {secretRef: {name, key}}
 	url := defkit.OneOf("url").
-		Required().
+		Mandatory().
 		Description("Specify the webhook url").
 		Variants(
 			defkit.Variant("value").WithFields(
-				defkit.Field("value", defkit.ParamTypeString).Required(),
+				defkit.Field("value", defkit.ParamTypeString).Mandatory(),
 			),
 			defkit.Variant("secretRef").WithFields(
-				defkit.Field("secretRef", defkit.ParamTypeStruct).Required().Nested(
+				defkit.Field("secretRef", defkit.ParamTypeStruct).Mandatory().Nested(
 					defkit.Struct("secretRef").WithFields(
-						defkit.Field("name", defkit.ParamTypeString).Required().Description("name is the name of the secret"),
-						defkit.Field("key", defkit.ParamTypeString).Required().Description("key is the key in the secret"),
+						defkit.Field("name", defkit.ParamTypeString).Mandatory().Description("name is the name of the secret"),
+						defkit.Field("key", defkit.ParamTypeString).Mandatory().Description("key is the key in the secret"),
 					),
 				),
 			),

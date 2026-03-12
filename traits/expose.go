@@ -31,13 +31,13 @@ func Expose() *defkit.TraitDefinition {
 	port := defkit.Array("port").Of(defkit.ParamTypeInt).Optional().Description("Deprecated, the old way to specify the exposion ports")
 
 	ports := defkit.Array("ports").Optional().WithFields(
-		defkit.Int("port").Required().Description("Number of port to expose on the pod's IP address"),
+		defkit.Int("port").Mandatory().Description("Number of port to expose on the pod's IP address"),
 		defkit.String("name").Optional().Description("Name of the port"),
 		defkit.String("protocol").Default("TCP").Values("TCP", "UDP", "SCTP").Description("Protocol for port. Must be UDP, TCP, or SCTP"),
 		defkit.Int("nodePort").Optional().Description("exposed node port. Only Valid when exposeType is NodePort"),
 	).Description("Specify portsyou want customer traffic sent to")
 
-	annotations := defkit.Map("annotations").Of(defkit.ParamTypeString).Required().Description("Specify the annotations of the exposed service")
+	annotations := defkit.Map("annotations").Of(defkit.ParamTypeString).Mandatory().Description("Specify the annotations of the exposed service")
 	matchLabels := defkit.Map("matchLabels").Of(defkit.ParamTypeString).Optional()
 	serviceType := defkit.String("type").Default("ClusterIP").Values("ClusterIP", "NodePort", "LoadBalancer", "ExternalName").Description(`Specify what kind of Service you want. options: "ClusterIP","NodePort","LoadBalancer","ExternalName"`)
 

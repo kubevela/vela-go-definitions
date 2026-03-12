@@ -30,7 +30,7 @@ func TakeOver() *defkit.PolicyDefinition {
 		defkit.Field("selector", defkit.ParamTypeStruct).
 			Description("Specify how to select the targets of the rule").
 			WithSchemaRef("RuleSelector").
-			Required(),
+			Mandatory(),
 	)
 
 	return defkit.NewPolicy("take-over").

@@ -118,7 +118,7 @@ var _ = Describe("SharedResource Policy", func() {
 					It("should be optional", func() {
 						f := selectorParam.GetField(sf.name)
 						Expect(f).NotTo(BeNil(), "field %s should exist", sf.name)
-						Expect(f.IsRequired()).To(BeFalse())
+						Expect(f.IsMandatory()).To(BeFalse())
 					})
 
 					It("should be array type with string elements", func() {
@@ -154,7 +154,7 @@ var _ = Describe("SharedResource Policy", func() {
 				It("should be required", func() {
 					f := ruleParam.GetField("selector")
 					Expect(f).NotTo(BeNil())
-					Expect(f.IsRequired()).To(BeTrue())
+					Expect(f.IsMandatory()).To(BeTrue())
 				})
 
 				It("should reference ResourcePolicyRuleSelector", func() {

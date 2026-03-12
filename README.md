@@ -65,7 +65,7 @@ func init() {
 }
 
 func MyComponent() *defkit.ComponentDefinition {
-    image := defkit.String("image").Required().Description("Container image")
+    image := defkit.String("image").Mandatory().Description("Container image")
     replicas := defkit.Int("replicas").Default(1).Description("Number of replicas")
 
     return defkit.NewComponent("my-component").

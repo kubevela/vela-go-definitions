@@ -24,9 +24,9 @@ import (
 // This trait adds host aliases on K8s pod for your workload.
 func HostAlias() *defkit.TraitDefinition {
 	// Define the hostAliases array parameter
-	hostAliases := defkit.Array("hostAliases").Description("Specify the hostAliases to add").Required().WithFields(
-		defkit.String("ip").Required(),
-		defkit.Array("hostnames").Of(defkit.ParamTypeString).Required(),
+	hostAliases := defkit.Array("hostAliases").Description("Specify the hostAliases to add").Mandatory().WithFields(
+		defkit.String("ip").Mandatory(),
+		defkit.Array("hostnames").Of(defkit.ParamTypeString).Mandatory(),
 	)
 
 	return defkit.NewTrait("hostalias").

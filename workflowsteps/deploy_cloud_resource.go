@@ -29,7 +29,7 @@ func DeployCloudResource() *defkit.WorkflowStepDefinition {
 		Default("").
 		Description("Declare the name of the env-binding policy, if empty, the first env-binding policy will be used")
 	env := defkit.String("env").
-		Required().
+		Mandatory().
 		Description("Declare the name of the env in policy")
 
 	return defkit.NewWorkflowStep("deploy-cloud-resource").

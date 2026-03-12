@@ -27,7 +27,7 @@ func ApplyDeployment() *defkit.WorkflowStepDefinition {
 	stepName := defkit.Reference("context.stepName")
 	stepLabel := defkit.Interpolation(vela.Name(), defkit.Lit("-"), stepName)
 
-	image := defkit.String("image").Required()
+	image := defkit.String("image").Mandatory()
 	replicas := defkit.Int("replicas").Default(1)
 	cluster := defkit.String("cluster").Default("")
 	cmd := defkit.StringList("cmd")

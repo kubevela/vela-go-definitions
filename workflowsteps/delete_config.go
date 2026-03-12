@@ -24,10 +24,10 @@ import (
 // This step deletes a config.
 func DeleteConfig() *defkit.WorkflowStepDefinition {
 	name := defkit.String("name").
-		Required().
+		Mandatory().
 		Description("Specify the name of the config.")
 	namespace := defkit.Object("namespace").
-		Required().
+		Mandatory().
 		Description("Specify the namespace of the config.").
 		WithSchema("*context.namespace | string")
 

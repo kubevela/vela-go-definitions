@@ -28,7 +28,7 @@ func K8sUpdateStrategy() *defkit.TraitDefinition {
 	targetKind := defkit.String("targetKind").Default("Deployment").Values("Deployment", "StatefulSet", "DaemonSet").Description("Specify the kind of target")
 
 	// Strategy struct with nested rolling strategy
-	strategy := defkit.Struct("strategy").Required().Description("Specify the strategy of update").WithFields(
+	strategy := defkit.Struct("strategy").Mandatory().Description("Specify the strategy of update").WithFields(
 		defkit.Field("type", defkit.ParamTypeString).Default("RollingUpdate").Values("RollingUpdate", "Recreate", "OnDelete").Description("Specify the strategy type"),
 		defkit.Field("rollingStrategy", defkit.ParamTypeStruct).
 			Description("Specify the parameters of rolling update strategy").

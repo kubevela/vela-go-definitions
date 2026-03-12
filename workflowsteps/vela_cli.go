@@ -25,14 +25,14 @@ import (
 func VelaCli() *defkit.WorkflowStepDefinition {
 	vela := defkit.VelaCtx()
 
-	command := defkit.StringList("command").Required().Description("Specify the vela command")
+	command := defkit.StringList("command").Mandatory().Description("Specify the vela command")
 	image := defkit.String("image").Default("oamdev/vela-cli:v1.6.4").Description("Specify the image")
 	serviceAccountName := defkit.String("serviceAccountName").Default("kubevela-vela-core").Description("specify serviceAccountName want to use")
 
 	// items array inside secret
 	items := defkit.Array("items").WithFields(
-		defkit.String("key").Required(),
-		defkit.String("path").Required(),
+		defkit.String("key").Mandatory(),
+		defkit.String("path").Mandatory(),
 		defkit.Int("mode").Default(511),
 	)
 
@@ -40,11 +40,11 @@ func VelaCli() *defkit.WorkflowStepDefinition {
 	secret := defkit.Array("secret").
 		Description("Mount Secret type storage").
 		WithFields(
-			defkit.String("name").Required(),
-			defkit.String("mountPath").Required(),
+			defkit.String("name").Mandatory(),
+			defkit.String("mountPath").Mandatory(),
 			defkit.String("subPath"),
 			defkit.Int("defaultMode").Default(420),
-			defkit.String("secretName").Required(),
+			defkit.String("secretName").Mandatory(),
 			items,
 		)
 
@@ -52,9 +52,9 @@ func VelaCli() *defkit.WorkflowStepDefinition {
 	hostPath := defkit.Array("hostPath").
 		Description("Declare host path type storage").
 		WithFields(
-			defkit.String("name").Required(),
-			defkit.String("path").Required(),
-			defkit.String("mountPath").Required(),
+			defkit.String("name").Mandatory(),
+			defkit.String("path").Mandatory(),
+			defkit.String("mountPath").Mandatory(),
 			defkit.String("type").Default("Directory").Values(
 				"Directory", "DirectoryOrCreate", "FileOrCreate",
 				"File", "Socket", "CharDevice", "BlockDevice",
