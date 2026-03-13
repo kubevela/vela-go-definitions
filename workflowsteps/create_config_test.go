@@ -25,16 +25,16 @@ import (
 	"github.com/oam-dev/vela-go-definitions/workflowsteps"
 )
 
-var _ = Describe("DeleteConfig WorkflowStep", func() {
+var _ = Describe("CreateConfig WorkflowStep", func() {
 	Describe("Metadata", func() {
 		It("should have the correct name", func() {
-			step := workflowsteps.DeleteConfig()
-			Expect(step.GetName()).To(Equal("delete-config"))
+			step := workflowsteps.CreateConfig()
+			Expect(step.GetName()).To(Equal("create-config"))
 		})
 
 		It("should have the correct description", func() {
-			step := workflowsteps.DeleteConfig()
-			Expect(step.GetDescription()).To(Equal("Delete a config"))
+			step := workflowsteps.CreateConfig()
+			Expect(step.GetDescription()).To(Equal("Create or update a config"))
 		})
 	})
 
@@ -42,7 +42,7 @@ var _ = Describe("DeleteConfig WorkflowStep", func() {
 		var cueOutput string
 
 		BeforeEach(func() {
-			step := workflowsteps.DeleteConfig()
+			step := workflowsteps.CreateConfig()
 			cueOutput = step.ToCue()
 			Expect(cueOutput).NotTo(BeEmpty())
 		})
@@ -57,7 +57,7 @@ var _ = Describe("DeleteConfig WorkflowStep", func() {
 			})
 
 			It("should quote the hyphenated name", func() {
-				Expect(cueOutput).To(ContainSubstring(`"delete-config": {`))
+				Expect(cueOutput).To(ContainSubstring(`"create-config": {`))
 			})
 		})
 
@@ -75,11 +75,19 @@ var _ = Describe("DeleteConfig WorkflowStep", func() {
 			It("should have namespace with default context.namespace", func() {
 				Expect(cueOutput).To(ContainSubstring("*context.namespace | string"))
 			})
+
+			It("should have optional template", func() {
+				Expect(cueOutput).To(ContainSubstring("template?: string"))
+			})
+
+			It("should have required config as open struct", func() {
+				Expect(cueOutput).To(ContainSubstring("config: {...}"))
+			})
 		})
 
 		Describe("Template", func() {
-			It("should call config.#DeleteConfig", func() {
-				Expect(cueOutput).To(ContainSubstring("config.#DeleteConfig & {"))
+			It("should call config.#CreateConfig", func() {
+				Expect(cueOutput).To(ContainSubstring("config.#CreateConfig & {"))
 			})
 
 			It("should pass full parameter object", func() {
@@ -88,8 +96,8 @@ var _ = Describe("DeleteConfig WorkflowStep", func() {
 		})
 
 		Describe("Template: structural correctness", func() {
-			It("should have exactly one config.#DeleteConfig", func() {
-				count := strings.Count(cueOutput, "config.#DeleteConfig & {")
+			It("should have exactly one config.#CreateConfig", func() {
+				count := strings.Count(cueOutput, "config.#CreateConfig & {")
 				Expect(count).To(Equal(1))
 			})
 		})

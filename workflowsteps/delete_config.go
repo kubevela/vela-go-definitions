@@ -38,10 +38,7 @@ func DeleteConfig() *defkit.WorkflowStepDefinition {
 		Params(name, namespace).
 		Template(func(tpl *defkit.WorkflowStepTemplate) {
 			tpl.Builtin("deploy", "config.#DeleteConfig").
-				WithParams(map[string]defkit.Value{
-					"name":      name,
-					"namespace": namespace,
-				}).
+				WithFullParameter().
 				Build()
 		})
 }

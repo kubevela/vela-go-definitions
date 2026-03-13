@@ -43,17 +43,8 @@ func CreateConfig() *defkit.WorkflowStepDefinition {
 		Params(name, namespace, template, config).
 		Template(func(tpl *defkit.WorkflowStepTemplate) {
 			tpl.Builtin("deploy", "config.#CreateConfig").
-				WithParams(map[string]defkit.Value{
-					"name":      name,
-					"namespace": namespace,
-					"config":    config,
-				}).
+				WithFullParameter().
 				Build()
-			tpl.Builtin("deploy", "config.#CreateConfig").
-				WithParams(map[string]defkit.Value{
-					"template": template,
-				}).
-				If(template.IsSet())
 		})
 }
 
