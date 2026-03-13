@@ -88,16 +88,8 @@ var _ = Describe("ListConfig WorkflowStep", func() {
 				Expect(cueOutput).To(ContainSubstring("config.#ListConfig & {"))
 			})
 
-			It("should pass template parameter", func() {
-				Expect(cueOutput).To(ContainSubstring("template:"))
-			})
-
-			It("should pass namespace parameter", func() {
-				Expect(cueOutput).To(ContainSubstring("namespace:"))
-			})
-
-			It("should wrap params in $params block", func() {
-				Expect(cueOutput).To(ContainSubstring("$params:"))
+			It("should pass full parameter object", func() {
+				Expect(cueOutput).To(ContainSubstring("$params: parameter"))
 			})
 		})
 	})
