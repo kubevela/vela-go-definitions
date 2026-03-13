@@ -50,6 +50,13 @@ func CheckMetrics() *defkit.WorkflowStepDefinition {
 		WithImports("vela/metrics", "vela/builtin").
 		Params(query, metricEndpoint, condition, duration, failDuration).
 		Template(func(tpl *defkit.WorkflowStepTemplate) {
+			checkReturns := func(field string) defkit.Value {
+				return defkit.Reference("check.$returns." + field)
+			}
+			failedExists := defkit.Ne(checkReturns("failed"), defkit.Reference("_|_"))
+			failedTrue := defkit.Eq(checkReturns("failed"), defkit.Lit(true))
+			messageExists := defkit.Ne(checkReturns("message"), defkit.Reference("_|_"))
+
 			tpl.Builtin("check", "metrics.#PromCheck").
 				WithParams(map[string]defkit.Value{
 					"query":          query,
@@ -60,22 +67,12 @@ func CheckMetrics() *defkit.WorkflowStepDefinition {
 				}).
 				Build()
 
-			tpl.Set("fail", defkit.Reference(`{
-	if check.$returns.failed != _|_ {
-		if check.$returns.failed == true {
-			breakWorkflow: builtin.#Fail & {
-				$params: message: check.$returns.message
-			}
-		}
-	}
-}`))
+			tpl.Set("fail", defkit.NewArrayElement().
+				SetIf(defkit.And(failedExists, failedTrue),
+					"breakWorkflow", defkit.Fail(checkReturns("message"))))
 
-			tpl.Set("wait", defkit.Reference(`builtin.#ConditionalWait & {
-	$params: continue: check.$returns.result
-	if check.$returns.message != _|_ {
-		$params: message: check.$returns.message
-	}
-}`))
+			tpl.Set("wait", defkit.WaitUntil(checkReturns("result")).
+				MessageIf(messageExists, checkReturns("message")))
 		})
 }
 
