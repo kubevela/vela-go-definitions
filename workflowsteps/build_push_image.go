@@ -190,11 +190,9 @@ func BuildPushImage() *defkit.WorkflowStepDefinition {
 				}).
 				Build()
 
-			tpl.Set("wait", defkit.Reference(`builtin.#ConditionalWait & {
-	if read.$returns.value.status != _|_ {
-		$params: continue: read.$returns.value.status.phase == "Succeeded"
-	}
-}`))
+			tpl.Set("wait", defkit.WaitUntil(
+				defkit.Reference(`read.$returns.value.status.phase == "Succeeded"`)).
+				Guard(defkit.Reference("read.$returns.value.status")))
 		})
 }
 
