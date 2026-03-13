@@ -216,7 +216,7 @@ var _ = Describe("Export2Secret WorkflowStep", func() {
 			})
 
 			It("should have exactly one secret block", func() {
-				count := strings.Count(cueOutput, "secret: {")
+				count := strings.Count(cueOutput, "\tsecret: {")
 				Expect(count).To(Equal(1))
 			})
 		})
