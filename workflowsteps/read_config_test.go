@@ -17,6 +17,8 @@ limitations under the License.
 package workflowsteps_test
 
 import (
+	"strings"
+
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
@@ -80,8 +82,8 @@ var _ = Describe("ReadConfig WorkflowStep", func() {
 		})
 
 		Describe("Template", func() {
-			It("should use config.#ReadConfig", func() {
-				Expect(cueOutput).To(ContainSubstring("config.#ReadConfig"))
+			It("should use config.#ReadConfig with struct unification", func() {
+				Expect(cueOutput).To(ContainSubstring("config.#ReadConfig & {"))
 			})
 
 			It("should pass full parameter directly", func() {
@@ -90,6 +92,11 @@ var _ = Describe("ReadConfig WorkflowStep", func() {
 
 			It("should not map individual fields in $params", func() {
 				Expect(cueOutput).NotTo(MatchRegexp(`\$params:\s*\{`))
+			})
+
+			It("should have exactly one config.#ReadConfig", func() {
+				count := strings.Count(cueOutput, "config.#ReadConfig & {")
+				Expect(count).To(Equal(1))
 			})
 		})
 	})

@@ -17,6 +17,8 @@ limitations under the License.
 package workflowsteps_test
 
 import (
+	"strings"
+
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
@@ -32,7 +34,7 @@ var _ = Describe("RestartWorkflow WorkflowStep", func() {
 
 		It("should have the correct description", func() {
 			step := workflowsteps.RestartWorkflow()
-			Expect(step.GetDescription()).To(ContainSubstring("restart"))
+			Expect(step.GetDescription()).To(Equal("Schedule the current Application's workflow to restart at a specific time, after a duration, or at recurring intervals"))
 		})
 
 		It("should have the correct category", func() {
@@ -74,17 +76,16 @@ var _ = Describe("RestartWorkflow WorkflowStep", func() {
 		})
 
 		Describe("Parameters", func() {
-			It("should have optional at parameter", func() {
-				Expect(cueOutput).To(ContainSubstring("at?:"))
-				Expect(cueOutput).To(ContainSubstring("string"))
+			It("should have optional at parameter as string", func() {
+				Expect(cueOutput).To(ContainSubstring("at?: string"))
 			})
 
-			It("should have optional after parameter", func() {
-				Expect(cueOutput).To(ContainSubstring("after?:"))
+			It("should have optional after parameter as string", func() {
+				Expect(cueOutput).To(ContainSubstring("after?: string"))
 			})
 
-			It("should have optional every parameter", func() {
-				Expect(cueOutput).To(ContainSubstring("every?:"))
+			It("should have optional every parameter as string", func() {
+				Expect(cueOutput).To(ContainSubstring("every?: string"))
 			})
 
 			It("should have description for at parameter", func() {
@@ -109,8 +110,7 @@ var _ = Describe("RestartWorkflow WorkflowStep", func() {
 			})
 
 			It("should contain _script variable", func() {
-				Expect(cueOutput).To(ContainSubstring("_script"))
-				Expect(cueOutput).To(ContainSubstring("string"))
+				Expect(cueOutput).To(ContainSubstring("_script: string"))
 			})
 
 			It("should set _script conditionally for at parameter", func() {
@@ -138,7 +138,7 @@ var _ = Describe("RestartWorkflow WorkflowStep", func() {
 			})
 
 			It("should apply the job via kube.#Apply", func() {
-				Expect(cueOutput).To(ContainSubstring("kube.#Apply"))
+				Expect(cueOutput).To(ContainSubstring("kube.#Apply & {"))
 			})
 
 			It("should create a job with correct metadata", func() {
@@ -149,22 +149,39 @@ var _ = Describe("RestartWorkflow WorkflowStep", func() {
 			})
 
 			It("should use kubectl in the job container", func() {
-				Expect(cueOutput).To(ContainSubstring("bitnami/kubectl"))
-				Expect(cueOutput).To(ContainSubstring("kubectl-annotate"))
+				Expect(cueOutput).To(ContainSubstring(`image:   "bitnami/kubectl:latest"`))
+				Expect(cueOutput).To(ContainSubstring(`name:    "kubectl-annotate"`))
 			})
 
 			It("should use kubevela service account", func() {
-				Expect(cueOutput).To(ContainSubstring("kubevela-vela-core"))
+				Expect(cueOutput).To(ContainSubstring(`serviceAccountName: "kubevela-vela-core"`))
 			})
 
 			It("should wait for job completion", func() {
-				Expect(cueOutput).To(ContainSubstring("builtin.#ConditionalWait"))
-				Expect(cueOutput).To(ContainSubstring("job.$returns.value.status.succeeded > 0"))
+				Expect(cueOutput).To(ContainSubstring("builtin.#ConditionalWait & {"))
+				Expect(cueOutput).To(ContainSubstring("continue: job.$returns.value.status.succeeded > 0"))
 			})
 
 			It("should guard wait with status checks", func() {
 				Expect(cueOutput).To(ContainSubstring("job.$returns.value.status != _|_"))
 				Expect(cueOutput).To(ContainSubstring("job.$returns.value.status.succeeded != _|_"))
+			})
+		})
+
+		Describe("Template: structural correctness", func() {
+			It("should have exactly one kube.#Apply", func() {
+				count := strings.Count(cueOutput, "kube.#Apply & {")
+				Expect(count).To(Equal(1))
+			})
+
+			It("should have exactly one builtin.#ConditionalWait", func() {
+				count := strings.Count(cueOutput, "builtin.#ConditionalWait & {")
+				Expect(count).To(Equal(1))
+			})
+
+			It("should have exactly one builtin.#Fail", func() {
+				count := strings.Count(cueOutput, "builtin.#Fail & {")
+				Expect(count).To(Equal(1))
 			})
 		})
 	})

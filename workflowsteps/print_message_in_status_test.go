@@ -17,6 +17,8 @@ limitations under the License.
 package workflowsteps_test
 
 import (
+	"strings"
+
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
@@ -32,7 +34,7 @@ var _ = Describe("PrintMessageInStatus WorkflowStep", func() {
 
 		It("should have the correct description", func() {
 			step := workflowsteps.PrintMessageInStatus()
-			Expect(step.GetDescription()).To(ContainSubstring("print message"))
+			Expect(step.GetDescription()).To(Equal("print message in workflow step status"))
 		})
 	})
 
@@ -69,7 +71,7 @@ var _ = Describe("PrintMessageInStatus WorkflowStep", func() {
 
 		Describe("Template", func() {
 			It("should use builtin.#Message", func() {
-				Expect(cueOutput).To(ContainSubstring("builtin.#Message"))
+				Expect(cueOutput).To(ContainSubstring("builtin.#Message & {"))
 			})
 
 			It("should pass full parameter directly", func() {
@@ -78,6 +80,11 @@ var _ = Describe("PrintMessageInStatus WorkflowStep", func() {
 
 			It("should not map individual fields in $params", func() {
 				Expect(cueOutput).NotTo(MatchRegexp(`\$params:\s*\{`))
+			})
+
+			It("should have exactly one builtin.#Message", func() {
+				count := strings.Count(cueOutput, "builtin.#Message & {")
+				Expect(count).To(Equal(1))
 			})
 		})
 	})

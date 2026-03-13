@@ -239,6 +239,16 @@ var _ = Describe("Notification WorkflowStep", func() {
 
 			It("should have password as ClosedUnion with value or secretRef", func() {
 				Expect(cueOutput).To(ContainSubstring("// +usage=Specify the password of the email"))
+				// Verify the ClosedUnion structure: close({ value }) | close({ secretRef })
+				emailIdx := strings.Index(cueOutput, "email?: {")
+				Expect(emailIdx).To(BeNumerically(">", 0))
+				emailBlock := cueOutput[emailIdx:]
+				Expect(emailBlock).To(ContainSubstring("password: close({"))
+				Expect(emailBlock).To(ContainSubstring("}) | close({"))
+				Expect(emailBlock).To(ContainSubstring("value: string"))
+				Expect(emailBlock).To(ContainSubstring("secretRef: {"))
+				Expect(emailBlock).To(ContainSubstring("name: string"))
+				Expect(emailBlock).To(ContainSubstring("key: string"))
 			})
 
 			It("should have to as string list", func() {

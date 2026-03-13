@@ -82,8 +82,8 @@ var _ = Describe("DeployCloudResource WorkflowStep", func() {
 		})
 
 		Describe("Template: op.#DeployCloudResource", func() {
-			It("should use op.#DeployCloudResource", func() {
-				Expect(cueOutput).To(ContainSubstring("op.#DeployCloudResource & {"))
+			It("should use op.#DeployCloudResource with app action name", func() {
+				Expect(cueOutput).To(ContainSubstring("app: op.#DeployCloudResource & {"))
 			})
 
 			It("should pass env parameter", func() {

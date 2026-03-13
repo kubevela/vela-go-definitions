@@ -17,6 +17,8 @@ limitations under the License.
 package workflowsteps_test
 
 import (
+	"strings"
+
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
@@ -66,14 +68,17 @@ var _ = Describe("ShareCloudResource WorkflowStep", func() {
 		})
 
 		Describe("Parameters", func() {
-			It("should have required placements array", func() {
-				Expect(cueOutput).To(ContainSubstring("placements:"))
+			It("should have required placements array of structs", func() {
+				Expect(cueOutput).To(ContainSubstring("placements: [...{"))
 				Expect(cueOutput).To(ContainSubstring("// +usage=Declare the location to bind"))
 			})
 
 			It("should have optional namespace and cluster in placements", func() {
-				Expect(cueOutput).To(ContainSubstring("namespace?: string"))
-				Expect(cueOutput).To(ContainSubstring("cluster?:"))
+				placementsIdx := strings.Index(cueOutput, "placements: [...{")
+				Expect(placementsIdx).To(BeNumerically(">", 0))
+				placementsBlock := cueOutput[placementsIdx:]
+				Expect(placementsBlock).To(ContainSubstring("namespace?: string"))
+				Expect(placementsBlock).To(ContainSubstring("cluster?:"))
 			})
 
 			It("should have policy with empty default", func() {
@@ -113,6 +118,11 @@ var _ = Describe("ShareCloudResource WorkflowStep", func() {
 
 			It("should NOT wrap fields in $params", func() {
 				Expect(cueOutput).NotTo(ContainSubstring("$params:"))
+			})
+
+			It("should have exactly one op.#ShareCloudResource", func() {
+				count := strings.Count(cueOutput, "op.#ShareCloudResource & {")
+				Expect(count).To(Equal(1))
 			})
 		})
 	})

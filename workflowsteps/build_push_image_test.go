@@ -122,20 +122,38 @@ var _ = Describe("BuildPushImage WorkflowStep", func() {
 				Expect(cueOutput).To(ContainSubstring("buildArgs?: [...string]"))
 			})
 
-			It("should have optional credentials struct", func() {
-				Expect(cueOutput).To(ContainSubstring("credentials?: {"))
+			It("should have optional credentials struct with git and image substructs", func() {
+				credIdx := strings.Index(cueOutput, "credentials?: {")
+				Expect(credIdx).To(BeNumerically(">", 0))
+				credBlock := cueOutput[credIdx:]
+				Expect(credBlock).To(ContainSubstring("git?: {"))
+				Expect(credBlock).To(ContainSubstring("image?: {"))
 			})
 
 			It("should have credentials.git with name and key", func() {
-				Expect(cueOutput).To(ContainSubstring("git?: {"))
+				credIdx := strings.Index(cueOutput, "credentials?: {")
+				Expect(credIdx).To(BeNumerically(">", 0))
+				credBlock := cueOutput[credIdx:]
+				gitIdx := strings.Index(credBlock, "git?: {")
+				Expect(gitIdx).To(BeNumerically(">", 0))
+				gitBlock := credBlock[gitIdx:]
+				Expect(gitBlock).To(ContainSubstring("name: string"))
+				Expect(gitBlock).To(ContainSubstring("key: string"))
 			})
 
 			It("should have credentials.image with key default", func() {
-				Expect(cueOutput).To(ContainSubstring(`key: *".dockerconfigjson" | string`))
+				credIdx := strings.Index(cueOutput, "credentials?: {")
+				Expect(credIdx).To(BeNumerically(">", 0))
+				credBlock := cueOutput[credIdx:]
+				imageIdx := strings.Index(credBlock, "image?: {")
+				Expect(imageIdx).To(BeNumerically(">", 0))
+				imageBlock := credBlock[imageIdx:]
+				Expect(imageBlock).To(ContainSubstring("name: string"))
+				Expect(imageBlock).To(ContainSubstring(`key: *".dockerconfigjson" | string`))
 			})
 
-			It("should have verbosity enum with info default", func() {
-				Expect(cueOutput).To(ContainSubstring(`verbosity: *"info" | "panic"`))
+			It("should have verbosity enum with all 7 values and info default", func() {
+				Expect(cueOutput).To(ContainSubstring(`verbosity: *"info" | "panic" | "fatal" | "error" | "warn" | "debug" | "trace"`))
 			})
 
 			It("should have context with #git or string", func() {

@@ -17,6 +17,8 @@ limitations under the License.
 package workflowsteps_test
 
 import (
+	"strings"
+
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
@@ -32,8 +34,7 @@ var _ = Describe("Suspend WorkflowStep", func() {
 
 		It("should have the correct description", func() {
 			step := workflowsteps.Suspend()
-			Expect(step.GetDescription()).To(ContainSubstring("Suspend"))
-			Expect(step.GetDescription()).To(ContainSubstring("vela workflow resume"))
+			Expect(step.GetDescription()).To(Equal("Suspend the current workflow, it can be resumed by 'vela workflow resume' command."))
 		})
 	})
 
@@ -63,14 +64,12 @@ var _ = Describe("Suspend WorkflowStep", func() {
 		})
 
 		Describe("Parameters", func() {
-			It("should have optional duration parameter", func() {
-				Expect(cueOutput).To(ContainSubstring("duration?:"))
-				Expect(cueOutput).To(ContainSubstring("string"))
+			It("should have optional duration parameter as string", func() {
+				Expect(cueOutput).To(ContainSubstring("duration?: string"))
 			})
 
-			It("should have optional message parameter", func() {
-				Expect(cueOutput).To(ContainSubstring("message?:"))
-				Expect(cueOutput).To(ContainSubstring("string"))
+			It("should have optional message parameter as string", func() {
+				Expect(cueOutput).To(ContainSubstring("message?: string"))
 			})
 
 			It("should have description for duration", func() {
@@ -84,11 +83,16 @@ var _ = Describe("Suspend WorkflowStep", func() {
 
 		Describe("Template", func() {
 			It("should use builtin.#Suspend", func() {
-				Expect(cueOutput).To(ContainSubstring("builtin.#Suspend"))
+				Expect(cueOutput).To(ContainSubstring("builtin.#Suspend & {"))
 			})
 
 			It("should pass full parameter", func() {
 				Expect(cueOutput).To(ContainSubstring("$params: parameter"))
+			})
+
+			It("should have exactly one builtin.#Suspend", func() {
+				count := strings.Count(cueOutput, "builtin.#Suspend & {")
+				Expect(count).To(Equal(1))
 			})
 		})
 	})

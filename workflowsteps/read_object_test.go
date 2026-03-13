@@ -17,6 +17,8 @@ limitations under the License.
 package workflowsteps_test
 
 import (
+	"strings"
+
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
@@ -32,7 +34,7 @@ var _ = Describe("ReadObject WorkflowStep", func() {
 
 		It("should have the correct description", func() {
 			step := workflowsteps.ReadObject()
-			Expect(step.GetDescription()).To(ContainSubstring("Read Kubernetes objects"))
+			Expect(step.GetDescription()).To(Equal("Read Kubernetes objects from cluster for your workflow steps"))
 		})
 	})
 
@@ -101,32 +103,32 @@ var _ = Describe("ReadObject WorkflowStep", func() {
 
 		Describe("Template", func() {
 			It("should use kube.#Read", func() {
-				Expect(cueOutput).To(ContainSubstring("kube.#Read"))
+				Expect(cueOutput).To(ContainSubstring("kube.#Read & {"))
 			})
 
-			It("should pass cluster parameter", func() {
-				Expect(cueOutput).To(ContainSubstring("cluster:"))
-				Expect(cueOutput).To(ContainSubstring("parameter.cluster"))
+			It("should pass cluster from parameter", func() {
+				Expect(cueOutput).To(ContainSubstring("cluster: parameter.cluster"))
 			})
 
-			It("should pass apiVersion in value", func() {
-				Expect(cueOutput).To(ContainSubstring("apiVersion:"))
-				Expect(cueOutput).To(ContainSubstring("parameter.apiVersion"))
+			It("should pass apiVersion from parameter in value", func() {
+				Expect(cueOutput).To(ContainSubstring("apiVersion: parameter.apiVersion"))
 			})
 
-			It("should pass kind in value", func() {
-				Expect(cueOutput).To(ContainSubstring("kind:"))
-				Expect(cueOutput).To(ContainSubstring("parameter.kind"))
+			It("should pass kind from parameter in value", func() {
+				Expect(cueOutput).To(ContainSubstring("kind: parameter.kind"))
 			})
 
-			It("should pass name in metadata", func() {
-				Expect(cueOutput).To(ContainSubstring("name:"))
-				Expect(cueOutput).To(ContainSubstring("parameter.name"))
+			It("should pass name from parameter in metadata", func() {
+				Expect(cueOutput).To(ContainSubstring("name: parameter.name"))
 			})
 
-			It("should pass namespace in metadata", func() {
-				Expect(cueOutput).To(ContainSubstring("namespace:"))
-				Expect(cueOutput).To(ContainSubstring("parameter.namespace"))
+			It("should pass namespace from parameter in metadata", func() {
+				Expect(cueOutput).To(ContainSubstring("namespace: parameter.namespace"))
+			})
+
+			It("should have exactly one kube.#Read", func() {
+				count := strings.Count(cueOutput, "kube.#Read & {")
+				Expect(count).To(Equal(1))
 			})
 		})
 	})

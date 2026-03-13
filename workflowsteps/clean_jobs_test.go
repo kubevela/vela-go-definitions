@@ -115,6 +115,22 @@ var _ = Describe("CleanJobs WorkflowStep", func() {
 				Expect(cueOutput).To(ContainSubstring(`apiVersion: "v1"`))
 				Expect(cueOutput).To(ContainSubstring(`kind: "pod"`))
 			})
+
+			It("should use labelselector when set for cleanPods", func() {
+				cleanPodsIdx := strings.Index(cueOutput, "cleanPods: kube.#Delete & {")
+				Expect(cleanPodsIdx).To(BeNumerically(">", 0))
+				cleanPodsBlock := cueOutput[cleanPodsIdx:]
+				Expect(cleanPodsBlock).To(ContainSubstring(`parameter["labelselector"] != _|_`))
+				Expect(cleanPodsBlock).To(ContainSubstring("matchingLabels: parameter.labelselector"))
+			})
+
+			It("should default matchingLabels to workflow name for cleanPods", func() {
+				cleanPodsIdx := strings.Index(cueOutput, "cleanPods: kube.#Delete & {")
+				Expect(cleanPodsIdx).To(BeNumerically(">", 0))
+				cleanPodsBlock := cueOutput[cleanPodsIdx:]
+				Expect(cleanPodsBlock).To(ContainSubstring(`parameter["labelselector"] == _|_`))
+				Expect(cleanPodsBlock).To(ContainSubstring(`"workflow.oam.dev/name": context.name`))
+			})
 		})
 
 		Describe("Template: structural correctness", func() {

@@ -68,6 +68,10 @@ var _ = Describe("StepGroup WorkflowStep", func() {
 			It("should not contain a parameter block", func() {
 				Expect(cueOutput).NotTo(ContainSubstring("parameter:"))
 			})
+
+			It("should not contain any import statements", func() {
+				Expect(cueOutput).NotTo(ContainSubstring("import"))
+			})
 		})
 	})
 })

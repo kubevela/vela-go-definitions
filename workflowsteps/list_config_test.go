@@ -17,6 +17,8 @@ limitations under the License.
 package workflowsteps_test
 
 import (
+	"strings"
+
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
@@ -90,6 +92,11 @@ var _ = Describe("ListConfig WorkflowStep", func() {
 
 			It("should pass full parameter object", func() {
 				Expect(cueOutput).To(ContainSubstring("$params: parameter"))
+			})
+
+			It("should have exactly one config.#ListConfig", func() {
+				count := strings.Count(cueOutput, "config.#ListConfig & {")
+				Expect(count).To(Equal(1))
 			})
 		})
 	})

@@ -91,17 +91,25 @@ var _ = Describe("ApplyTerraformProvider WorkflowStep", func() {
 				Expect(cueOutput).To(ContainSubstring("#UCloudProvider: {"))
 			})
 
-			It("should set default names for providers", func() {
+			It("should set default names for all 8 providers", func() {
 				Expect(cueOutput).To(ContainSubstring(`name: *"alibaba-provider" | string`))
 				Expect(cueOutput).To(ContainSubstring(`name: *"aws-provider" | string`))
 				Expect(cueOutput).To(ContainSubstring(`name: *"azure-provider" | string`))
+				Expect(cueOutput).To(ContainSubstring(`name: *"baidu-provider" | string`))
+				Expect(cueOutput).To(ContainSubstring(`name: *"ec-provider" | string`))
 				Expect(cueOutput).To(ContainSubstring(`name: *"gcp-provider" | string`))
+				Expect(cueOutput).To(ContainSubstring(`name: *"tencent-provider" | string`))
+				Expect(cueOutput).To(ContainSubstring(`name: *"ucloud-provider" | string`))
 			})
 
-			It("should constrain type field per provider", func() {
+			It("should constrain type field per provider that defines one", func() {
+				// AzureProvider has no type field — it's identified by its unique fields
 				Expect(cueOutput).To(ContainSubstring(`type: "alibaba"`))
 				Expect(cueOutput).To(ContainSubstring(`type: "aws"`))
+				Expect(cueOutput).To(ContainSubstring(`type: "baidu"`))
+				Expect(cueOutput).To(ContainSubstring(`type: "ec"`))
 				Expect(cueOutput).To(ContainSubstring(`type: "gcp"`))
+				Expect(cueOutput).To(ContainSubstring(`type: "tencent"`))
 				Expect(cueOutput).To(ContainSubstring(`type: "ucloud"`))
 			})
 		})
@@ -154,6 +162,33 @@ var _ = Describe("ApplyTerraformProvider WorkflowStep", func() {
 				Expect(cueOutput).To(ContainSubstring(`parameter.type == "gcp"`))
 				Expect(cueOutput).To(ContainSubstring("GOOGLE_CREDENTIALS: parameter.credentials"))
 				Expect(cueOutput).To(ContainSubstring("GOOGLE_PROJECT: parameter.project"))
+			})
+
+			It("should conditionally set Baidu config keys", func() {
+				Expect(cueOutput).To(ContainSubstring(`parameter.type == "baidu"`))
+				Expect(cueOutput).To(ContainSubstring("BAIDUCLOUD_ACCESS_KEY: parameter.accessKey"))
+				Expect(cueOutput).To(ContainSubstring("BAIDUCLOUD_SECRET_KEY: parameter.secretKey"))
+				Expect(cueOutput).To(ContainSubstring("BAIDUCLOUD_REGION: parameter.region"))
+			})
+
+			It("should conditionally set EC config keys", func() {
+				Expect(cueOutput).To(ContainSubstring(`parameter.type == "ec"`))
+				Expect(cueOutput).To(ContainSubstring("EC_API_KEY: parameter.apiKey"))
+			})
+
+			It("should conditionally set Tencent config keys", func() {
+				Expect(cueOutput).To(ContainSubstring(`parameter.type == "tencent"`))
+				Expect(cueOutput).To(ContainSubstring("TENCENTCLOUD_SECRET_ID: parameter.secretID"))
+				Expect(cueOutput).To(ContainSubstring("TENCENTCLOUD_SECRET_KEY: parameter.secretKey"))
+				Expect(cueOutput).To(ContainSubstring("TENCENTCLOUD_REGION: parameter.region"))
+			})
+
+			It("should conditionally set UCloud config keys", func() {
+				Expect(cueOutput).To(ContainSubstring(`parameter.type == "ucloud"`))
+				Expect(cueOutput).To(ContainSubstring("UCLOUD_PRIVATE_KEY: parameter.privateKey"))
+				Expect(cueOutput).To(ContainSubstring("UCLOUD_PUBLIC_KEY: parameter.publicKey"))
+				Expect(cueOutput).To(ContainSubstring("UCLOUD_PROJECT_ID: parameter.projectID"))
+				Expect(cueOutput).To(ContainSubstring("UCLOUD_REGION: parameter.region"))
 			})
 		})
 
