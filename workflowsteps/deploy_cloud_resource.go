@@ -40,6 +40,7 @@ func DeployCloudResource() *defkit.WorkflowStepDefinition {
 		Params(policy, env).
 		Template(func(tpl *defkit.WorkflowStepTemplate) {
 			tpl.Builtin("app", "op.#DeployCloudResource").
+				WithDirectFields().
 				WithParams(map[string]defkit.Value{
 					"env":       env,
 					"policy":    policy,
