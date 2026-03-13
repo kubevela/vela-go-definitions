@@ -36,10 +36,7 @@ func ApplyObject() *defkit.WorkflowStepDefinition {
 		Params(value, cluster).
 		Template(func(tpl *defkit.WorkflowStepTemplate) {
 			tpl.Builtin("apply", "kube.#Apply").
-				WithParams(map[string]defkit.Value{
-					"value":   value,
-					"cluster": cluster,
-				}).
+				WithFullParameter().
 				Build()
 		})
 }
