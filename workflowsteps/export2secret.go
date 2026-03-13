@@ -57,23 +57,38 @@ func Export2Secret() *defkit.WorkflowStepDefinition {
 				Description("Specify the server of the docker registry"),
 		)
 
-	baseSecretValue := defkit.NewArrayElement().
+	dockerRegistryMode := defkit.And(kind.Eq("docker-registry"), dockerRegistry.IsSet())
+
+	// Build the Secret resource value with mutually exclusive namespace guards
+	secretValue := defkit.NewArrayElement().
 		Set("apiVersion", defkit.Lit("v1")).
 		Set("kind", defkit.Lit("Secret")).
+		SetIf(defkit.And(secretType.NotSet(), kind.Eq("docker-registry")),
+			"type", defkit.Lit("kubernetes.io/dockerconfigjson")).
+		SetIf(secretType.IsSet(), "type", secretType).
 		Set("metadata", defkit.NewArrayElement().
 			Set("name", secretName).
-			Set("namespace", vela.Namespace()).
-			SetIf(namespace.IsSet(), "namespace", namespace),
+			SetIf(namespace.IsSet(), "namespace", namespace).
+			SetIf(namespace.NotSet(), "namespace", vela.Namespace()),
 		).
-		Set("stringData", data).
-		SetIf(defkit.And(secretType.NotSet(), kind.Eq("docker-registry")), "type", defkit.Lit("kubernetes.io/dockerconfigjson")).
-		SetIf(secretType.IsSet(), "type", secretType)
+		Set("stringData", defkit.Reference("data")) // references local sibling `data`
 
-	dockerStringData := defkit.NewArrayElement().
-		Set(`".dockerconfigjson"`, defkit.Reference(`json.Marshal({auths: "\(parameter.dockerRegistry.server)": {username: parameter.dockerRegistry.username, password: parameter.dockerRegistry.password, auth: base64.Encode(null, "\(parameter.dockerRegistry.username):\(parameter.dockerRegistry.password)")}})`))
-	dockerSecretOverlay := defkit.NewArrayElement().
-		Set("stringData", dockerStringData)
-	dockerRegistryMode := defkit.And(kind.Eq("docker-registry"), dockerRegistry.IsSet())
+	// Build the secret block: helper variable `data` + conditional docker augmentation + apply
+	secretBlock := defkit.NewArrayElement().
+		Set("data", defkit.Reference("*parameter.data | {}")).
+		SetIf(dockerRegistryMode, "registryData", defkit.Reference(`{
+	auths: {
+		"\(parameter.dockerRegistry.server)": {
+			username: parameter.dockerRegistry.username
+			password: parameter.dockerRegistry.password
+			auth:     base64.Encode(null, "\(parameter.dockerRegistry.username):\(parameter.dockerRegistry.password)")
+		}
+	}
+}`)).
+		SetIf(dockerRegistryMode, "data", defkit.Reference(`{
+	".dockerconfigjson": json.Marshal(registryData)
+}`)).
+		Set("apply", defkit.KubeApply(secretValue).Cluster(cluster))
 
 	return defkit.NewWorkflowStep("export2secret").
 		Description("Export data to Kubernetes Secret in your workflow.").
@@ -81,18 +96,7 @@ func Export2Secret() *defkit.WorkflowStepDefinition {
 		WithImports("vela/kube", "encoding/base64", "encoding/json").
 		Params(secretName, namespace, secretType, data, cluster, kind, dockerRegistry).
 		Template(func(tpl *defkit.WorkflowStepTemplate) {
-			tpl.Builtin("apply", "kube.#Apply").
-				WithParams(map[string]defkit.Value{
-					"value":   baseSecretValue,
-					"cluster": cluster,
-				}).
-				Build()
-
-			tpl.Builtin("apply", "kube.#Apply").
-				WithParams(map[string]defkit.Value{
-					"value": dockerSecretOverlay,
-				}).
-				If(dockerRegistryMode)
+			tpl.Set("secret", secretBlock)
 		})
 }
 
