@@ -28,38 +28,24 @@ func DependsOnApp() *defkit.WorkflowStepDefinition {
 	namespace := defkit.String("namespace").
 		Description("Specify the namespace of the dependent Application")
 
-	appObject := defkit.NewArrayElement().
-		Set("apiVersion", defkit.Lit("core.oam.dev/v1beta1")).
-		Set("kind", defkit.Lit("Application")).
-		Set("metadata", defkit.NewArrayElement().
-			Set("name", name).
-			Set("namespace", namespace),
-		)
+	appRead := defkit.KubeRead("core.oam.dev/v1beta1", "Application").
+		Name(name).
+		Namespace(namespace)
 
 	condDependsOnErr := defkit.Ne(defkit.Reference("dependsOn.$returns.err"), defkit.Reference("_|_"))
 	condDependsOnOK := defkit.Eq(defkit.Reference("dependsOn.$returns.err"), defkit.Reference("_|_"))
 
 	load := defkit.NewArrayElement().
-		SetIf(condDependsOnErr, "configMap", defkit.Reference(`kube.#Read & {
-	$params: value: {
-		apiVersion: "v1"
-		kind:       "ConfigMap"
-		metadata: {
-			name:      parameter.name
-			namespace: parameter.namespace
-		}
-	}
-}`)).
-		SetIf(condDependsOnErr, "template", defkit.Reference(`configMap.$returns.value.data["application"]`)).
-		SetIf(condDependsOnErr, "apply", defkit.Reference(`kube.#Apply & {
-	$params: value: yaml.Unmarshal(template)
-}`)).
-		SetIf(condDependsOnErr, "wait", defkit.Reference(`builtin.#ConditionalWait & {
-	$params: continue: apply.$returns.value.status.status == "running"
-}`)).
-		SetIf(condDependsOnOK, "wait", defkit.Reference(`builtin.#ConditionalWait & {
-	$params: continue: dependsOn.$returns.value.status.status == "running"
-}`))
+		SetIf(condDependsOnErr, "configMap",
+			defkit.KubeRead("v1", "ConfigMap").Name(name).Namespace(namespace)).
+		SetIf(condDependsOnErr, "template",
+			defkit.Reference(`configMap.$returns.value.data["application"]`)).
+		SetIf(condDependsOnErr, "apply",
+			defkit.KubeApply(defkit.Reference("yaml.Unmarshal(template)"))).
+		SetIf(condDependsOnErr, "wait",
+			defkit.WaitUntil(defkit.Reference(`apply.$returns.value.status.status == "running"`))).
+		SetIf(condDependsOnOK, "wait",
+			defkit.WaitUntil(defkit.Reference(`dependsOn.$returns.value.status.status == "running"`)))
 
 	return defkit.NewWorkflowStep("depends-on-app").
 		Description("Wait for the specified Application to complete.").
@@ -67,11 +53,7 @@ func DependsOnApp() *defkit.WorkflowStepDefinition {
 		WithImports("vela/kube", "vela/builtin", "encoding/yaml").
 		Params(name, namespace).
 		Template(func(tpl *defkit.WorkflowStepTemplate) {
-			tpl.Builtin("dependsOn", "kube.#Read").
-				WithParams(map[string]defkit.Value{
-					"value": appObject,
-				}).
-				Build()
+			tpl.Set("dependsOn", appRead)
 			tpl.Set("load", load)
 		})
 }
