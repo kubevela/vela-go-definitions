@@ -17,24 +17,60 @@ limitations under the License.
 package workflowsteps
 
 import (
+	"fmt"
+
 	"github.com/oam-dev/kubevela/pkg/definition/defkit"
 )
 
-func stringValueOrSecretRef(name, usage, valueUsage string) *defkit.OneOfParam {
-	return defkit.OneOf(name).
+func stringValueOrSecretRef(name, usage, valueUsage string) *defkit.ClosedUnionParam {
+	return defkit.ClosedUnion(name).
+		Required().
 		Description(usage).
-		Variants(
-			defkit.Variant("value").WithFields(
-				defkit.Field("value", defkit.ParamTypeString).Description(valueUsage),
+		Options(
+			defkit.ClosedStruct().WithFields(
+				defkit.Field("value", defkit.ParamTypeString).Required().Description(valueUsage),
 			),
-			defkit.Variant("secretRef").WithFields(
-				defkit.Field("secretRef", defkit.ParamTypeStruct).Nested(
+			defkit.ClosedStruct().WithFields(
+				defkit.Field("secretRef", defkit.ParamTypeStruct).Required().Nested(
 					defkit.Struct("secretRef").WithFields(
 						defkit.Field("name", defkit.ParamTypeString).Description("name is the name of the secret"),
 						defkit.Field("key", defkit.ParamTypeString).Description("key is the key in the secret"),
 					),
 				),
 			),
+		)
+}
+
+// notifyChannelAction builds a template block for a notification channel that sends
+// an HTTP POST with the channel's message, resolving the URL from either a direct
+// value or a secret reference. Used by dingding, lark, and slack.
+func notifyChannelAction(channel, prefix string) *defkit.ArrayElement {
+	paramBase := fmt.Sprintf("parameter.%s", channel)
+	hasURLValue := defkit.PathExists(fmt.Sprintf("%s.url.value", paramBase))
+	urlValueNotSet := defkit.Eq(
+		defkit.Reference(fmt.Sprintf("%s.url.value", paramBase)),
+		defkit.Reference("_|_"),
+	)
+	useSecretURL := defkit.And(
+		defkit.PathExists(fmt.Sprintf("%s.url.secretRef", paramBase)),
+		urlValueNotSet,
+	)
+
+	return defkit.NewArrayElement().
+		SetIf(hasURLValue, prefix+"1", defkit.HTTPPost(defkit.Reference(fmt.Sprintf("%s.url.value", paramBase))).
+			Body(defkit.Reference(fmt.Sprintf("json.Marshal(%s.message)", paramBase))).
+			Header("Content-Type", "application/json"),
+		).
+		SetIf(useSecretURL, "read", defkit.KubeRead("v1", "Secret").
+			Name(defkit.Reference(fmt.Sprintf("%s.url.secretRef.name", paramBase))).
+			Namespace(defkit.Reference("context.namespace")),
+		).
+		SetIf(useSecretURL, "stringValue", defkit.ConvertString(
+			defkit.Reference(fmt.Sprintf("base64.Decode(null, read.$returns.value.data[%s.url.secretRef.key])", paramBase)),
+		)).
+		SetIf(useSecretURL, prefix+"2", defkit.HTTPPost(defkit.Reference("stringValue.$returns.str")).
+			Body(defkit.Reference(fmt.Sprintf("json.Marshal(%s.message)", paramBase))).
+			Header("Content-Type", "application/json"),
 		)
 }
 
@@ -60,6 +96,11 @@ func Notification() *defkit.WorkflowStepDefinition {
 		defkit.String("title").Optional(),
 		defkit.String("messageUrl").Optional(),
 		defkit.String("picUrl").Optional(),
+	)
+
+	dingBtn := defkit.Object("dingBtn").WithFields(
+		defkit.String("title").Required(),
+		defkit.String("actionURL").Required(),
 	)
 
 	block := defkit.Object("block").WithFields(
@@ -127,36 +168,43 @@ func Notification() *defkit.WorkflowStepDefinition {
 			defkit.Object("message").
 				Description("Specify the message that you want to sent, refer to [dingtalk messaging](https://developers.dingtalk.com/document/robots/custom-robot-access/title-72m-8ag-pqw)").
 				WithFields(
-					defkit.Object("text").Optional().Description("Specify the message content of dingtalk notification").WithFields(
-						defkit.String("content"),
+					defkit.ClosedUnion("text").Optional().Description("Specify the message content of dingtalk notification").Options(
+						defkit.ClosedStruct().WithFields(
+							defkit.Field("content", defkit.ParamTypeString).Required(),
+						),
 					),
 					defkit.String("msgtype").
 						Description("msgType can be text, link, mardown, actionCard, feedCard").
 						Default("text").
 						Values("text", "link", "markdown", "actionCard", "feedCard"),
 					defkit.Object("link").Optional().WithSchemaRef("DingLink"),
-					defkit.Object("markdown").Optional().WithFields(
-						defkit.String("text"),
-						defkit.String("title"),
-					),
-					defkit.Object("at").Optional().WithFields(
-						defkit.StringList("atMobiles").Optional(),
-						defkit.Bool("isAtAll").Optional(),
-					),
-					defkit.Object("actionCard").Optional().WithFields(
-						defkit.String("text"),
-						defkit.String("title"),
-						defkit.String("hideAvatar"),
-						defkit.String("btnOrientation"),
-						defkit.String("singleTitle"),
-						defkit.String("singleURL"),
-						defkit.Array("btns").Optional().WithFields(
-							defkit.String("title"),
-							defkit.String("actionURL"),
+					defkit.ClosedUnion("markdown").Optional().Options(
+						defkit.ClosedStruct().WithFields(
+							defkit.Field("text", defkit.ParamTypeString).Required(),
+							defkit.Field("title", defkit.ParamTypeString).Required(),
 						),
 					),
-					defkit.Object("feedCard").Optional().WithFields(
-						defkit.Array("links").WithSchemaRef("DingLink"),
+					defkit.ClosedUnion("at").Optional().Options(
+						defkit.ClosedStruct().WithFields(
+							defkit.Field("atMobiles", defkit.ParamTypeArray).Optional().Of(defkit.ParamTypeString),
+							defkit.Field("isAtAll", defkit.ParamTypeBool).Optional(),
+						),
+					),
+					defkit.ClosedUnion("actionCard").Optional().Options(
+						defkit.ClosedStruct().WithFields(
+							defkit.Field("text", defkit.ParamTypeString).Required(),
+							defkit.Field("title", defkit.ParamTypeString).Required(),
+							defkit.Field("hideAvatar", defkit.ParamTypeString).Required(),
+							defkit.Field("btnOrientation", defkit.ParamTypeString).Required(),
+							defkit.Field("singleTitle", defkit.ParamTypeString).Required(),
+							defkit.Field("singleURL", defkit.ParamTypeString).Required(),
+							defkit.Field("btns", defkit.ParamTypeArray).Optional().WithSchemaRef("DingBtn"),
+						),
+					),
+					defkit.ClosedUnion("feedCard").Optional().Options(
+						defkit.ClosedStruct().WithFields(
+							defkit.Field("links", defkit.ParamTypeArray).Required().WithSchemaRef("DingLink"),
+						),
 					),
 				),
 		)
@@ -175,9 +223,11 @@ func Notification() *defkit.WorkflowStepDefinition {
 				WithFields(
 					defkit.String("text").Description("Specify the message text for slack notification"),
 					defkit.Array("blocks").Optional().WithSchemaRef("Block"),
-					defkit.Object("attachments").Optional().WithFields(
-						defkit.Array("blocks").Optional().WithSchemaRef("Block"),
-						defkit.String("color").Optional(),
+					defkit.ClosedUnion("attachments").Optional().Options(
+						defkit.ClosedStruct().WithFields(
+							defkit.Field("blocks", defkit.ParamTypeArray).Optional().WithSchemaRef("Block"),
+							defkit.Field("color", defkit.ParamTypeString).Optional(),
+						),
 					),
 					defkit.String("thread_ts").Optional(),
 					defkit.Bool("mrkdwn").Optional().Default(true).Description("Specify the message text format in markdown for slack notification"),
@@ -217,137 +267,28 @@ func Notification() *defkit.WorkflowStepDefinition {
 		Helper("TextType", textType).
 		Helper("Option", option).
 		Helper("DingLink", dingLink).
+		Helper("DingBtn", dingBtn).
 		Helper("Block", block).
 		Params(lark, dingding, slack, email).
 		Template(func(tpl *defkit.WorkflowStepTemplate) {
-			tpl.Set("ding", defkit.Reference(`{
-	if parameter.dingding != _|_ {
-		if parameter.dingding.url.value != _|_ {
-			ding1: http.#HTTPDo & {
-				$params: {
-					method: "POST"
-					url:    parameter.dingding.url.value
-					request: {
-						body: json.Marshal(parameter.dingding.message)
-						header: "Content-Type": "application/json"
-					}
-				}
-			}
-		}
-		if parameter.dingding.url.secretRef != _|_ && parameter.dingding.url.value == _|_ {
-			read: kube.#Read & {
-				$params: value: {
-					apiVersion: "v1"
-					kind:       "Secret"
-					metadata: {
-						name:      parameter.dingding.url.secretRef.name
-						namespace: context.namespace
-					}
-				}
-			}
+			// Notification channel actions: each sends an HTTP POST, resolving URL from value or secretRef
+			tpl.SetGuardedBlock(defkit.PathExists("parameter.dingding"), "ding", notifyChannelAction("dingding", "ding"))
+			tpl.SetGuardedBlock(defkit.PathExists("parameter.lark"), "lark", notifyChannelAction("lark", "lark"))
+			tpl.SetGuardedBlock(defkit.PathExists("parameter.slack"), "slack", notifyChannelAction("slack", "slack"))
 
-			stringValue: util.#ConvertString & {$params: bt: base64.Decode(null, read.$returns.value.data[parameter.dingding.url.secretRef.key])}
-			ding2: http.#HTTPDo & {
-				$params: {
-					method: "POST"
-					url:    stringValue.$returns.str
-					request: {
-						body: json.Marshal(parameter.dingding.message)
-						header: "Content-Type": "application/json"
-					}
-				}
-			}
-		}
-	}
-}`))
+			// Email action: uses email.#SendEmail with password from value or secretRef
+			hasPwdValue := defkit.PathExists("parameter.email.from.password.value")
+			pwdValueNotSet := defkit.Eq(
+				defkit.Reference("parameter.email.from.password.value"),
+				defkit.Reference("_|_"),
+			)
+			useSecretPwd := defkit.And(
+				defkit.PathExists("parameter.email.from.password.secretRef"),
+				pwdValueNotSet,
+			)
 
-			tpl.Set("lark", defkit.Reference(`{
-	if parameter.lark != _|_ {
-		if parameter.lark.url.value != _|_ {
-			lark1: http.#HTTPDo & {
-				$params: {
-					method: "POST"
-					url:    parameter.lark.url.value
-					request: {
-						body: json.Marshal(parameter.lark.message)
-						header: "Content-Type": "application/json"
-					}
-				}
-			}
-		}
-		if parameter.lark.url.secretRef != _|_ && parameter.lark.url.value == _|_ {
-			read: kube.#Read & {
-				$params: value: {
-					apiVersion: "v1"
-					kind:       "Secret"
-					metadata: {
-						name:      parameter.lark.url.secretRef.name
-						namespace: context.namespace
-					}
-				}
-			}
-
-			stringValue: util.#ConvertString & {$params: bt: base64.Decode(null, read.$returns.value.data[parameter.lark.url.secretRef.key])}
-			lark2: http.#HTTPDo & {
-				$params: {
-					method: "POST"
-					url:    stringValue.$returns.str
-					request: {
-						body: json.Marshal(parameter.lark.message)
-						header: "Content-Type": "application/json"
-					}
-				}
-			}
-
-		}
-	}
-}`))
-
-			tpl.Set("slack", defkit.Reference(`{
-	if parameter.slack != _|_ {
-		if parameter.slack.url.value != _|_ {
-			slack1: http.#HTTPDo & {
-				$params: {
-					method: "POST"
-					url:    parameter.slack.url.value
-					request: {
-						body: json.Marshal(parameter.slack.message)
-						header: "Content-Type": "application/json"
-					}
-				}
-			}
-		}
-		if parameter.slack.url.secretRef != _|_ && parameter.slack.url.value == _|_ {
-			read: kube.#Read & {
-				$params: value: {
-					kind:       "Secret"
-					apiVersion: "v1"
-					metadata: {
-						name:      parameter.slack.url.secretRef.name
-						namespace: context.namespace
-					}
-				}
-			}
-
-			stringValue: util.#ConvertString & {$params: bt: base64.Decode(null, read.$returns.value.data[parameter.slack.url.secretRef.key])}
-			slack2: http.#HTTPDo & {
-				$params: {
-					method: "POST"
-					url:    stringValue.$returns.str
-					request: {
-						body: json.Marshal(parameter.slack.message)
-						header: "Content-Type": "application/json"
-					}
-				}
-			}
-		}
-	}
-}`))
-
-			tpl.Set("email0", defkit.Reference(`{
-	if parameter.email != _|_ {
-		if parameter.email.from.password.value != _|_ {
-			email1: email.#SendEmail & {
+			emailAction := defkit.NewArrayElement().
+				SetIf(hasPwdValue, "email1", defkit.Reference(`email.#SendEmail & {
 				$params: {
 					from: {
 						address: parameter.email.from.address
@@ -361,23 +302,15 @@ func Notification() *defkit.WorkflowStepDefinition {
 					to:      parameter.email.to
 					content: parameter.email.content
 				}
-			}
-		}
-
-		if parameter.email.from.password.secretRef != _|_ && parameter.email.from.password.value == _|_ {
-			read: kube.#Read & {
-				$params: value: {
-					kind:       "Secret"
-					apiVersion: "v1"
-					metadata: {
-						name:      parameter.email.from.password.secretRef.name
-						namespace: context.namespace
-					}
-				}
-			}
-
-			stringValue: util.#ConvertString & {$params: bt: base64.Decode(null, read.$returns.value.data[parameter.email.from.password.secretRef.key])}
-			email2: email.#SendEmail & {
+			}`)).
+				SetIf(useSecretPwd, "read", defkit.KubeRead("v1", "Secret").
+					Name(defkit.Reference("parameter.email.from.password.secretRef.name")).
+					Namespace(defkit.Reference("context.namespace")),
+				).
+				SetIf(useSecretPwd, "stringValue", defkit.ConvertString(
+					defkit.Reference("base64.Decode(null, read.$returns.value.data[parameter.email.from.password.secretRef.key])"),
+				)).
+				SetIf(useSecretPwd, "email2", defkit.Reference(`email.#SendEmail & {
 				$params: {
 					from: {
 						address: parameter.email.from.address
@@ -391,10 +324,8 @@ func Notification() *defkit.WorkflowStepDefinition {
 					to:      parameter.email.to
 					content: parameter.email.content
 				}
-			}
-		}
-	}
-}`))
+			}`))
+			tpl.SetGuardedBlock(defkit.PathExists("parameter.email"), "email0", emailAction)
 		})
 }
 
