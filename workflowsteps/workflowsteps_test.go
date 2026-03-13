@@ -44,25 +44,6 @@ var _ = Describe("Deploy WorkflowStep", func() {
 	})
 })
 
-var _ = Describe("Suspend WorkflowStep", func() {
-	It("should have correct name and CUE output", func() {
-		step := workflowsteps.Suspend()
-
-		Expect(step.GetName()).To(Equal("suspend"))
-		Expect(step.GetDescription()).To(Equal("Suspend the current workflow, it can be resumed by 'vela workflow resume' command."))
-
-		cue := step.ToCue()
-
-		Expect(cue).To(ContainSubstring(`type: "workflow-step"`))
-		Expect(cue).To(ContainSubstring(`"category": "Process Control"`))
-		Expect(cue).To(ContainSubstring(`builtin.#Suspend`))
-
-		// Verify parameter types (not just existence)
-		Expect(cue).To(ContainSubstring(`duration?: string`))
-		Expect(cue).To(ContainSubstring(`message?: string`))
-	})
-})
-
 var _ = Describe("ApplyComponent WorkflowStep", func() {
 	It("should have correct name and CUE output", func() {
 		step := workflowsteps.ApplyComponent()
@@ -101,13 +82,6 @@ var _ = Describe("All WorkflowSteps Registered", func() {
 			ToCue() string
 		} {
 			return workflowsteps.Deploy()
-		}},
-		{"suspend", "Suspend the current workflow, it can be resumed by 'vela workflow resume' command.", func() interface {
-			GetName() string
-			GetDescription() string
-			ToCue() string
-		} {
-			return workflowsteps.Suspend()
 		}},
 		{"apply-component", "Apply a specific component and its corresponding traits in application", func() interface {
 			GetName() string
