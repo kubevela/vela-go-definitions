@@ -24,11 +24,9 @@ import (
 // This step collects service endpoints for the application.
 func CollectServiceEndpoints() *defkit.WorkflowStepDefinition {
 	name := defkit.Object("name").
-		Required().
 		Description("Specify the name of the application").
 		WithSchema("*context.name | string")
 	namespace := defkit.Object("namespace").
-		Required().
 		Description("Specify the namespace of the application").
 		WithSchema("*context.namespace | string")
 	components := defkit.StringList("components").Optional().Description("Filter the component of the endpoints")

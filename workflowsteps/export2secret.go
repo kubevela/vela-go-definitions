@@ -28,8 +28,10 @@ func Export2Secret() *defkit.WorkflowStepDefinition {
 	secretName := defkit.String("secretName").
 		Description("Specify the name of the secret")
 	namespace := defkit.String("namespace").
+		Optional().
 		Description("Specify the namespace of the secret")
 	secretType := defkit.String("type").
+		Optional().
 		Description("Specify the type of the secret")
 	data := defkit.Object("data").
 		Description("Specify the data of secret").
@@ -42,6 +44,7 @@ func Export2Secret() *defkit.WorkflowStepDefinition {
 		Values("docker-registry", "generic").
 		Description("Specify the kind of the secret")
 	dockerRegistry := defkit.Struct("dockerRegistry").
+		Optional().
 		Description("Specify the docker data").
 		WithFields(
 			defkit.Field("username", defkit.ParamTypeString).

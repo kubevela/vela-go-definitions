@@ -28,6 +28,7 @@ func Export2Config() *defkit.WorkflowStepDefinition {
 	configName := defkit.String("configName").
 		Description("Specify the name of the config map")
 	namespace := defkit.String("namespace").
+		Optional().
 		Description("Specify the namespace of the config map")
 	data := defkit.Object("data").
 		Description("Specify the data of config map").

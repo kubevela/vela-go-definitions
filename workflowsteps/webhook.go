@@ -25,14 +25,13 @@ import (
 func Webhook() *defkit.WorkflowStepDefinition {
 	// url is a closed struct disjunction: either {value: string} or {secretRef: {name, key}}
 	url := defkit.ClosedUnion("url").
-		Required().
 		Description("Specify the webhook url").
 		Options(
 			defkit.ClosedStruct().WithFields(
-				defkit.Field("value", defkit.ParamTypeString).Required(),
+				defkit.Field("value", defkit.ParamTypeString),
 			),
 			defkit.ClosedStruct().WithFields(
-				defkit.Field("secretRef", defkit.ParamTypeStruct).Required().Nested(
+				defkit.Field("secretRef", defkit.ParamTypeStruct).Nested(
 					defkit.Struct("secretRef").WithFields(
 						defkit.Field("name", defkit.ParamTypeString).Description("name is the name of the secret"),
 						defkit.Field("key", defkit.ParamTypeString).Description("key is the key in the secret"),

@@ -24,8 +24,10 @@ import (
 // This step exports service to clusters specified by topology.
 func ExportService() *defkit.WorkflowStepDefinition {
 	name := defkit.String("name").
+		Optional().
 		Description("Specify the name of the export destination")
 	namespace := defkit.String("namespace").
+		Optional().
 		Description("Specify the namespace of the export destination")
 	ip := defkit.String("ip").
 		Description("Specify the ip to be export")
@@ -34,6 +36,7 @@ func ExportService() *defkit.WorkflowStepDefinition {
 	targetPort := defkit.Int("targetPort").
 		Description("Specify the port to be export")
 	topology := defkit.String("topology").
+		Optional().
 		Description("Specify the topology to export")
 
 	meta := defkit.NewArrayElement().

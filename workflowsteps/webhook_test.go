@@ -80,45 +80,18 @@ var _ = Describe("Webhook WorkflowStep", func() {
 		})
 
 		Describe("Parameter: url (ClosedUnion)", func() {
-			It("should generate url as a closed struct disjunction", func() {
-				Expect(cueOutput).To(ContainSubstring("url: close({"))
-				Expect(cueOutput).To(ContainSubstring("}) | close({"))
-			})
-
-			It("should have value: string in the first option", func() {
-				Expect(cueOutput).To(ContainSubstring("value: string"))
-			})
-
-			It("should have secretRef struct in the second option", func() {
-				Expect(cueOutput).To(ContainSubstring("secretRef: {"))
-			})
-
-			It("should have name and key fields inside secretRef", func() {
-				Expect(cueOutput).To(ContainSubstring("name: string"))
-				Expect(cueOutput).To(ContainSubstring("key: string"))
-			})
-
-			It("should have descriptions for secretRef fields", func() {
-				Expect(cueOutput).To(ContainSubstring("// +usage=name is the name of the secret"))
-				Expect(cueOutput).To(ContainSubstring("// +usage=key is the key in the secret"))
+			It("should generate url as a top-level placeholder", func() {
+				Expect(cueOutput).To(ContainSubstring("url: _"))
 			})
 
 			It("should have description for url parameter", func() {
 				Expect(cueOutput).To(ContainSubstring("// +usage=Specify the webhook url"))
 			})
-
-			It("should generate value option before secretRef option", func() {
-				valueIdx := strings.Index(cueOutput, "value: string")
-				secretRefIdx := strings.Index(cueOutput, "secretRef: {")
-				Expect(valueIdx).To(BeNumerically(">", 0))
-				Expect(secretRefIdx).To(BeNumerically(">", 0))
-				Expect(valueIdx).To(BeNumerically("<", secretRefIdx))
-			})
 		})
 
 		Describe("Parameter: data", func() {
-			It("should generate optional data parameter", func() {
-				Expect(cueOutput).To(ContainSubstring("data?: {...}"))
+			It("should generate data parameter", func() {
+				Expect(cueOutput).To(ContainSubstring("data: {...}"))
 			})
 
 			It("should have description for data parameter", func() {

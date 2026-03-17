@@ -24,14 +24,13 @@ import (
 
 func stringValueOrSecretRef(name, usage, valueUsage string) *defkit.ClosedUnionParam {
 	return defkit.ClosedUnion(name).
-		Required().
 		Description(usage).
 		Options(
 			defkit.ClosedStruct().WithFields(
-				defkit.Field("value", defkit.ParamTypeString).Required().Description(valueUsage),
+				defkit.Field("value", defkit.ParamTypeString).Description(valueUsage),
 			),
 			defkit.ClosedStruct().WithFields(
-				defkit.Field("secretRef", defkit.ParamTypeStruct).Required().Nested(
+				defkit.Field("secretRef", defkit.ParamTypeStruct).Nested(
 					defkit.Struct("secretRef").WithFields(
 						defkit.Field("name", defkit.ParamTypeString).Description("name is the name of the secret"),
 						defkit.Field("key", defkit.ParamTypeString).Description("key is the key in the secret"),
@@ -99,8 +98,8 @@ func Notification() *defkit.WorkflowStepDefinition {
 	)
 
 	dingBtn := defkit.Object("dingBtn").WithFields(
-		defkit.String("title").Required(),
-		defkit.String("actionURL").Required(),
+		defkit.String("title"),
+		defkit.String("actionURL"),
 	)
 
 	block := defkit.Object("block").WithFields(
@@ -170,7 +169,7 @@ func Notification() *defkit.WorkflowStepDefinition {
 				WithFields(
 					defkit.ClosedUnion("text").Optional().Description("Specify the message content of dingtalk notification").Options(
 						defkit.ClosedStruct().WithFields(
-							defkit.Field("content", defkit.ParamTypeString).Required(),
+							defkit.Field("content", defkit.ParamTypeString),
 						),
 					),
 					defkit.String("msgtype").
@@ -180,8 +179,8 @@ func Notification() *defkit.WorkflowStepDefinition {
 					defkit.Object("link").Optional().WithSchemaRef("DingLink"),
 					defkit.ClosedUnion("markdown").Optional().Options(
 						defkit.ClosedStruct().WithFields(
-							defkit.Field("text", defkit.ParamTypeString).Required(),
-							defkit.Field("title", defkit.ParamTypeString).Required(),
+							defkit.Field("text", defkit.ParamTypeString),
+							defkit.Field("title", defkit.ParamTypeString),
 						),
 					),
 					defkit.ClosedUnion("at").Optional().Options(
@@ -192,18 +191,18 @@ func Notification() *defkit.WorkflowStepDefinition {
 					),
 					defkit.ClosedUnion("actionCard").Optional().Options(
 						defkit.ClosedStruct().WithFields(
-							defkit.Field("text", defkit.ParamTypeString).Required(),
-							defkit.Field("title", defkit.ParamTypeString).Required(),
-							defkit.Field("hideAvatar", defkit.ParamTypeString).Required(),
-							defkit.Field("btnOrientation", defkit.ParamTypeString).Required(),
-							defkit.Field("singleTitle", defkit.ParamTypeString).Required(),
-							defkit.Field("singleURL", defkit.ParamTypeString).Required(),
+							defkit.Field("text", defkit.ParamTypeString),
+							defkit.Field("title", defkit.ParamTypeString),
+							defkit.Field("hideAvatar", defkit.ParamTypeString),
+							defkit.Field("btnOrientation", defkit.ParamTypeString),
+							defkit.Field("singleTitle", defkit.ParamTypeString),
+							defkit.Field("singleURL", defkit.ParamTypeString),
 							defkit.Field("btns", defkit.ParamTypeArray).Optional().WithSchemaRef("DingBtn"),
 						),
 					),
 					defkit.ClosedUnion("feedCard").Optional().Options(
 						defkit.ClosedStruct().WithFields(
-							defkit.Field("links", defkit.ParamTypeArray).Required().WithSchemaRef("DingLink"),
+							defkit.Field("links", defkit.ParamTypeArray).WithSchemaRef("DingLink"),
 						),
 					),
 				),

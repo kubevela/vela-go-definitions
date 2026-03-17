@@ -24,8 +24,10 @@ import (
 // This step exports data to clusters specified by topology.
 func ExportData() *defkit.WorkflowStepDefinition {
 	name := defkit.String("name").
+		Optional().
 		Description("Specify the name of the export destination")
 	namespace := defkit.String("namespace").
+		Optional().
 		Description("Specify the namespace of the export destination")
 	kind := defkit.String("kind").
 		Default("ConfigMap").
@@ -35,6 +37,7 @@ func ExportData() *defkit.WorkflowStepDefinition {
 		Description("Specify the data to export").
 		WithSchema("{}")
 	topology := defkit.String("topology").
+		Optional().
 		Description("Specify the topology to export")
 
 	object := defkit.NewArrayElement().

@@ -29,7 +29,8 @@ func CreateConfig() *defkit.WorkflowStepDefinition {
 		Description("Specify the namespace of the config.").
 		WithSchema("*context.namespace | string")
 	template := defkit.String("template").
-		Description("Specify the template of the config.")
+		Description("Specify the template of the config.").
+		Optional()
 	config := defkit.Object("config").
 		Description("Specify the content of the config.")
 
