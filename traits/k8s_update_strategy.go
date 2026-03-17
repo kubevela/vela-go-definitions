@@ -42,7 +42,9 @@ func K8sUpdateStrategy() *defkit.TraitDefinition {
 	return defkit.NewTrait("k8s-update-strategy").
 		Description("Set k8s update strategy for Deployment/DaemonSet/StatefulSet").
 		AppliesTo("deployments.apps", "statefulsets.apps", "daemonsets.apps").
+		ConflictsWith().
 		PodDisruptive(false).
+		WorkloadRefPath("").
 		Params(targetAPIVersion, targetKind, strategy).
 		Template(func(tpl *defkit.Template) {
 			// References to parameter fields
