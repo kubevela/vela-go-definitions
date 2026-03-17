@@ -134,11 +134,13 @@ var _ = Describe("Notification WorkflowStep", func() {
 			})
 
 			It("should have url as ClosedUnion with value or secretRef", func() {
-				// The lark block should contain url as top type (ClosedUnion generates _ now)
 				larkIdx := strings.Index(cueOutput, "lark?: {")
 				Expect(larkIdx).To(BeNumerically(">", 0))
 				larkBlock := cueOutput[larkIdx:]
-				Expect(larkBlock).To(ContainSubstring("url: _"))
+				Expect(larkBlock).To(ContainSubstring("url: close({"))
+				Expect(larkBlock).To(ContainSubstring("value: string"))
+				Expect(larkBlock).To(ContainSubstring("}) | close({"))
+				Expect(larkBlock).To(ContainSubstring("secretRef: {"))
 			})
 
 			It("should have message with msg_type and content", func() {
@@ -156,7 +158,9 @@ var _ = Describe("Notification WorkflowStep", func() {
 				dingIdx := strings.Index(cueOutput, "dingding?: {")
 				Expect(dingIdx).To(BeNumerically(">", 0))
 				dingBlock := cueOutput[dingIdx:]
-				Expect(dingBlock).To(ContainSubstring("url: _"))
+				Expect(dingBlock).To(ContainSubstring("url: close({"))
+				Expect(dingBlock).To(ContainSubstring("value: string"))
+				Expect(dingBlock).To(ContainSubstring("}) | close({"))
 			})
 
 			It("should have message with msgtype enum and default", func() {
@@ -164,7 +168,7 @@ var _ = Describe("Notification WorkflowStep", func() {
 			})
 
 			It("should have text as closed union", func() {
-				Expect(cueOutput).To(ContainSubstring("text: _"))
+				Expect(cueOutput).To(ContainSubstring("text?: close({"))
 				Expect(cueOutput).To(ContainSubstring("content: string"))
 			})
 
@@ -173,15 +177,23 @@ var _ = Describe("Notification WorkflowStep", func() {
 			})
 
 			It("should have markdown as closed union", func() {
-				Expect(cueOutput).To(ContainSubstring("markdown: _"))
+				Expect(cueOutput).To(ContainSubstring("markdown?: close({"))
+				Expect(cueOutput).To(ContainSubstring("text: string"))
+				Expect(cueOutput).To(ContainSubstring("title: string"))
 			})
 
 			It("should have at with atMobiles and isAtAll", func() {
-				Expect(cueOutput).To(ContainSubstring("at: _"))
+				Expect(cueOutput).To(ContainSubstring("at?: close({"))
+				Expect(cueOutput).To(ContainSubstring("atMobiles?: [...string]"))
+				Expect(cueOutput).To(ContainSubstring("isAtAll?: bool"))
 			})
 
 			It("should have actionCard with all required fields", func() {
-				Expect(cueOutput).To(ContainSubstring("actionCard: _"))
+				Expect(cueOutput).To(ContainSubstring("actionCard?: close({"))
+				Expect(cueOutput).To(ContainSubstring("hideAvatar: string"))
+				Expect(cueOutput).To(ContainSubstring("btnOrientation: string"))
+				Expect(cueOutput).To(ContainSubstring("singleTitle: string"))
+				Expect(cueOutput).To(ContainSubstring("singleURL: string"))
 			})
 
 			It("should reference #DingBtn for btns", func() {
@@ -191,7 +203,8 @@ var _ = Describe("Notification WorkflowStep", func() {
 			})
 
 			It("should have feedCard referencing #DingLink", func() {
-				Expect(cueOutput).To(ContainSubstring("feedCard: _"))
+				Expect(cueOutput).To(ContainSubstring("feedCard?: close({"))
+				Expect(cueOutput).To(ContainSubstring("links: [...#DingLink]"))
 			})
 		})
 
@@ -206,7 +219,8 @@ var _ = Describe("Notification WorkflowStep", func() {
 			})
 
 			It("should have attachments as closed union with blocks and color", func() {
-				Expect(cueOutput).To(ContainSubstring("attachments: _"))
+				Expect(cueOutput).To(ContainSubstring("attachments?: close({"))
+				Expect(cueOutput).To(ContainSubstring("color?: string"))
 			})
 
 			It("should have thread_ts optional", func() {
@@ -232,11 +246,11 @@ var _ = Describe("Notification WorkflowStep", func() {
 
 			It("should have password as ClosedUnion with value or secretRef", func() {
 				Expect(cueOutput).To(ContainSubstring("// +usage=Specify the password of the email"))
-				// ClosedUnion now generates top type (_)
 				emailIdx := strings.Index(cueOutput, "email?: {")
 				Expect(emailIdx).To(BeNumerically(">", 0))
 				emailBlock := cueOutput[emailIdx:]
-				Expect(emailBlock).To(ContainSubstring("password: _"))
+				Expect(emailBlock).To(ContainSubstring("password: close({"))
+				Expect(emailBlock).To(ContainSubstring("}) | close({"))
 			})
 
 			It("should have to as string list", func() {

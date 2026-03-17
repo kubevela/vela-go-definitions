@@ -70,16 +70,16 @@ func ApplyTerraformProvider() *defkit.WorkflowStepDefinition {
 		Alias("").
 		WithImports("vela/config", "vela/kube", "vela/builtin", "strings").
 		Helper("AlibabaProvider", defkit.Struct("AlibabaProvider").WithFields(
-			defkit.Field("accessKey", defkit.ParamTypeString),
-			defkit.Field("secretKey", defkit.ParamTypeString),
-			defkit.Field("region", defkit.ParamTypeString),
+			defkit.Field("accessKey", defkit.ParamTypeString).Required(),
+			defkit.Field("secretKey", defkit.ParamTypeString).Required(),
+			defkit.Field("region", defkit.ParamTypeString).Required(),
 			defkit.Field("type", defkit.ParamTypeString).Values("alibaba"),
 			defkit.Field("name", defkit.ParamTypeString).Default("alibaba-provider"),
 		)).
 		Helper("AWSProvider", defkit.Struct("AWSProvider").WithFields(
-			defkit.Field("accessKey", defkit.ParamTypeString),
-			defkit.Field("secretKey", defkit.ParamTypeString),
-			defkit.Field("region", defkit.ParamTypeString),
+			defkit.Field("accessKey", defkit.ParamTypeString).Required(),
+			defkit.Field("secretKey", defkit.ParamTypeString).Required(),
+			defkit.Field("region", defkit.ParamTypeString).Required(),
 			defkit.Field("token", defkit.ParamTypeString).Default(""),
 			defkit.Field("type", defkit.ParamTypeString).Values("aws"),
 			defkit.Field("name", defkit.ParamTypeString).Default("aws-provider"),
@@ -92,9 +92,9 @@ func ApplyTerraformProvider() *defkit.WorkflowStepDefinition {
 			defkit.Field("name", defkit.ParamTypeString).Default("azure-provider"),
 		)).
 		Helper("BaiduProvider", defkit.Struct("BaiduProvider").WithFields(
-			defkit.Field("accessKey", defkit.ParamTypeString),
-			defkit.Field("secretKey", defkit.ParamTypeString),
-			defkit.Field("region", defkit.ParamTypeString),
+			defkit.Field("accessKey", defkit.ParamTypeString).Required(),
+			defkit.Field("secretKey", defkit.ParamTypeString).Required(),
+			defkit.Field("region", defkit.ParamTypeString).Required(),
 			defkit.Field("type", defkit.ParamTypeString).Values("baidu"),
 			defkit.Field("name", defkit.ParamTypeString).Default("baidu-provider"),
 		)).

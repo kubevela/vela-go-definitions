@@ -102,6 +102,30 @@ var _ = Describe("ApplyTerraformProvider WorkflowStep", func() {
 				Expect(cueOutput).To(ContainSubstring(`name: *"ucloud-provider" | string`))
 			})
 
+			It("should mark accessKey, secretKey, region as required in providers with providerBasic", func() {
+				// AlibabaProvider, AWSProvider, BaiduProvider embed providerBasic which uses ! markers
+				alibabaIdx := strings.Index(cueOutput, "#AlibabaProvider: {")
+				Expect(alibabaIdx).To(BeNumerically(">", 0))
+				alibabaBlock := cueOutput[alibabaIdx : alibabaIdx+200]
+				Expect(alibabaBlock).To(ContainSubstring("accessKey!: string"))
+				Expect(alibabaBlock).To(ContainSubstring("secretKey!: string"))
+				Expect(alibabaBlock).To(ContainSubstring("region!: string"))
+
+				awsIdx := strings.Index(cueOutput, "#AWSProvider: {")
+				Expect(awsIdx).To(BeNumerically(">", 0))
+				awsBlock := cueOutput[awsIdx : awsIdx+200]
+				Expect(awsBlock).To(ContainSubstring("accessKey!: string"))
+				Expect(awsBlock).To(ContainSubstring("secretKey!: string"))
+				Expect(awsBlock).To(ContainSubstring("region!: string"))
+
+				baiduIdx := strings.Index(cueOutput, "#BaiduProvider: {")
+				Expect(baiduIdx).To(BeNumerically(">", 0))
+				baiduBlock := cueOutput[baiduIdx : baiduIdx+200]
+				Expect(baiduBlock).To(ContainSubstring("accessKey!: string"))
+				Expect(baiduBlock).To(ContainSubstring("secretKey!: string"))
+				Expect(baiduBlock).To(ContainSubstring("region!: string"))
+			})
+
 			It("should constrain type field per provider that defines one", func() {
 				// AzureProvider has no type field — it's identified by its unique fields
 				Expect(cueOutput).To(ContainSubstring(`type: "alibaba"`))
