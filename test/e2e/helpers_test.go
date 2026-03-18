@@ -106,6 +106,38 @@ func readAppFromFile(filename string) (*v1beta1.Application, error) {
 	return nil, fmt.Errorf("no Application found in file %s", filename)
 }
 
+// readAllAppsFromFile reads ALL Applications from a multi-doc YAML file.
+// Some test files (shared-resource, depends-on-app) contain multiple Applications.
+func readAllAppsFromFile(filename string) ([]*v1beta1.Application, error) {
+	bs, err := os.ReadFile(filename)
+	if err != nil {
+		return nil, err
+	}
+
+	var apps []*v1beta1.Application
+	docs := strings.Split(string(bs), "---")
+	for _, doc := range docs {
+		doc = strings.TrimSpace(doc)
+		if doc == "" {
+			continue
+		}
+
+		app := &v1beta1.Application{}
+		if err = yaml.Unmarshal([]byte(doc), app); err != nil {
+			continue
+		}
+
+		if app.Kind == "Application" {
+			apps = append(apps, app)
+		}
+	}
+
+	if len(apps) == 0 {
+		return nil, fmt.Errorf("no Application found in file %s", filename)
+	}
+	return apps, nil
+}
+
 // updateAppNamespaceReferences updates namespace references inside Application components
 // This is needed for ref-objects type components that reference resources in specific namespaces
 func updateAppNamespaceReferences(app *v1beta1.Application, newNamespace string) {
@@ -408,43 +440,49 @@ var skipWorkflowStepTests = map[string]string{
 	"generate-jdbc-connection.yaml": "requires alibaba-rds component",
 	"apply-terraform-config.yaml":   "requires Alibaba Cloud credentials and terraform provider",
 	"apply-terraform-provider.yaml": "requires Alibaba Cloud credentials",
+	"build-push-image.yaml":         "requires external container registry (ttl.sh) and GitHub access",
+	"check-metrics.yaml":            "requires external Prometheus endpoint (demo.promlabs.com)",
+	"restart-workflow.yaml":         "self-restarting workflow cannot be validated with single-shot test framework",
 }
 
 // runDefinitionTest executes a single definition e2e test case.
-// It creates an isolated namespace, applies the application, waits for running status,
-// optionally validates resource expectations, and cleans up.
+// It creates an isolated namespace, applies all applications from the YAML file,
+// waits for running status, validates expectations, and cleans up.
 func runDefinitionTest(ctx context.Context, file string, skipTests map[string]string) {
 	if reason, ok := skipTests[filepath.Base(file)]; ok {
 		Skip(fmt.Sprintf("Skipping: %s", reason))
 	}
 
-	app, err := readAppFromFile(file)
-	Expect(err).NotTo(HaveOccurred(), "Failed to read application from %s", file)
+	apps, err := readAllAppsFromFile(file)
+	Expect(err).NotTo(HaveOccurred(), "Failed to read applications from %s", file)
 
-	// Each app has unique name, so namespace based on app name is unique per test
-	appNameSanitized := sanitizeForNamespace(app.Name)
+	// The last application is the "main" one for validation purposes.
+	// Earlier apps are dependencies (e.g., depends-on-app, shared-resource).
+	mainApp := apps[len(apps)-1]
+
+	appNameSanitized := sanitizeForNamespace(mainApp.Name)
 	uniqueNs := fmt.Sprintf("e2e-%s", appNameSanitized)
 
-	app.SetNamespace(uniqueNs)
-
-	// Update namespace references inside component properties (e.g., ref-objects)
-	updateAppNamespaceReferences(app, uniqueNs)
+	// Set namespace on all apps
+	for _, app := range apps {
+		app.SetNamespace(uniqueNs)
+		updateAppNamespaceReferences(app, uniqueNs)
+	}
 
 	// Track test success for cleanup diagnostics
 	testPassed := false
 
-	// DeferCleanup runs even on suite timeout - print diagnostics if test didn't pass
+	// DeferCleanup: delete all apps (removes finalizers), then delete namespace
 	DeferCleanup(func() {
 		if !testPassed {
 			GinkgoWriter.Printf("\nTest did not complete successfully, gathering diagnostics...\n")
-			GinkgoWriter.Printf("%s\n", getAppFailureDiagnostics(ctx, app.Name, uniqueNs))
-			// Print kaniko pod logs for build-push-image workflow step
-			if filepath.Base(file) == "build-push-image.yaml" {
-				GinkgoWriter.Printf("\n--- Kaniko Pod Diagnostics ---\n")
-				GinkgoWriter.Printf("%s\n", getKanikoPodLogs(uniqueNs))
-			}
+			GinkgoWriter.Printf("%s\n", getAppFailureDiagnostics(ctx, mainApp.Name, uniqueNs))
 		}
-		// Clean up namespace after test
+		// Delete all apps first (to clear finalizers)
+		for _, app := range apps {
+			_ = k8sClient.Delete(ctx, app)
+		}
+		// Then delete namespace
 		GinkgoWriter.Printf("Deleting namespace %s...\n", uniqueNs)
 		ns := &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: uniqueNs}}
 		_ = k8sClient.Delete(ctx, ns)
@@ -457,39 +495,41 @@ func runDefinitionTest(ctx context.Context, file string, skipTests map[string]st
 		Expect(err).NotTo(HaveOccurred(), "Failed to create namespace")
 	}
 
-	// Ensure clean slate - delete app if exists
-	GinkgoWriter.Printf("Cleaning up any existing application %s/%s...\n", uniqueNs, app.Name)
-	_ = k8sClient.Delete(ctx, app)
-
-	// Wait for deletion
+	// Ensure clean slate - delete all apps if they exist
+	for _, app := range apps {
+		_ = k8sClient.Delete(ctx, app)
+	}
 	Eventually(func() bool {
-		err := k8sClient.Get(ctx, types.NamespacedName{Namespace: uniqueNs, Name: app.Name}, &v1beta1.Application{})
+		err := k8sClient.Get(ctx, types.NamespacedName{Namespace: uniqueNs, Name: mainApp.Name}, &v1beta1.Application{})
 		return errors.IsNotFound(err)
 	}, 30*time.Second, 2*time.Second).Should(BeTrue(),
-		fmt.Sprintf("Application %s should be fully deleted before test", app.Name))
+		fmt.Sprintf("Application %s should be fully deleted before test", mainApp.Name))
 
-	// Check if this file has prerequisite resources
+	// Apply prerequisite non-Application resources (Deployments, Services, ConfigMaps, etc.)
 	if hasPrerequisiteResources(file) {
 		GinkgoWriter.Printf("Applying prerequisite resources from %s...\n", filepath.Base(file))
 		err = applyPrerequisiteResources(ctx, file, uniqueNs)
 		Expect(err).NotTo(HaveOccurred(), "Failed to apply prerequisite resources")
-		time.Sleep(2 * time.Second)
+		// Wait for prerequisite resources to be ready
+		waitForPrerequisiteResources(ctx, file, uniqueNs)
 	}
 
-	// Apply application
-	GinkgoWriter.Printf("Applying application %s/%s...\n", uniqueNs, app.Name)
-	Expect(k8sClient.Create(ctx, app)).Should(Succeed())
+	// Apply all applications. For multi-app files, dependency apps go first.
+	for i, app := range apps {
+		GinkgoWriter.Printf("Applying application %s/%s (%d/%d)...\n", uniqueNs, app.Name, i+1, len(apps))
+		Expect(k8sClient.Create(ctx, app)).Should(Succeed())
 
-	// Wait for running status
-	Eventually(func(g Gomega) {
-		currentApp := &v1beta1.Application{}
-		g.Expect(k8sClient.Get(ctx, types.NamespacedName{Namespace: uniqueNs, Name: app.Name}, currentApp)).Should(Succeed())
-		GinkgoWriter.Printf("Application %s status: %s\n", app.Name, currentApp.Status.Phase)
-		g.Expect(string(currentApp.Status.Phase)).Should(Equal("running"))
-	}, AppRunningTimeout, PollInterval).Should(Succeed())
+		// Wait for each app to reach running status
+		Eventually(func(g Gomega) {
+			currentApp := &v1beta1.Application{}
+			g.Expect(k8sClient.Get(ctx, types.NamespacedName{Namespace: uniqueNs, Name: app.Name}, currentApp)).Should(Succeed())
+			GinkgoWriter.Printf("Application %s status: %s\n", app.Name, currentApp.Status.Phase)
+			g.Expect(string(currentApp.Status.Phase)).Should(Equal("running"))
+		}, AppRunningTimeout, PollInterval).Should(Succeed())
+	}
 
-	// Layer 1: Auto-derived validation (all definitions get this for free)
-	autoValidate(ctx, app, uniqueNs)
+	// Layer 1: Auto-derived validation on the main app
+	autoValidate(ctx, mainApp, uniqueNs)
 
 	// Layer 2: Extra expectations from companion .expect.yaml (additive)
 	ef := loadExpectations(file)
@@ -500,12 +540,46 @@ func runDefinitionTest(ctx context.Context, file string, skipTests map[string]st
 		}
 		if len(ef.WorkflowSteps) > 0 {
 			GinkgoWriter.Printf("Validating %d extra workflow step expectation(s)...\n", len(ef.WorkflowSteps))
-			validateWorkflowStepExpectations(ctx, app.Name, uniqueNs, ef.WorkflowSteps)
+			validateWorkflowStepExpectations(ctx, mainApp.Name, uniqueNs, ef.WorkflowSteps)
 		}
 	}
 
 	testPassed = true
 	GinkgoWriter.Printf("PASS %s\n", filepath.Base(file))
+}
+
+// waitForPrerequisiteResources polls until prerequisite resources from a multi-doc YAML
+// are ready, instead of using a hardcoded sleep.
+func waitForPrerequisiteResources(ctx context.Context, filePath, namespace string) {
+	content, err := os.ReadFile(filePath)
+	if err != nil {
+		return
+	}
+
+	docs := strings.Split(string(content), "---")
+	for _, doc := range docs {
+		doc = strings.TrimSpace(doc)
+		if doc == "" {
+			continue
+		}
+
+		obj := &unstructured.Unstructured{}
+		if err := yaml.Unmarshal([]byte(doc), obj); err != nil {
+			continue
+		}
+
+		if obj.GetKind() == "" || obj.GetKind() == "Application" {
+			continue
+		}
+
+		GinkgoWriter.Printf("Waiting for prerequisite %s/%s...\n", obj.GetKind(), obj.GetName())
+		check := &unstructured.Unstructured{}
+		check.SetGroupVersionKind(obj.GroupVersionKind())
+		Eventually(func() error {
+			return k8sClient.Get(ctx, types.NamespacedName{Namespace: namespace, Name: obj.GetName()}, check)
+		}, 30*time.Second, 2*time.Second).Should(Succeed(),
+			fmt.Sprintf("Prerequisite %s/%s should exist in namespace %s", obj.GetKind(), obj.GetName(), namespace))
+	}
 }
 
 // --------------------------------------------------------------------------

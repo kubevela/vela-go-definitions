@@ -82,22 +82,22 @@ test-unit:
 test-e2e: test-e2e-components test-e2e-traits test-e2e-policies test-e2e-workflowsteps
 	@echo "All E2E tests completed!"
 
-test-e2e-components:
+test-e2e-components: force-cleanup-e2e-namespaces
 	@echo "Running E2E tests for component definitions in parallel ($(PROCS) processes)..."
 	TESTDATA_PATH=$(TESTDATA_PATH) \
 		$(GINKGO) -v --timeout=$(E2E_TIMEOUT) --label-filter="components" --procs=$(PROCS) ./test/e2e/...
 
-test-e2e-traits:
+test-e2e-traits: force-cleanup-e2e-namespaces
 	@echo "Running E2E tests for trait definitions in parallel ($(PROCS) processes)..."
 	TESTDATA_PATH=$(TESTDATA_PATH) \
 		$(GINKGO) -v --timeout=$(E2E_TIMEOUT) --label-filter="traits" --procs=$(PROCS) ./test/e2e/...
 
-test-e2e-policies:
+test-e2e-policies: force-cleanup-e2e-namespaces
 	@echo "Running E2E tests for policy definitions in parallel ($(PROCS) processes)..."
 	TESTDATA_PATH=$(TESTDATA_PATH) \
 		$(GINKGO) -v --timeout=$(E2E_TIMEOUT) --label-filter="policies" --procs=$(PROCS) ./test/e2e/...
 
-test-e2e-workflowsteps:
+test-e2e-workflowsteps: force-cleanup-e2e-namespaces
 	@echo "Running E2E tests for workflowstep definitions in parallel ($(PROCS) processes)..."
 	TESTDATA_PATH=$(TESTDATA_PATH) \
 		$(GINKGO) -v --timeout=$(E2E_TIMEOUT) --label-filter="workflowsteps" --procs=$(PROCS) ./test/e2e/...
