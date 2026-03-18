@@ -944,7 +944,34 @@ func normalizeValue(v interface{}) interface{} {
 // --------------------------------------------------------------------------
 
 // runVelaDryRun executes `vela dry-run -f <appFile>` and returns the rendered output.
+// For multi-doc YAML files (with prerequisite resources), it extracts just the last
+// Application document into a temp file since vela dry-run can't handle non-Application docs.
 func runVelaDryRun(appFile string) (string, error) {
+	// Check if file has non-Application resources
+	if hasPrerequisiteResources(appFile) {
+		// Extract the last Application document
+		apps, err := readAllAppsFromFile(appFile)
+		if err != nil {
+			return "", fmt.Errorf("failed to read applications from %s: %w", appFile, err)
+		}
+		mainApp := apps[len(apps)-1]
+		appBytes, err := yaml.Marshal(mainApp)
+		if err != nil {
+			return "", fmt.Errorf("failed to marshal application: %w", err)
+		}
+		tmpFile, err := os.CreateTemp("", "dryrun-*.yaml")
+		if err != nil {
+			return "", fmt.Errorf("failed to create temp file: %w", err)
+		}
+		defer os.Remove(tmpFile.Name())
+		if _, err := tmpFile.Write(appBytes); err != nil {
+			tmpFile.Close()
+			return "", fmt.Errorf("failed to write temp file: %w", err)
+		}
+		tmpFile.Close()
+		appFile = tmpFile.Name()
+	}
+
 	cmd := exec.Command("vela", "dry-run", "-f", appFile)
 	output, err := cmd.CombinedOutput()
 	if err != nil {
