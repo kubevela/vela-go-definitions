@@ -46,7 +46,6 @@ test/
     e2e_suite_test.go          # Ginkgo suite bootstrap
     definition_e2e_test.go     # Table-driven test generator for all 4 types
     helpers_test.go            # All test logic: runner, auto-validate, expectations
-    dryrun_parity_test.go      # Dry-run parity tests (defkit vs CUE baseline)
   builtin-definition-example/
     applications/              # Test inputs (Application YAMLs)
       components/              # 8 component tests
@@ -170,7 +169,7 @@ Tests requiring external infrastructure are skipped:
 
 ### GitHub Actions Workflow (`test-definitions.yaml`)
 
-A single workflow with 4 parallel jobs (one per definition type) plus a parity test job:
+A single workflow with 4 parallel jobs (one per definition type):
 
 | Job | Label Filter | What it tests |
 |-----|-------------|---------------|
@@ -178,7 +177,6 @@ A single workflow with 4 parallel jobs (one per definition type) plus a parity t
 | `test-traits` | `traits` | 29 trait definitions |
 | `test-policies` | `policies` | 9 policy definitions |
 | `test-workflowsteps` | `workflowsteps` | 31 workflow step definitions |
-| `test-parity` | `parity` | Dry-run output comparison (defkit vs CUE baseline) |
 
 ### Setup Action (`.github/actions/setup-vela-environment`)
 
@@ -210,7 +208,6 @@ The built-from-source CLI uses `cmd/register/main.go` (fast registry path) to di
 | `test-e2e-traits` | Run trait tests only |
 | `test-e2e-policies` | Run policy tests only |
 | `test-e2e-workflowsteps` | Run workflow step tests only |
-| `test-e2e-parity` | Run dry-run parity tests |
 | `cleanup-e2e-namespaces` | Delete all `e2e-*` namespaces |
 | `force-cleanup-e2e-namespaces` | Force-delete stuck terminating namespaces |
 
@@ -224,7 +221,6 @@ Each `test-e2e-*` target automatically runs `force-cleanup-e2e-namespaces` first
 | `E2E_TIMEOUT` | 10m | Total test suite timeout |
 | `TESTDATA_PATH` | `test/builtin-definition-example` | Test data directory |
 | `E2E_CLUSTER` | `e2e-test` | k3d cluster name |
-| `BASELINE_DIR` | `/tmp/cue-baseline` | CUE parity baseline directory |
 
 ### Running Individual Tests
 

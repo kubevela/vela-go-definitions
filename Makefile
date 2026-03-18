@@ -19,14 +19,12 @@ E2E_TIMEOUT ?= 10m
 # Number of parallel processes for Ginkgo (can be overridden)
 PROCS ?= 10
 
-# Baseline directory for parity tests
-BASELINE_DIR ?= /tmp/cue-baseline
 
 # k3d cluster name for local E2E testing
 E2E_CLUSTER ?= e2e-test
 
 
-.PHONY: tidy install-ginkgo test-unit test-e2e test-e2e-components test-e2e-traits test-e2e-policies test-e2e-workflowsteps test-e2e-parity generate-baseline e2e-setup e2e-teardown cleanup-e2e-namespaces force-cleanup-e2e-namespaces generate fmt vet lint check-diff reviewable help
+.PHONY: tidy install-ginkgo test-unit test-e2e test-e2e-components test-e2e-traits test-e2e-policies test-e2e-workflowsteps e2e-setup e2e-teardown cleanup-e2e-namespaces force-cleanup-e2e-namespaces generate fmt vet lint check-diff reviewable help
 
 ## Generate CUE definitions from Go into vela-templates/definitions/
 generate:
@@ -101,26 +99,6 @@ test-e2e-workflowsteps: force-cleanup-e2e-namespaces
 	@echo "Running E2E tests for workflowstep definitions in parallel ($(PROCS) processes)..."
 	TESTDATA_PATH=$(TESTDATA_PATH) \
 		$(GINKGO) -v --timeout=$(E2E_TIMEOUT) --label-filter="workflowsteps" --procs=$(PROCS) ./test/e2e/...
-
-## Dry-run parity tests (compares defkit output against CUE baseline)
-test-e2e-parity:
-	@echo "Running dry-run parity tests ($(PROCS) processes)..."
-	CUE_BASELINE_DIR=$(BASELINE_DIR) TESTDATA_PATH=$(TESTDATA_PATH) \
-		$(GINKGO) -v --timeout=$(E2E_TIMEOUT) --label-filter="parity" --procs=$(PROCS) ./test/e2e/...
-
-## Generate CUE baseline for parity tests (requires built-in CUE definitions installed)
-generate-baseline:
-	@echo "Generating CUE dry-run baseline into $(BASELINE_DIR)..."
-	@mkdir -p $(BASELINE_DIR)
-	@for dir in components trait policies workflowsteps; do \
-		for f in $(TESTDATA_PATH)/applications/$$dir/*.yaml; do \
-			[ -f "$$f" ] || continue; \
-			base=$$(basename "$$f" .yaml); \
-			echo "  dry-run: $$dir/$$base"; \
-			vela dry-run -f "$$f" > "$(BASELINE_DIR)/$$base.yaml" 2>/dev/null || true; \
-		done; \
-	done
-	@echo "Baseline generated at $(BASELINE_DIR)"
 
 ## Set up a local E2E test environment (k3d cluster + KubeVela + defkit definitions)
 ## Prerequisites: docker, k3d, kubectl, vela CLI
@@ -228,8 +206,6 @@ help:
 	@echo "  test-e2e-traits        - Run E2E tests for trait definitions (parallel)"
 	@echo "  test-e2e-policies      - Run E2E tests for policy definitions (parallel)"
 	@echo "  test-e2e-workflowsteps - Run E2E tests for workflowstep definitions (parallel)"
-	@echo "  test-e2e-parity        - Run dry-run parity tests (defkit vs CUE baseline)"
-	@echo "  generate-baseline      - Generate CUE dry-run baseline for parity tests"
 	@echo ""
 	@echo "  Environment:"
 	@echo "  e2e-setup                    - Set up local E2E environment (k3d + KubeVela + definitions)"
@@ -244,7 +220,6 @@ help:
 	@echo "  TESTDATA_PATH   - Path to test data (default: test/builtin-definition-example)"
 	@echo "  E2E_TIMEOUT     - Timeout for E2E tests (default: 10m)"
 	@echo "  PROCS           - Number of parallel processes for Ginkgo (default: 10)"
-	@echo "  BASELINE_DIR    - Directory for CUE parity baselines (default: /tmp/cue-baseline)"
 	@echo ""
 	@echo "Examples:"
 	@echo "  make e2e-setup                              # Set up local test cluster"
