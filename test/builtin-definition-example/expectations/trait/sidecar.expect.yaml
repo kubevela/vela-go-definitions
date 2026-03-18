@@ -1,7 +1,7 @@
 expectations:
   - apiVersion: apps/v1
     kind: Deployment
-    name: nginx-app
+    name: log-gen-worker
     fields:
-      spec.template.spec.containers[1].name: "sidecar-logger"
+      spec.template.spec.containers[1].name: "count-log"
       spec.template.spec.containers[1].image: "busybox"

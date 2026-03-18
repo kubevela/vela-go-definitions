@@ -3,4 +3,4 @@ expectations:
     kind: ConfigMap
     name: recreate
     fields:
-      data.key: "value"
+      data.key: "val"

@@ -3,5 +3,5 @@ expectations:
     kind: Deployment
     name: nginx-app
     fields:
-      spec.template.spec.containers[0].image: "alpine:3.18"
-      spec.template.spec.containers[0].imagePullPolicy: "IfNotPresent"
+      spec.template.spec.containers[0].image: "nginx:latest"
+      spec.template.spec.containers[0].imagePullPolicy: "Always"

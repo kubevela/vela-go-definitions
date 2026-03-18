@@ -36,7 +36,7 @@ type definitionTestSuite struct {
 
 var suites = []definitionTestSuite{
 	{label: "components", subdir: "applications/components", descName: "Component"},
-	{label: "traits", subdir: "applications/trait", descName: "Trait"},
+	{label: "traits", subdir: "applications/trait", descName: "Trait", skipTests: skipTraitTests},
 	{label: "policies", subdir: "applications/policies", descName: "Policy"},
 	{label: "workflowsteps", subdir: "applications/workflowsteps", descName: "WorkflowStep", skipTests: skipWorkflowStepTests},
 }

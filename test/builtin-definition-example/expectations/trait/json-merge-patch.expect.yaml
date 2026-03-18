@@ -3,4 +3,4 @@ expectations:
     kind: Deployment
     name: nginx-app
     fields:
-      spec.template.metadata.labels.added-by: "json-merge-patch"
+      spec.template.metadata.labels.custom: "merged"

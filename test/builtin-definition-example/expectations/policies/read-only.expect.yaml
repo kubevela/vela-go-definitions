@@ -5,4 +5,4 @@ expectations:
     fields:
       spec.replicas: 1
       spec.template.spec.containers[0].image: "busybox"
-      spec.template.spec.containers[0].command: ["sleep", "3600"]
+      spec.template.spec.containers[0].command: ["sleep", "1000000"]

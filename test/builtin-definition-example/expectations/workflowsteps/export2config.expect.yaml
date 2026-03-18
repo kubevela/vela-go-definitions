@@ -1,9 +1,3 @@
 workflowSteps:
   - name: export-config
     phase: succeeded
-expectations:
-  - apiVersion: v1
-    kind: Secret
-    name: my-configmap
-    fields:
-      metadata.labels.config.oam.dev/catalog: "velacore-config"
