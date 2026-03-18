@@ -45,6 +45,7 @@ jobs:
         uses: golangci/golangci-lint-action@v6
         with:
           version: ${{ env.GOLANGCI_VERSION }}
+          args: --timeout=5m
 
   check-diff:
     name: Check Diff

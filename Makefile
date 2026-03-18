@@ -47,7 +47,7 @@ vet:
 lint:
 	@echo "Linting Go code..."
 	@which golangci-lint > /dev/null 2>&1 || (echo "Installing golangci-lint..." && go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest)
-	golangci-lint run ./...
+	golangci-lint run --timeout=5m ./...
 
 ## Check that generated files are up-to-date (no uncommitted diff after generate)
 check-diff: generate
