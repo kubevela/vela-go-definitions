@@ -1,6 +1,0 @@
-expectations:
-  - apiVersion: apps/v1
-    kind: Deployment
-    name: backend-worker
-    fields:
-      spec.template.spec.containers[0].image: "nginx:latest"

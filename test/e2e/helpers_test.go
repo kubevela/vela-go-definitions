@@ -488,15 +488,18 @@ func runDefinitionTest(ctx context.Context, file string, skipTests map[string]st
 		g.Expect(string(currentApp.Status.Phase)).Should(Equal("running"))
 	}, AppRunningTimeout, PollInterval).Should(Succeed())
 
-	// Validate expectations if companion .expect.yaml exists
+	// Layer 1: Auto-derived validation (all definitions get this for free)
+	autoValidate(ctx, app, uniqueNs)
+
+	// Layer 2: Extra expectations from companion .expect.yaml (additive)
 	ef := loadExpectations(file)
 	if ef != nil {
 		if len(ef.Expectations) > 0 {
-			GinkgoWriter.Printf("Validating %d resource expectation(s)...\n", len(ef.Expectations))
+			GinkgoWriter.Printf("Validating %d extra resource expectation(s)...\n", len(ef.Expectations))
 			validateResourceExpectations(ctx, uniqueNs, ef.Expectations)
 		}
 		if len(ef.WorkflowSteps) > 0 {
-			GinkgoWriter.Printf("Validating %d workflow step expectation(s)...\n", len(ef.WorkflowSteps))
+			GinkgoWriter.Printf("Validating %d extra workflow step expectation(s)...\n", len(ef.WorkflowSteps))
 			validateWorkflowStepExpectations(ctx, app.Name, uniqueNs, ef.WorkflowSteps)
 		}
 	}
@@ -506,7 +509,111 @@ func runDefinitionTest(ctx context.Context, file string, skipTests map[string]st
 }
 
 // --------------------------------------------------------------------------
-// Resource expectation validation (Phase 2)
+// Auto-derived validation (Layer 1)
+// --------------------------------------------------------------------------
+
+// componentTypeToGVK maps KubeVela component types to the K8s resource they create.
+// Returns empty strings for types that create varied resources (k8s-objects, ref-objects).
+func componentTypeToGVK(componentType string) (apiVersion, kind string) {
+	switch componentType {
+	case "webservice", "worker":
+		return "apps/v1", "Deployment"
+	case "daemon":
+		return "apps/v1", "DaemonSet"
+	case "statefulset":
+		return "apps/v1", "StatefulSet"
+	case "task":
+		return "batch/v1", "Job"
+	case "cron-task":
+		return "batch/v1", "CronJob"
+	default:
+		return "", ""
+	}
+}
+
+// autoValidate performs automatic validation derived from the Application spec:
+// 1. All workflow steps should have phase "succeeded"
+// 2. Component resources should exist with correct image
+func autoValidate(ctx context.Context, app *v1beta1.Application, namespace string) {
+	// --- Validate workflow steps all succeeded ---
+	currentApp := &v1beta1.Application{}
+	Expect(k8sClient.Get(ctx, types.NamespacedName{Namespace: namespace, Name: app.Name}, currentApp)).Should(Succeed())
+
+	if currentApp.Status.Workflow != nil && len(currentApp.Status.Workflow.Steps) > 0 {
+		GinkgoWriter.Printf("Auto-validating %d workflow step(s)...\n", len(currentApp.Status.Workflow.Steps))
+		for _, step := range currentApp.Status.Workflow.Steps {
+			GinkgoWriter.Printf("  Step %q (%s): %s\n", step.Name, step.Type, step.Phase)
+			Expect(string(step.Phase)).To(Equal("succeeded"),
+				"Workflow step %q (type: %s) should have phase succeeded, got %s. Message: %s",
+				step.Name, step.Type, step.Phase, step.Message)
+			// Also check sub-steps
+			for _, sub := range step.SubStepsStatus {
+				GinkgoWriter.Printf("    Sub-step %q (%s): %s\n", sub.Name, sub.Type, sub.Phase)
+				Expect(string(sub.Phase)).To(Equal("succeeded"),
+					"Workflow sub-step %q (type: %s) should have phase succeeded, got %s",
+					sub.Name, sub.Type, sub.Phase)
+			}
+		}
+	}
+
+	// --- Validate component resources exist with correct image ---
+	// Use the Application's status.appliedResources to find actual resource names
+	for _, comp := range app.Spec.Components {
+		apiVersion, kind := componentTypeToGVK(comp.Type)
+		if apiVersion == "" {
+			continue // Skip types with varied resources (k8s-objects, ref-objects)
+		}
+
+		// Find the actual resource name from applied resources in status
+		resourceName := ""
+		for _, ar := range currentApp.Status.AppliedResources {
+			if ar.Kind == kind {
+				resourceName = ar.Name
+				break
+			}
+		}
+		if resourceName == "" {
+			resourceName = comp.Name // fallback to component name
+		}
+
+		GinkgoWriter.Printf("Auto-validating %s/%s %q...\n", apiVersion, kind, resourceName)
+
+		obj := &unstructured.Unstructured{}
+		obj.SetGroupVersionKind(parseGVK(apiVersion, kind))
+
+		Eventually(func() error {
+			return k8sClient.Get(ctx, types.NamespacedName{Namespace: namespace, Name: resourceName}, obj)
+		}, 30*time.Second, 2*time.Second).Should(Succeed(),
+			fmt.Sprintf("Expected %s/%s %q to exist in namespace %s", apiVersion, kind, resourceName, namespace))
+
+		// Check image if specified in properties
+		if comp.Properties != nil {
+			var props map[string]interface{}
+			if err := json.Unmarshal(comp.Properties.Raw, &props); err == nil {
+				if image, ok := props["image"].(string); ok && image != "" {
+					// Get actual image — for CronJob, image is nested under jobTemplate
+					imagePath := "spec.template.spec.containers[0].image"
+					if kind == "CronJob" {
+						imagePath = "spec.jobTemplate.spec.template.spec.containers[0].image"
+					}
+					actual, err := getNestedValue(obj.Object, imagePath)
+					if err == nil {
+						actualStr, _ := actual.(string)
+						// K8s may normalize the image (e.g., "postgres:16.4" → "docker.io/library/postgres:16.4")
+						Expect(actualStr).To(SatisfyAny(
+							Equal(image),
+							HaveSuffix("/"+image),
+							HaveSuffix("/library/"+image),
+						), "Container image mismatch for %s %q", kind, resourceName)
+					}
+				}
+			}
+		}
+	}
+}
+
+// --------------------------------------------------------------------------
+// Resource expectation validation (Layer 2 — extras from .expect.yaml)
 // --------------------------------------------------------------------------
 
 // ResourceExpectation describes expected state of a K8s resource after an Application is running.

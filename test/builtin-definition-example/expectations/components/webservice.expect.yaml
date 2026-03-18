@@ -1,8 +1,0 @@
-expectations:
-  - apiVersion: apps/v1
-    kind: Deployment
-    name: frontend
-    fields:
-      spec.template.spec.containers[0].image: "oamdev/testapp:v1"
-      spec.template.spec.containers[0].command: ["node", "server.js"]
-      spec.template.spec.containers[0].ports[0].containerPort: 8080

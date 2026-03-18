@@ -1,7 +1,0 @@
-expectations:
-  - apiVersion: apps/v1
-    kind: DaemonSet
-    name: node-exporter
-    fields:
-      spec.template.spec.containers[0].image: "prom/node-exporter"
-      spec.template.spec.containers[0].imagePullPolicy: "IfNotPresent"

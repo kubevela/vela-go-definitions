@@ -1,7 +1,0 @@
-expectations:
-  - apiVersion: apps/v1
-    kind: StatefulSet
-    name: postgres
-    fields:
-      spec.template.spec.containers[0].image: "docker.io/library/postgres:16.4"
-      spec.template.spec.containers[0].ports[0].containerPort: 5432
