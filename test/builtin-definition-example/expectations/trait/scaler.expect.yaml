@@ -1,0 +1,6 @@
+expectations:
+  - apiVersion: apps/v1
+    kind: Deployment
+    name: nginx-app
+    fields:
+      spec.replicas: 3

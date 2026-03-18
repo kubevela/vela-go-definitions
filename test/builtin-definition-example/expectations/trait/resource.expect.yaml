@@ -1,0 +1,9 @@
+expectations:
+  - apiVersion: apps/v1
+    kind: Deployment
+    name: nginx-app
+    fields:
+      spec.template.spec.containers[0].resources.requests.cpu: "250m"
+      spec.template.spec.containers[0].resources.requests.memory: "256Mi"
+      spec.template.spec.containers[0].resources.limits.cpu: "1"
+      spec.template.spec.containers[0].resources.limits.memory: "1Gi"

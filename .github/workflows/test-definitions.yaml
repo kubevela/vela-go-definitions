@@ -40,8 +40,8 @@ jobs:
           echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### Test Applications" >> $GITHUB_STEP_SUMMARY
-          echo "Tested applications from \`test/builtin-definition-example/components/\`:" >> $GITHUB_STEP_SUMMARY
-          ls -1 test/builtin-definition-example/components/*.yaml | xargs -I {} basename {} | while read f; do echo "- $f"; done >> $GITHUB_STEP_SUMMARY
+          echo "Tested applications from \`test/builtin-definition-example/applications/components/\`:" >> $GITHUB_STEP_SUMMARY
+          ls -1 test/builtin-definition-example/applications/components/*.yaml | xargs -I {} basename {} | while read f; do echo "- $f"; done >> $GITHUB_STEP_SUMMARY
 
   test-traits:
     runs-on: ubuntu-latest
@@ -71,8 +71,8 @@ jobs:
           echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### Test Applications" >> $GITHUB_STEP_SUMMARY
-          echo "Tested applications from \`test/builtin-definition-example/trait/\`:" >> $GITHUB_STEP_SUMMARY
-          ls -1 test/builtin-definition-example/trait/*.yaml | xargs -I {} basename {} | while read f; do echo "- $f"; done >> $GITHUB_STEP_SUMMARY
+          echo "Tested applications from \`test/builtin-definition-example/applications/trait/\`:" >> $GITHUB_STEP_SUMMARY
+          ls -1 test/builtin-definition-example/applications/trait/*.yaml | xargs -I {} basename {} | while read f; do echo "- $f"; done >> $GITHUB_STEP_SUMMARY
 
   test-policies:
     runs-on: ubuntu-latest
@@ -102,8 +102,8 @@ jobs:
           echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### Test Applications" >> $GITHUB_STEP_SUMMARY
-          echo "Tested applications from \`test/builtin-definition-example/policies/\`:" >> $GITHUB_STEP_SUMMARY
-          ls -1 test/builtin-definition-example/policies/*.yaml | xargs -I {} basename {} | while read f; do echo "- $f"; done >> $GITHUB_STEP_SUMMARY
+          echo "Tested applications from \`test/builtin-definition-example/applications/policies/\`:" >> $GITHUB_STEP_SUMMARY
+          ls -1 test/builtin-definition-example/applications/policies/*.yaml | xargs -I {} basename {} | while read f; do echo "- $f"; done >> $GITHUB_STEP_SUMMARY
 
   test-workflowsteps:
     runs-on: ubuntu-latest
@@ -133,5 +133,5 @@ jobs:
           echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### Test Applications" >> $GITHUB_STEP_SUMMARY
-          echo "Tested applications from \`test/builtin-definition-example/workflowsteps/\`:" >> $GITHUB_STEP_SUMMARY
-          ls -1 test/builtin-definition-example/workflowsteps/*.yaml | xargs -I {} basename {} | while read f; do echo "- $f"; done >> $GITHUB_STEP_SUMMARY
+          echo "Tested applications from \`test/builtin-definition-example/applications/workflowsteps/\`:" >> $GITHUB_STEP_SUMMARY
+          ls -1 test/builtin-definition-example/applications/workflowsteps/*.yaml | xargs -I {} basename {} | while read f; do echo "- $f"; done >> $GITHUB_STEP_SUMMARY

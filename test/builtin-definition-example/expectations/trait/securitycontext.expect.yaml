@@ -1,0 +1,8 @@
+expectations:
+  - apiVersion: apps/v1
+    kind: Deployment
+    name: podtato-head-frontend
+    fields:
+      spec.template.spec.containers[0].securityContext.privileged: false
+      spec.template.spec.containers[0].securityContext.runAsNonRoot: true
+      spec.template.spec.containers[0].securityContext.readOnlyRootFilesystem: false

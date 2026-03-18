@@ -1,0 +1,4 @@
+workflowSteps:
+  - name: message
+    phase: succeeded
+    messageContains: "All addons have been enabled successfully"

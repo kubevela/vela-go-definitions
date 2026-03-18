@@ -1,0 +1,7 @@
+expectations:
+  - apiVersion: apps/v1
+    kind: Deployment
+    name: pod-sec-context-frontend
+    fields:
+      spec.template.spec.securityContext.runAsNonRoot: true
+      spec.template.spec.securityContext.runAsUser: 65532

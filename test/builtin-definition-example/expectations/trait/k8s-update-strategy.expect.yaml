@@ -1,0 +1,8 @@
+expectations:
+  - apiVersion: apps/v1
+    kind: Deployment
+    name: helloworld
+    fields:
+      spec.strategy.type: "RollingUpdate"
+      spec.strategy.rollingUpdate.maxSurge: "20%"
+      spec.strategy.rollingUpdate.maxUnavailable: "30%"

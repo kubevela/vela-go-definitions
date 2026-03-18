@@ -23,8 +23,8 @@ import (
 	. "github.com/onsi/gomega"
 
 	"github.com/oam-dev/kubevela/pkg/definition/defkit"
-	"github.com/oam-dev/vela-go-definitions/components"
 	. "github.com/oam-dev/kubevela/pkg/definition/defkit/testing/matchers"
+	"github.com/oam-dev/vela-go-definitions/components"
 )
 
 var _ = Describe("Daemon Component", func() {

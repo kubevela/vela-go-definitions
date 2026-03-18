@@ -1,0 +1,6 @@
+expectations:
+  - apiVersion: v1
+    kind: ConfigMap
+    name: recreate
+    fields:
+      data.key: "val"

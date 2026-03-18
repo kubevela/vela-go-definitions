@@ -1,0 +1,8 @@
+expectations:
+  - apiVersion: apps/v1
+    kind: Deployment
+    name: nginx-app
+    fields:
+      spec.template.spec.hostAliases[0].ip: "127.0.0.1"
+      spec.template.spec.hostAliases[0].hostnames[0]: "myapp.local"
+      spec.template.spec.hostAliases[0].hostnames[1]: "api.local"

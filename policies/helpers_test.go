@@ -28,9 +28,10 @@ import (
 func findClosingBrace(cue string, start int) int {
 	depth := 0
 	for i := start; i < len(cue); i++ {
-		if cue[i] == '{' {
+		switch cue[i] {
+		case '{':
 			depth++
-		} else if cue[i] == '}' {
+		case '}':
 			depth--
 			if depth == 0 {
 				return i + 1

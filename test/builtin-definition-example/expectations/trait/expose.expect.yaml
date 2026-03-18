@@ -1,0 +1,7 @@
+expectations:
+  - apiVersion: v1
+    kind: Service
+    name: nginx-app
+    fields:
+      spec.type: ClusterIP
+      spec.ports[0].port: 80

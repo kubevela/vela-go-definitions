@@ -1,0 +1,8 @@
+expectations:
+  - apiVersion: apps/v1
+    kind: Deployment
+    name: nginx-app
+    fields:
+      spec.template.metadata.labels.environment: "production"
+      spec.template.metadata.labels.team: "platform"
+      spec.template.metadata.labels.tier: "frontend"

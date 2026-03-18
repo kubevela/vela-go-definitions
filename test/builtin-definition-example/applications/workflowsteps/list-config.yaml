@@ -41,7 +41,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: test-db-1
-  namespace: default
+
   labels:
     config.oam.dev/type: my-db-template
 data:
@@ -53,7 +53,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: test-db-2
-  namespace: default
+
   labels:
     config.oam.dev/type: my-db-template
 data:
@@ -65,7 +65,7 @@ apiVersion: core.oam.dev/v1beta1
 kind: Application
 metadata:
   name: list-config-example
-  namespace: default
+
 spec:
   components: []
 
@@ -76,7 +76,7 @@ spec:
         type: list-config
         properties:
           template: my-db-template
-          namespace: default
+        
         outputs:
           - name: found-configs
             valueFrom: "output.configs"

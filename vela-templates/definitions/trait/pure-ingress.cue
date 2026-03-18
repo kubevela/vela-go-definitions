@@ -1,0 +1,60 @@
+"pure-ingress": {
+	type: "trait"
+	annotations: {}
+	labels: {
+		deprecated:  "true"
+		"ui-hidden": "true"
+	}
+	description: "Enable public web traffic for the component without creating a Service."
+	attributes: {
+		podDisruptive: false
+		appliesToWorkloads: ["*"]
+		conflictsWith: []
+		status: customStatus: #"""
+			let igs = context.outputs.ingress.status.loadBalancer.ingress
+			if igs == _|_ {
+				message: "No loadBalancer found, visiting by using 'vela port-forward " + context.appName + " --route'\n"
+			}
+			if len(igs) > 0 {
+				let rules = context.outputs.ingress.spec.rules
+				host: *"" | string
+				if rules != _|_ if len(rules) > 0 if rules[0].host != _|_ {
+					host: rules[0].host
+				}
+				if igs[0].ip != _|_ {
+					message: "Visiting URL: " + host + ", IP: " + igs[0].ip
+				}
+				if igs[0].ip == _|_ {
+					message: "Visiting URL: " + host
+				}
+			}
+			"""#
+		workloadRefPath: ""
+	}
+}
+template: {
+	outputs: ingress: {
+		apiVersion: "networking.k8s.io/v1beta1"
+		kind:       "Ingress"
+		metadata: name: context.name
+		spec: rules: [{
+			host: parameter.domain
+			http: paths: [
+				for k, v in parameter.http {
+					path: k
+					backend: {
+						serviceName: context.name
+						servicePort: v
+					}
+				},
+			]
+		}]
+	}
+	parameter: {
+		// +usage=Specify the domain you want to expose
+		domain: string
+
+		// +usage=Specify the mapping relationship between the http path and the workload port
+		http: [string]: int
+	}
+}

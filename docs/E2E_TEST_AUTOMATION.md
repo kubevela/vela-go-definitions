@@ -1,836 +1,321 @@
 # E2E Test Automation Framework
 
-This document provides comprehensive documentation of the E2E test automation framework implemented in the `feat/defkit-test-automation` branch for the `vela-go-definitions` module.
-
-## Table of Contents
-
-- [Overview](#overview)
-- [Architecture](#architecture)
-- [Directory Structure](#directory-structure)
-- [Test Framework](#test-framework)
-  - [Ginkgo Test Suite](#ginkgo-test-suite)
-  - [Test Helpers](#test-helpers)
-  - [Test Data](#test-data)
-- [CI/CD Integration](#cicd-integration)
-  - [GitHub Actions Workflows](#github-actions-workflows)
-  - [Reusable Setup Action](#reusable-setup-action)
-- [Running Tests Locally](#running-tests-locally)
-- [How It Works](#how-it-works)
-- [Adding New Tests](#adding-new-tests)
-- [Troubleshooting](#troubleshooting)
-
----
-
 ## Overview
 
-The E2E test automation framework validates that KubeVela X-Definitions (components, traits, policies, and workflow steps) defined in this module work correctly when deployed to a live Kubernetes cluster with KubeVela installed.
+The E2E test framework validates that all 77 KubeVela X-Definitions (components, traits, policies, workflow steps) work correctly when deployed to a live Kubernetes cluster. It uses a two-layer validation approach: auto-derived checks for every definition, plus optional `.expect.yaml` files for definition-specific assertions.
 
 ### Key Features
 
-- **Automated E2E Testing**: Validates definitions against a real KubeVela cluster
-- **Parallel Execution**: Tests run in parallel using Ginkgo's multi-process support
-- **Isolated Test Namespaces**: Each test creates a unique namespace to avoid conflicts
-- **CI/CD Integration**: GitHub Actions workflows automatically test on PR/push
-- **Dynamic KubeVela Version**: Builds KubeVela CLI from the commit specified in `go.mod`
+- **77 definitions tested** across 4 types (8 components, 29 traits, 9 policies, 31 workflow steps)
+- **Two-layer validation**: auto-derived baseline + optional extra expectations
+- **Multi-app support**: tests with multiple Applications (e.g., shared-resource, depends-on-app)
+- **Parallel execution**: Ginkgo multi-process with isolated namespaces
+- **One-command setup**: `make e2e-setup` creates a k3d cluster with everything installed
+- **Failure diagnostics**: workflow status, kubectl describe, pod logs on failure
 
 ---
 
-## Architecture
+## Quick Start
 
-### High-Level Overview
+```bash
+# Set up local test environment (k3d + KubeVela + definitions)
+make e2e-setup
 
-The diagram below shows the complete CI/CD pipeline flow:
+# Run all tests
+make test-e2e
 
-1. **Trigger Events** - Workflows are triggered by git push, pull requests (when `go.mod`/`go.sum` change), or manual dispatch
-2. **GitHub Actions Workflows** - Four separate workflows run tests for components, traits, policies, and workflow steps
-3. **Setup Action** - A reusable composite action sets up the entire test environment (Kind cluster, KubeVela, definitions)
-4. **Test Execution** - Ginkgo runs E2E tests in parallel, each test in its own isolated namespace
-5. **Results** - Test results are reported back to GitHub with detailed summaries
+# Run by category
+make test-e2e-components
+make test-e2e-traits
+make test-e2e-policies
+make test-e2e-workflowsteps
 
-```
-┌──────────────────────────────────────────────────────────────────────────────────┐
-│                              TRIGGER EVENTS                                      │
-│  ┌─────────────┐    ┌─────────────┐    ┌──────────────────┐                      │
-│  │  git push   │    │ Pull Request│    │ workflow_dispatch│                      │
-│  │ (go.mod/    │    │ (go.mod/    │    │ (manual trigger) │                      │
-│  │  go.sum)    │    │  go.sum)    │    │                  │                      │
-│  └──────┬──────┘    └──────┬──────┘    └────────┬─────────┘                      │
-│         └──────────────────┼───────────────────┘                                 │
-│                            ▼                                                     │
-│  ┌────────────────────────────────────────────────────────────────────────────┐  │
-│  │                        GitHub Actions Workflows                            │  │
-│  │  ┌────────────────┐ ┌────────────────┐ ┌────────────────┐ ┌──────────────┐ │  │
-│  │  │test-component- │ │test-trait-     │ │test-policy-    │ │test-workflow-│ │  │
-│  │  │definitions.yaml│ │definitions.yaml│ │definitions.yaml│ │step-def.yaml │ │  │
-│  │  └───────┬────────┘ └───────┬────────┘ └───────┬────────┘ └──────┬───────┘ │  │
-│  │          └──────────────────┼──────────────────┼─────────────────┘         │  │
-│  │                             ▼                  ▼                           │  │
-│  │              ┌──────────────────────────────────────┐                      │  │
-│  │              │  setup-vela-environment (Composite)  │                      │  │
-│  │              │  Sets up: Go, Kind, KubeVela, Defs   │                      │  │
-│  │              └──────────────┬───────────────────────┘                      │  │
-│  │                             │                                              │  │
-│  │                             ▼                                              │  │
-│  │              ┌──────────────────────────────────────┐                      │  │
-│  │              │  make test-e2e-{components|traits|   │                      │  │
-│  │              │       policies|workflowsteps}        │                      │  │
-│  │              │  Runs Ginkgo E2E tests in parallel   │                      │  │
-│  │              └──────────────┬───────────────────────┘                      │  │
-│  │                             │                                              │  │
-│  │                             ▼                                              │  │
-│  │              ┌──────────────────────────────────────┐                      │  │
-│  │              │         Test Results Summary         │                      │  │
-│  │              │  ✅ Passed | ❌ Failed | ⏭ Skipped  │                      │  │
-│  │              └──────────────────────────────────────┘                      │  │
-│  └────────────────────────────────────────────────────────────────────────────┘  │
-└──────────────────────────────────────────────────────────────────────────────────┘
+# Tear down
+make e2e-teardown
 ```
 
-### Setup Action Detail Flow
-
-```
-┌──────────────────────────────────────────────────────────────────────────────────┐
-│                    setup-vela-environment (Composite Action)                     │
-├──────────────────────────────────────────────────────────────────────────────────┤
-│                                                                                  │
-│  PHASE 1: Environment Setup                                                      │
-│  ┌─────────────────────────────────────────────────────────────────────────────┐ │
-│  │                                                                             │ │
-│  │   ┌─────────────┐      ┌──────────────────┐      ┌───────────────────┐      │ │
-│  │   │  Setup Go   │ ───► │ Create Kind      │ ───► │ Verify Cluster    │      │ │
-│  │   │  (v1.23)    │      │ Cluster          │      │ kubectl get nodes │      │ │
-│  │   └─────────────┘      │ (vela-test)      │      └───────────────────┘      │ │
-│  │                        └──────────────────┘                                 │ │
-│  └─────────────────────────────────────────────────────────────────────────────┘ │
-│                                      │                                           │
-│                                      ▼                                           │
-│  PHASE 2: KubeVela Installation                                                  │
-│  ┌─────────────────────────────────────────────────────────────────────────────┐ │
-│  │                                                                             │ │
-│  │   ┌─────────────────┐      ┌──────────────────┐      ┌─────────────────┐    │ │
-│  │   │ Download Vela   │ ───► │ vela install     │ ───► │ Wait for        │    │ │
-│  │   │ CLI (latest)    │      │ (deploy to       │      │ controller ready│    │ │
-│  │   │                 │      │  cluster)        │      │ (300s timeout)  │    │ │
-│  │   └─────────────────┘      └──────────────────┘      └─────────────────┘    │ │
-│  └─────────────────────────────────────────────────────────────────────────────┘ │
-│                                      │                                           │
-│                                      ▼                                           │
-│  PHASE 3: Build CLI from go.mod Reference                                        │
-│  ┌─────────────────────────────────────────────────────────────────────────────┐ │
-│  │                                                                             │ │
-│  │   ┌─────────────────────────────────────────────────────────────────────┐   │ │
-│  │   │                     Parse go.mod replace directive                  │   │ │
-│  │   │  ┌─────────────────────────────────────────────────────────────┐    │   │ │
-│  │   │  │ replace github.com/oam-dev/kubevela =>                      │    │   │ │
-│  │   │  │         github.com/kubevela/kubevela v0.0.0-20250115-abc123 │    │   │ │
-│  │   │  └─────────────────────────────────────────────────────────────┘    │   │ │
-│  │   │                              │                                      │   │ │
-│  │   │              ┌───────────────┴───────────────┐                      │   │ │
-│  │   │              ▼                               ▼                      │   │ │
-│  │   │   ┌──────────────────┐            ┌──────────────────┐              │   │ │
-│  │   │   │ Extract repo:    │            │ Extract commit:  │              │   │ │
-│  │   │   │ kubevela/kubevela│            │ abc123           │              │   │ │
-│  │   │   └──────────────────┘            └──────────────────┘              │   │ │
-│  │   └─────────────────────────────────────────────────────────────────────┘   │ │
-│  │                              │                                              │ │
-│  │                              ▼                                              │ │
-│  │   ┌───────────────────┐    ┌───────────────────┐    ┌───────────────────┐   │ │
-│  │   │ git clone         │───►│ git checkout      │───►│ make vela-cli     │   │ │
-│  │   │ kubevela/kubevela │    │ abc123            │    │ (build from src)  │   │ │
-│  │   └───────────────────┘    └───────────────────┘    └───────────────────┘   │ │
-│  └─────────────────────────────────────────────────────────────────────────────┘ │
-│                                      │                                           │
-│                                      ▼                                           │
-│  PHASE 4: Install Definitions from This Module                                   │
-│  ┌─────────────────────────────────────────────────────────────────────────────┐ │
-│  │                                                                             │ │
-│  │   ┌───────────────────────┐    ┌───────────────────────────────────────┐    │ │
-│  │   │ Uninstall built-in    │───►│ vela def apply-module .               │    │ │
-│  │   │ definitions           │    │ --conflict=overwrite                  │    │ │
-│  │   │ (componentdefs,       │    │                                       │    │ │
-│  │   │  traitdefs, etc.)     │    │ Installs definitions from:            │    │ │
-│  │   └───────────────────────┘    │  - components/*.go                    │    │ │
-│  │                                │  - traits/*.go                        │    │ │
-│  │                                │  - policies/*.go                      │    │ │
-│  │                                │  - workflowsteps/*.go                 │    │ │
-│  │                                └───────────────────────────────────────┘    │ │
-│  └─────────────────────────────────────────────────────────────────────────────┘ │
-│                                      │                                           │
-│                                      ▼                                           │
-│  PHASE 5: Prepare Test Environment                                               │
-│  ┌─────────────────────────────────────────────────────────────────────────────┐ │
-│  │   ┌───────────────────┐    ┌───────────────────┐    ┌───────────────────┐   │ │
-│  │   │ make tidy         │───►│ Verify installed  │───►│ Install Ginkgo    │   │ │
-│  │   │ (go mod tidy)     │    │ definitions       │    │ CLI               │   │ │
-│  │   └───────────────────┘    └───────────────────┘    └───────────────────┘   │ │
-│  └─────────────────────────────────────────────────────────────────────────────┘ │
-│                                      │                                           │
-│                                      ▼                                           │
-│  PHASE 6: Run E2E Tests                                                          │
-│  ┌─────────────────────────────────────────────────────────────────────────────┐ │
-│  │                                                                             │ │
-│  │   ┌─────────────────────────────────────────────────────────────────────┐   │ │
-│  │   │  make test-e2e-{components|traits|policies|workflowsteps}           │   │ │
-│  │   │                                                                     │   │ │
-│  │   │  Executes:                                                          │   │ │
-│  │   │  ginkgo -v --timeout=30m --label-filter="<type>" --procs=4          │   │ │
-│  │   │          ./test/e2e/...                                             │   │ │
-│  │   └─────────────────────────────────────────────────────────────────────┘   │ │
-│  │                              │                                              │ │
-│  │                              ▼                                              │ │
-│  │   ┌───────────────────┐    ┌───────────────────┐    ┌───────────────────┐   │ │
-│  │   │ For each YAML in  │───►│ Create isolated   │───►│ Apply Application │   │ │
-│  │   │ test data folder  │    │ namespace (e2e-*) │    │ & wait for status │   │ │
-│  │   └───────────────────┘    └───────────────────┘    └───────────────────┘   │ │
-│  │                              │                                              │ │
-│  │                              ▼                                              │ │
-│  │   ┌─────────────────────────────────────────────────────────────────────┐   │ │
-│  │   │                      Test Results                                   │   │ │
-│  │   │  ┌─────────────┐    ┌─────────────┐    ┌─────────────┐              │   │ │
-│  │   │  │ ✅ PASSED   │    │ ❌ FAILED   │    │ ⏭ SKIPPED  │              │   │ │
-│  │   │  │ App running │    │ Timeout/Err │    │ Filtered    │              │   │ │
-│  │   │  └─────────────┘    └─────────────┘    └─────────────┘              │   │ │
-│  │   └─────────────────────────────────────────────────────────────────────┘   │ │
-│  │                                                                             │ │
-│  └─────────────────────────────────────────────────────────────────────────────┘ │
-└──────────────────────────────────────────────────────────────────────────────────┘
-```
-
-
-### Single Test Execution Flow
-
-```
-┌──────────────────────────────────────────────────────────────────────────────────┐
-│                        Single Test Execution Flow                                │
-├──────────────────────────────────────────────────────────────────────────────────┤
-│                                                                                  │
-│   Input: webservice.yaml                                                         │
-│   ┌─────────────────────────────────────────────────────────────────┐            │
-│   │ apiVersion: core.oam.dev/v1beta1                                │            │
-│   │ kind: Application                                               │            │
-│   │ metadata:                                                       │            │
-│   │   name: website                                                 │            │
-│   │ spec:                                                           │            │
-│   │   components:                                                   │            │
-│   │     - name: frontend                                            │            │
-│   │       type: webservice                                          │            │
-│   │       properties:                                               │            │
-│   │         image: oamdev/testapp:v1                                │            │
-│   └─────────────────────────────────────────────────────────────────┘            │
-│                                      │                                           │
-│                                      ▼                                           │
-│  ┌───────────────────────────────────────────────────────────────────────────┐   │
-│  │ STEP 1: Read Application                                                  │   │
-│  │ ┌─────────────────────────────────────────────────────────────────────┐   │   │
-│  │ │ app, err := readAppFromFile("webservice.yaml")                      │   │   │
-│  │ │ // Parses YAML, handles multi-document files                        │   │   │
-│  │ │ // Returns: Application{Name: "website", ...}                       │   │   │
-│  │ └─────────────────────────────────────────────────────────────────────┘   │   │
-│  └───────────────────────────────────────────────────────────────────────────┘   │
-│                                      │                                           │
-│                                      ▼                                           │
-│  ┌───────────────────────────────────────────────────────────────────────────┐   │
-│  │ STEP 2: Generate Unique Namespace                                         │   │
-│  │ ┌─────────────────────────────────────────────────────────────────────┐   │   │
-│  │ │ uniqueNs := uniqueNamespaceForApp(app.Name)                         │   │   │
-│  │ │ // "website" → "e2e-website"                                        │   │   │
-│  │ │ // Sanitizes: lowercase, replace . and _, max 30 chars              │   │   │
-│  │ └─────────────────────────────────────────────────────────────────────┘   │   │
-│  └───────────────────────────────────────────────────────────────────────────┘   │
-│                                      │                                           │
-│                                      ▼                                           │
-│  ┌───────────────────────────────────────────────────────────────────────────┐   │
-│  │ STEP 3: Create Namespace                                                  │   │
-│  │ ┌─────────────────────────────────────────────────────────────────────┐   │   │
-│  │ │ ensureNamespace(ctx, "e2e-website")                                 │   │   │
-│  │ │ // kubectl create namespace e2e-website                             │   │   │
-│  │ └─────────────────────────────────────────────────────────────────────┘   │   │
-│  └───────────────────────────────────────────────────────────────────────────┘   │
-│                                      │                                           │
-│                                      ▼                                           │
-│  ┌───────────────────────────────────────────────────────────────────────────┐   │
-│  │ STEP 4: Cleanup Existing Application (if any)                             │   │
-│  │ ┌─────────────────────────────────────────────────────────────────────┐   │   │
-│  │ │ cleanupExistingApplication(ctx, app)                                │   │   │
-│  │ │ // Deletes app if exists, waits for complete deletion (30s timeout) │   │   │
-│  │ └─────────────────────────────────────────────────────────────────────┘   │   │
-│  └───────────────────────────────────────────────────────────────────────────┘   │
-│                                      │                                           │
-│                                      ▼                                           │
-│  ┌───────────────────────────────────────────────────────────────────────────┐   │
-│  │ STEP 5: Apply Prerequisites (if any)                                      │   │
-│  │ ┌─────────────────────────────────────────────────────────────────────┐   │   │
-│  │ │ applyPrerequisitesIfAny(ctx, filePath, uniqueNs)                    │   │   │
-│  │ │ // For ref-objects.yaml: creates Deployment/Service first           │   │   │
-│  │ │ // Waits 2s for resources to settle                                 │   │   │
-│  │ └─────────────────────────────────────────────────────────────────────┘   │   │
-│  └───────────────────────────────────────────────────────────────────────────┘   │
-│                                      │                                           │
-│                                      ▼                                           │
-│  ┌───────────────────────────────────────────────────────────────────────────┐   │
-│  │ STEP 6: Apply Application                                                 │   │
-│  │ ┌─────────────────────────────────────────────────────────────────────┐   │   │
-│  │ │ k8sClient.Create(ctx, app)                                          │   │   │
-│  │ │ // Creates Application CR in Kubernetes                             │   │   │
-│  │ │ // KubeVela controller starts reconciliation                        │   │   │
-│  │ └─────────────────────────────────────────────────────────────────────┘   │   │
-│  └───────────────────────────────────────────────────────────────────────────┘   │
-│                                      │                                           │
-│                                      ▼                                           │
-│  ┌───────────────────────────────────────────────────────────────────────────┐   │
-│  │ STEP 7: Wait for Running Status                                           │   │
-│  │ ┌─────────────────────────────────────────────────────────────────────┐   │   │
-│  │ │ waitForApplicationRunning(ctx, "website", "e2e-website")            │   │   │
-│  │ │                                                                     │   │   │
-│  │ │    ┌─────────────────────────────────────────────────────────────┐  │   │   │
-│  │ │    │  Poll Loop (every 5s, timeout 5m):                          │  │   │   │
-│  │ │    │  ┌─────────────────────────────────────────────────────┐    │  │   │   │
-│  │ │    │  │ status := getApplicationStatus(ctx, app, ns)        │    │  │   │   │
-│  │ │    │  │ if status contains "running" → SUCCESS ✅           │    │  │   │   │
-│  │ │    │  │ if status contains "failed"  → FAIL ❌              │    │  │   │   │
-│  │ │    │  │ else → continue polling                             │    │  │   │   │
-│  │ │    │  └─────────────────────────────────────────────────────┘    │  │   │   │
-│  │ │    └─────────────────────────────────────────────────────────────┘  │   │   │
-│  │ └─────────────────────────────────────────────────────────────────────┘   │   │
-│  └───────────────────────────────────────────────────────────────────────────┘   │
-│                                      │                                           │
-│                                      ▼                                           │
-│  ┌───────────────────────────────────────────────────────────────────────────┐   │
-│  │ STEP 8: Cleanup                                                           │   │
-│  │ ┌─────────────────────────────────────────────────────────────────────┐   │   │
-│  │ │ deleteNamespace(ctx, "e2e-website")                                 │   │   │
-│  │ │ // Deletes entire namespace, cascading to all resources             │   │   │
-│  │ └─────────────────────────────────────────────────────────────────────┘   │   │
-│  └───────────────────────────────────────────────────────────────────────────┘   │
-│                                      │                                           │
-│                                      ▼                                           │
-│                          ┌─────────────────────┐                                 │
-│                          │   TEST COMPLETE ✅  │                                 │
-│                          └─────────────────────┘                                 │
-└──────────────────────────────────────────────────────────────────────────────────┘
-```
-
-### Parallel Execution Model
-
-```
-┌──────────────────────────────────────────────────────────────────────────────────┐
-│                         Parallel Execution (PROCS=4)                             │
-├──────────────────────────────────────────────────────────────────────────────────┤
-│                                                                                  │
-│   Ginkgo distributes tests across 4 parallel processes:                          │
-│                                                                                  │
-│   ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────┐ │
-│   │   Process 1     │  │   Process 2     │  │   Process 3     │  │  Process 4  │ │
-│   ├─────────────────┤  ├─────────────────┤  ├─────────────────┤  ├─────────────┤ │
-│   │ webservice.yaml │  │ worker.yaml     │  │ task.yaml       │  │ daemon.yaml │ │
-│   │ Namespace:      │  │ Namespace:      │  │ Namespace:      │  │ Namespace:  │ │
-│   │ e2e-website     │  │ e2e-vela-app    │  │ e2e-task-app    │  │ e2e-daemon  │ │
-│   │                 │  │                 │  │                 │  │             │ │
-│   │ ┌─────────────┐ │  │ ┌─────────────┐ │  │ ┌─────────────┐ │  │ ┌─────────┐ │ │
-│   │ │ Deployment  │ │  │ │ Deployment  │ │  │ │ Job         │ │  │ │DaemonSet│ │ │
-│   │ │ frontend    │ │  │ │ backend     │ │  │ │ task-runner │ │  │ │ daemon  │ │ │
-│   │ └─────────────┘ │  │ └─────────────┘ │  │ └─────────────┘ │  │ └─────────┘ │ │
-│   └────────┬────────┘  └────────┬────────┘  └────────┬────────┘  └──────┬──────┘ │
-│            │                    │                    │                  │        │
-│            ▼                    ▼                    ▼                  ▼        │
-│   ┌─────────────────────────────────────────────────────────────────────────────┐│
-│   │                        Kubernetes Cluster (Kind)                            ││
-│   │  ┌───────────────┐ ┌───────────────┐ ┌───────────────┐ ┌───────────────┐   │││
-│   │  │ ns:e2e-website│ │ns:e2e-vela-app│ │ns:e2e-task-app│ │ ns:e2e-daemon │   │││
-│   │  │   (isolated)  │ │   (isolated)  │ │   (isolated)  │ │   (isolated)  │   │││
-│   │  └───────────────┘ └───────────────┘ └───────────────┘ └───────────────┘   │││
-│   └─────────────────────────────────────────────────────────────────────────────┘│
-│                                                                                  │
-│   Benefits:                                                                      │
-│   ✓ Tests don't interfere with each other (isolated namespaces)                  │
-│   ✓ 4x faster than serial execution                                              │
-│   ✓ Each process has independent K8s client                                      │
-│   ✓ Failures in one process don't affect others                                  │
-│                                                                                  │
-└──────────────────────────────────────────────────────────────────────────────────┘
-```
+Prerequisites: docker, k3d, kubectl, vela CLI, Go 1.23+
 
 ---
 
 ## Directory Structure
 
 ```
-vela-go-definitions/
-├── .github/
-│   ├── actions/
-│   │   └── setup-vela-environment/
-│   │       └── action.yaml              # Reusable composite action
-│   └── workflows/
-│       ├── test-component-definitions.yaml
-│       ├── test-trait-definitions.yaml
-│       ├── test-policy-definitions.yaml
-│       └── test-workflowstep-definitions.yaml
-├── test/
-│   ├── e2e/
-│   │   ├── e2e_suite_test.go           # Ginkgo suite setup
-│   │   ├── helpers_test.go             # Shared test utilities
-│   │   ├── component_e2e_test.go       # Component definition tests
-│   │   ├── trait_e2e_test.go           # Trait definition tests
-│   │   ├── policy_e2e_test.go          # Policy definition tests
-│   │   └── workflowstep_e2e_test.go    # Workflow step tests
-│   └── builtin-definition-example/
-│       ├── components/                  # Component test applications
-│       │   ├── webservice.yaml
-│       │   ├── worker.yaml
-│       │   ├── task.yaml
-│       │   ├── cron-task.yaml
-│       │   ├── daemon.yaml
-│       │   ├── statefulset.yaml
-│       │   ├── k8s-objects.yaml
-│       │   └── ref-objects.yaml
-│       ├── trait/                       # Trait test applications
-│       │   ├── sidecar.yaml
-│       │   ├── scaler.yaml
-│       │   ├── gateway.yaml
-│       │   ├── hpa.yaml
-│       │   └── ... (28 total)
-│       ├── policies/                    # Policy test applications
-│       │   ├── topology.yaml
-│       │   ├── override.yaml
-│       │   ├── garbage-collect.yaml
-│       │   └── ... (9 total)
-│       └── workflowsteps/               # Workflow step test applications
-│           ├── apply-component.yaml
-│           ├── suspend.yaml
-│           ├── deploy.yaml
-│           └── ... (34 total)
-└── Makefile                             # Make targets for running tests
+test/
+  e2e/
+    e2e_suite_test.go          # Ginkgo suite bootstrap
+    definition_e2e_test.go     # Table-driven test generator for all 4 types
+    helpers_test.go            # All test logic: runner, auto-validate, expectations
+  builtin-definition-example/
+    applications/              # Test inputs (Application YAMLs)
+      components/              # 8 component tests
+      trait/                   # 29 trait tests
+      policies/                # 9 policy tests
+      workflowsteps/           # 31 workflow step tests
+    expectations/              # Extra validation (optional, additive)
+      trait/                   # Trait-specific checks
+      policies/                # Policy-specific checks
+      workflowsteps/           # Workflow step output checks
 ```
 
 ---
 
-## Test Framework
+## Architecture
 
-### Ginkgo Test Suite
+### Test Runner (`definition_e2e_test.go`)
 
-The E2E tests use [Ginkgo v2](https://onsi.github.io/ginkgo/) with [Gomega](https://onsi.github.io/gomega/) matchers.
-
-#### Suite Setup (`e2e_suite_test.go`)
+A single file generates all test suites from a table-driven config:
 
 ```go
-func TestE2E(t *testing.T) {
-    RegisterFailHandler(Fail)
-    RunSpecs(t, "E2E Definition Test Suite")
+var suites = []definitionTestSuite{
+    {label: "components",    subdir: "applications/components",    descName: "Component"},
+    {label: "traits",        subdir: "applications/trait",         descName: "Trait"},
+    {label: "policies",      subdir: "applications/policies",      descName: "Policy"},
+    {label: "workflowsteps", subdir: "applications/workflowsteps", descName: "WorkflowStep", skipTests: skipWorkflowStepTests},
 }
-
-var _ = BeforeSuite(func() {
-    err := initK8sClient()
-    Expect(err).NotTo(HaveOccurred(), "Failed to initialize K8s client")
-})
 ```
 
-#### Test Structure (`component_e2e_test.go`)
+Each YAML file in the test data directory becomes a Ginkgo `It` block. Tests are auto-discovered — no code changes needed to add new tests.
 
-Each test file follows this pattern:
+### Test Execution Flow
 
-```go
-var _ = Describe("Component Definition E2E Tests", Label("components"), func() {
-    ctx := context.Background()
+For each test YAML file:
 
-    Context("when testing component definitions", func() {
-        testDataPath := filepath.Join(getTestDataPath(), "components")
-        componentFiles := mustListYAMLFiles(testDataPath)
+1. **Parse** all Applications from the file (supports multi-doc YAML with multiple apps)
+2. **Create** isolated namespace (`e2e-{appname}`)
+3. **Apply prerequisites** — non-Application resources (Deployments, Services, ConfigMaps) with polling for readiness
+4. **Apply all Applications** sequentially, waiting for each to reach `phase: running`
+5. **Auto-validate** (Layer 1):
+   - All workflow steps have `phase: succeeded`
+   - Component resources exist (Deployment, DaemonSet, StatefulSet, Job, CronJob) with correct image
+6. **Extra validation** (Layer 2) from `.expect.yaml` if it exists:
+   - Resource field assertions (dot-path with array indexing and bracket key notation)
+   - Workflow step message assertions
+7. **Cleanup** — delete apps (clears finalizers), then delete namespace
+8. **Diagnostics** on failure — app status, workflow steps, vela status, kubectl describe, pod logs
 
-        When("applying component applications", func() {
-            for _, file := range componentFiles {
-                file := file  // Capture for closure
+### Two-Layer Validation
 
-                It(fmt.Sprintf("should run %s", filepath.Base(file)), func() {
-                    runComponentTest(ctx, file)
-                })
-            }
-        })
-    })
-})
-```
+**Layer 1 — Auto-derived (all 77 definitions, zero config):**
 
-#### Test Labels
+Every test automatically validates:
+- Workflow steps all reached `phase: succeeded` (including sub-steps)
+- Component resources exist based on type mapping:
 
-Tests are organized by labels for selective execution:
+| Component Type | K8s Resource | Image Path |
+|---------------|-------------|------------|
+| `webservice`, `worker` | Deployment | `spec.template.spec.containers[0].image` |
+| `daemon` | DaemonSet | `spec.template.spec.containers[0].image` |
+| `statefulset` | StatefulSet | `spec.template.spec.containers[0].image` |
+| `task` | Job | `spec.template.spec.containers[0].image` |
+| `cron-task` | CronJob | `spec.jobTemplate.spec.template.spec.containers[0].image` |
+| `k8s-objects`, `ref-objects` | (varied, skipped) | — |
 
-| Label | Description |
-|-------|-------------|
-| `components` | Component definition tests |
-| `traits` | Trait definition tests |
-| `policies` | Policy definition tests |
-| `workflowsteps` | Workflow step definition tests |
+Resource names are resolved from `status.appliedResources` (not guessed).
 
-### Test Helpers
+**Layer 2 — `.expect.yaml` files (25 files for definition-specific checks):**
 
-The `helpers_test.go` file provides shared utilities:
-
-#### Key Functions
-
-| Function | Description |
-|----------|-------------|
-| `initK8sClient()` | Initializes the Kubernetes controller-runtime client |
-| `readAppFromFile(filename)` | Reads an Application from a YAML file (supports multi-doc) |
-| `sanitizeForNamespace(name)` | Creates DNS-1123 compliant namespace names |
-| `applyApplication(ctx, app)` | Creates or updates a KubeVela Application |
-| `deleteApplication(ctx, app)` | Deletes an Application with foreground deletion |
-| `waitForApplicationRunning(ctx, appName, namespace)` | Polls until app reaches running state |
-| `hasPrerequisiteResources(filePath)` | Checks if YAML contains non-Application resources |
-| `applyPrerequisiteResources(ctx, filePath, namespace)` | Applies dependent resources (e.g., for ref-objects) |
-| `updateAppNamespaceReferences(app, namespace)` | Updates namespace references inside Application |
-
-#### Constants
-
-```go
-const (
-    AppRunningTimeout = 5 * time.Minute   // Timeout for app to become running
-    PollInterval      = 5 * time.Second   // Polling interval for status checks
-)
-```
-
-### Test Data
-
-Test data is organized in `test/builtin-definition-example/` with YAML files for each definition type.
-
-#### Example: Component Test Application
+Only needed when testing something the auto-derive can't check. Format:
 
 ```yaml
-# test/builtin-definition-example/components/webservice.yaml
-apiVersion: core.oam.dev/v1beta1
-kind: Application
-metadata:
-  name: website
-spec:
-  components:
-    - name: frontend
-      type: webservice
-      properties:
-        image: oamdev/testapp:v1
-        cmd: ["node", "server.js"]
-        ports:
-          - port: 8080
-            expose: true
+# Validate K8s resource fields
+expectations:
+  - apiVersion: apps/v1
+    kind: Deployment
+    name: nginx-app
+    fields:
+      spec.replicas: 3
+      spec.template.metadata.annotations["prometheus.io/scrape"]: "true"
+      spec.template.spec.containers[0].env[0].name: "LOG_LEVEL"
+
+# Validate workflow step status
+workflowSteps:
+  - name: message
+    phase: succeeded
+    messageContains: "All addons have been enabled"
 ```
 
-#### Example: Trait Test Application
+Supported path syntax:
+- Dot notation: `spec.template.spec.containers`
+- Array indexing: `containers[0].image`
+- Bracket keys (for dots/slashes in names): `annotations["app.example.com/owner"]`
 
-```yaml
-# test/builtin-definition-example/trait/sidecar.yaml
-apiVersion: core.oam.dev/v1beta1
-kind: Application
-metadata:
-  name: vela-app-with-sidecar
-spec:
-  components:
-    - name: log-gen-worker
-      type: worker
-      properties:
-        image: busybox
-        cmd: ["/bin/sh", "-c", "while true; do echo hello; sleep 1; done"]
-      traits:
-        - type: sidecar
-          properties:
-            name: count-log
-            image: busybox
-            cmd: ["/bin/sh", "-c", "tail -f /var/log/date.log"]
-```
+### Multi-App Support
 
-#### Example: Policy Test Application
+Some tests contain multiple Applications in a single YAML file (e.g., `shared-resource.yaml`, `depends-on-app.yaml`). The framework:
 
-```yaml
-# test/builtin-definition-example/policies/topology.yaml
-apiVersion: core.oam.dev/v1beta1
-kind: Application
-metadata:
-  name: basic-topology
-spec:
-  components:
-    - name: nginx-basic
-      type: webservice
-      properties:
-        image: nginx
-  policies:
-    - name: topology-hangzhou-clusters
-      type: topology
-      properties:
-        clusters: ["local"]
-```
+1. Parses ALL Applications from the file
+2. Applies them sequentially, waiting for each to reach running
+3. Auto-validates the **last** application (the "main" one; earlier apps are dependencies)
 
-#### Example: Workflow Step Test Application
+### Skipped Tests
 
-```yaml
-# test/builtin-definition-example/workflowsteps/suspend.yaml
-apiVersion: core.oam.dev/v1beta1
-kind: Application
-metadata:
-  name: first-vela-workflow
-spec:
-  components:
-    - name: express-server
-      type: webservice
-      properties:
-        image: oamdev/hello-world
-        port: 8000
-  workflow:
-    steps:
-      - name: manual-approval
-        type: suspend
-        properties:
-          duration: "30s"
-      - name: express-server
-        type: apply-component
-        properties:
-          component: express-server
-```
+Tests requiring external infrastructure are skipped:
+
+| Test | Reason |
+|------|--------|
+| `deploy-cloud-resource.yaml` | Requires Alibaba RDS + multi-cluster |
+| `share-cloud-resource.yaml` | Requires Alibaba RDS + multi-cluster |
+| `generate-jdbc-connection.yaml` | Requires Alibaba RDS |
+| `apply-terraform-config.yaml` | Requires Terraform provider credentials |
+| `apply-terraform-provider.yaml` | Requires Terraform provider credentials |
+| `build-push-image.yaml` | Requires external container registry (ttl.sh) |
+| `check-metrics.yaml` | Requires external Prometheus endpoint |
+| `restart-workflow.yaml` | Self-restarting workflow, can't validate with single-shot framework |
 
 ---
 
 ## CI/CD Integration
 
-### GitHub Actions Workflows
+### GitHub Actions Workflow (`test-definitions.yaml`)
 
-Four separate workflows run tests for each definition type:
+A single workflow with 4 parallel jobs (one per definition type):
 
-| Workflow | File | Trigger |
-|----------|------|---------|
-| Test Component Definitions | `test-component-definitions.yaml` | Push/PR to `go.mod`, `go.sum` |
-| Test Trait Definitions | `test-trait-definitions.yaml` | Push/PR to `go.mod`, `go.sum` |
-| Test Policy Definitions | `test-policy-definitions.yaml` | Push/PR to `go.mod`, `go.sum` |
-| Test Workflow Step Definitions | `test-workflowstep-definitions.yaml` | Push/PR to `go.mod`, `go.sum` |
+| Job | Label Filter | What it tests |
+|-----|-------------|---------------|
+| `test-components` | `components` | 8 component definitions |
+| `test-traits` | `traits` | 29 trait definitions |
+| `test-policies` | `policies` | 9 policy definitions |
+| `test-workflowsteps` | `workflowsteps` | 31 workflow step definitions |
 
+### Setup Action (`.github/actions/setup-vela-environment`)
 
-### Reusable Setup Action
+Reusable composite action that:
 
-The `.github/actions/setup-vela-environment/action.yaml` composite action handles all setup:
+1. Sets up Go + k3d cluster
+2. Downloads and installs vela CLI (latest release)
+3. Installs KubeVela on the cluster
+4. Extracts kubevela fork/commit from `go.mod` replace directive
+5. Clones and builds vela CLI from source (for `apply-module` support)
+6. Uninstalls built-in CUE definitions
+7. Installs defkit definitions via `vela def apply-module .`
+8. Installs Ginkgo
 
-#### Setup Steps
-
-1. **Set up Go** - Installs Go 1.23
-2. **Set up Kubernetes (Kind)** - Creates a Kind cluster named `vela-test`
-3. **Download and install Vela CLI** - Installs latest release for initial setup
-4. **Install KubeVela** - Runs `vela install` to deploy KubeVela to the cluster
-5. **Extract KubeVela repository info from go.mod** - Parses replace directive to find fork/commit
-6. **Clone KubeVela repository and checkout commit** - Clones the specified fork at the exact commit
-7. **Build Vela CLI from source** - Runs `make vela-cli` to build the CLI
-8. **Uninstall built-in definitions** - Removes default definitions to test module definitions
-9. **Install definitions from defkit** - Runs `vela def apply-module .` to install this module's definitions
-10. **Install Ginkgo** - Installs Ginkgo CLI for running tests
-
-#### Dynamic KubeVela Version
-
-The action extracts the KubeVela version from `go.mod`:
-
-```bash
-# Example go.mod replace directive:
-replace github.com/oam-dev/kubevela => github.com/kubevela/kubevela v0.0.0-20250115123456-abc123def456
-
-# Extracted:
-# - Repository: kubevela/kubevela
-# - Commit SHA: abc123def456
-```
-
-This ensures tests always run against the exact KubeVela version the module depends on.
+The built-from-source CLI uses `cmd/register/main.go` (fast registry path) to discover all 77 definitions.
 
 ---
 
-## Running Tests Locally
+## Local Development
 
-### Prerequisites
+### Make Targets
 
-1. **Go 1.23+** installed
-2. **kubectl** configured with a Kubernetes cluster
-3. **KubeVela** installed on the cluster
-4. **Ginkgo CLI** installed
+| Target | Description |
+|--------|-------------|
+| `e2e-setup` | Create k3d cluster, install KubeVela, install definitions, install Ginkgo |
+| `e2e-teardown` | Delete the k3d cluster |
+| `test-e2e` | Run all E2E tests (components + traits + policies + workflowsteps) |
+| `test-e2e-components` | Run component tests only |
+| `test-e2e-traits` | Run trait tests only |
+| `test-e2e-policies` | Run policy tests only |
+| `test-e2e-workflowsteps` | Run workflow step tests only |
+| `cleanup-e2e-namespaces` | Delete all `e2e-*` namespaces |
+| `force-cleanup-e2e-namespaces` | Force-delete stuck terminating namespaces |
 
-### Install Ginkgo
+Each `test-e2e-*` target automatically runs `force-cleanup-e2e-namespaces` first.
 
-```bash
-make install-ginkgo
-# or
-go install github.com/onsi/ginkgo/v2/ginkgo@latest
-```
+### Configuration
 
-### Run All Tests
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `PROCS` | 10 | Parallel Ginkgo processes |
+| `E2E_TIMEOUT` | 10m | Total test suite timeout |
+| `TESTDATA_PATH` | `test/builtin-definition-example` | Test data directory |
+| `E2E_CLUSTER` | `e2e-test` | k3d cluster name |
 
-```bash
-make test-e2e
-```
-
-### Run Specific Test Categories
-
-```bash
-# Component definitions only
-make test-e2e-components
-
-# Trait definitions only
-make test-e2e-traits
-
-# Policy definitions only
-make test-e2e-policies
-
-# Workflow step definitions only
-make test-e2e-workflowsteps
-```
-
-### Configure Parallelism
+### Running Individual Tests
 
 ```bash
-# Run with 8 parallel processes (default: 4)
-make test-e2e-components PROCS=8
+# Run a single test by name
+TESTDATA_PATH=test/builtin-definition-example \
+  ginkgo -v --timeout=5m --focus="webservice.yaml" --label-filter="components" ./test/e2e/...
 
-# Run serially (useful for debugging)
+# Run serially for debugging
 make test-e2e-components PROCS=1
 ```
-
-### Configure Timeout
-
-```bash
-# Set 60 minute timeout (default: 30m)
-make test-e2e-components E2E_TIMEOUT=60m
-```
-
-### Custom Test Data Path
-
-```bash
-# Use custom test data directory
-make test-e2e-components TESTDATA_PATH=/path/to/custom/test-data
-```
-
-### Run with Ginkgo Directly
-
-```bash
-# Run with verbose output
-ginkgo -v --label-filter="components" ./test/e2e/...
-
-# Run specific test by name
-ginkgo -v --focus="webservice" ./test/e2e/...
-
-# Run with race detector
-ginkgo -v --race --label-filter="traits" ./test/e2e/...
-```
-
----
-
-## How It Works
-
-### Test Execution Flow
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                     For each YAML test file:                     │
-├─────────────────────────────────────────────────────────────────┤
-│  1. Read Application from YAML file                              │
-│     └─► readAppFromFile(filePath)                                │
-│                                                                   │
-│  2. Generate unique namespace                                     │
-│     └─► uniqueNamespaceForApp(app.Name)                          │
-│     └─► Example: "e2e-website" for app "website"                 │
-│                                                                   │
-│  3. Create namespace                                              │
-│     └─► ensureNamespace(ctx, uniqueNs)                           │
-│                                                                   │
-│  4. Clean up any existing application                             │
-│     └─► cleanupExistingApplication(ctx, app)                     │
-│                                                                   │
-│  5. Apply prerequisite resources (if any)                         │
-│     └─► applyPrerequisitesIfAny(ctx, filePath, uniqueNs)         │
-│     └─► Example: Deployment/Service for ref-objects tests        │
-│                                                                   │
-│  6. Apply the Application                                         │
-│     └─► k8sClient.Create(ctx, app)                               │
-│                                                                   │
-│  7. Wait for Application to reach "running" status                │
-│     └─► waitForApplicationRunning(ctx, appName, uniqueNs)        │
-│     └─► Polls every 5s, timeout 5 minutes                        │
-│                                                                   │
-│  8. Delete namespace (cleanup)                                    │
-│     └─► deleteNamespace(ctx, uniqueNs)                           │
-│                                                                   │
-│  ✅ Test passes if app reaches "running" state                    │
-│  ❌ Test fails if timeout or error status                         │
-└─────────────────────────────────────────────────────────────────┘
-```
-
-### Parallel Execution
-
-Ginkgo runs tests in parallel processes. Each test:
-
-1. Creates its own unique namespace (e.g., `e2e-website`, `e2e-worker`)
-2. Deploys applications in isolation
-3. Cleans up its namespace after completion
-
-This allows multiple tests to run simultaneously without interference.
-
-### Prerequisite Resources
-
-Some tests require existing resources (e.g., `ref-objects` references existing Deployments):
-
-```yaml
-# ref-objects.yaml contains multiple documents:
----
-apiVersion: apps/v1
-kind: Deployment        # Prerequisite resource
-metadata:
-  name: ref-deployment
-spec:
-  # ...
----
-apiVersion: core.oam.dev/v1beta1
-kind: Application       # Test application that references the Deployment
-metadata:
-  name: ref-objects-test
-spec:
-  components:
-    - name: ref-comp
-      type: ref-objects
-      properties:
-        objects:
-          - name: ref-deployment
-            kind: Deployment
-```
-
-The framework automatically:
-1. Detects multi-document YAMLs with non-Application resources
-2. Applies prerequisite resources first
-3. Waits briefly for them to settle
-4. Then applies the Application
 
 ---
 
 ## Adding New Tests
 
-### 1. Create a Test Application YAML
+### 1. Add Application YAML
 
-Create a YAML file in the appropriate directory:
+Create a YAML file in the appropriate `applications/` subdirectory:
 
 ```yaml
-# test/builtin-definition-example/components/my-component.yaml
+# test/builtin-definition-example/applications/trait/my-trait.yaml
 apiVersion: core.oam.dev/v1beta1
 kind: Application
 metadata:
-  name: my-component-test
+  name: my-trait-example
 spec:
   components:
-    - name: my-app
-      type: my-component
+    - name: nginx-app
+      type: webservice
       properties:
-        image: nginx
-        # Add required properties for your component
+        image: nginx:latest
+      traits:
+        - type: my-trait
+          properties:
+            key: value
 ```
 
-### 2. Test is Automatically Picked Up
+The test is auto-discovered — no code changes needed. It will automatically:
+- Verify app reaches running
+- Verify all workflow steps succeeded
+- Verify the Deployment exists with correct image
 
-The E2E framework automatically discovers all `.yaml` files in the test data directories. No code changes needed!
+### 2. Add Extra Expectations (Optional)
 
-### 3. Run the Test
+If the trait/policy/step has specific effects to validate, create an `.expect.yaml` file:
+
+```yaml
+# test/builtin-definition-example/expectations/trait/my-trait.expect.yaml
+expectations:
+  - apiVersion: apps/v1
+    kind: Deployment
+    name: nginx-app
+    fields:
+      spec.template.metadata.labels.my-key: "value"
+```
+
+### 3. Run
 
 ```bash
-# Run all component tests (includes your new test)
-make test-e2e-components
-
-# Or run just your test
-ginkgo -v --focus="my-component" ./test/e2e/...
+ginkgo -v --timeout=5m --focus="my-trait.yaml" --label-filter="traits" ./test/e2e/...
 ```
 
 ---
 
+## Troubleshooting
 
+### Stuck Namespaces
+
+```bash
+make force-cleanup-e2e-namespaces
+```
+
+### inotify Errors on macOS (k3d nodes not starting)
+
+The `e2e-setup` target fixes this automatically, but if needed manually:
+
+```bash
+docker run --rm --privileged alpine:latest sh -c \
+  "sysctl -w fs.inotify.max_user_watches=524288 && sysctl -w fs.inotify.max_user_instances=512"
+```
+
+### Test Failures — Reading Diagnostics
+
+On failure, the framework prints:
+- Application phase and workflow step details
+- `vela status` output
+- `kubectl describe app` output
+- Pod listing in the namespace
+
+### Definitions Not Installing
+
+If `vela def apply-module .` fails, the fallback is:
+
+```bash
+make generate
+for f in vela-templates/definitions/*/*.cue; do vela def apply "$f"; done
+```

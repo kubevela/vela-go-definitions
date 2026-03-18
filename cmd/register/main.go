@@ -14,14 +14,10 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-// Package main is the entry point for the definition registry.
-// It outputs all registered definitions as JSON for CLI consumption.
-//
-// Usage: go run ./cmd/register
-//
-// Each definition package (components, traits, policies, workflowsteps)
-// registers its definitions via init() functions that call defkit.Register().
-// Importing those packages triggers registration automatically.
+// Package main outputs all registered definitions as JSON.
+// This is the conventional entry point used by `vela def apply-module`
+// to discover definitions via the registry pattern (fast path).
+// See also: cmd/defkit for the full CLI.
 package main
 
 import (
@@ -30,10 +26,10 @@ import (
 
 	"github.com/oam-dev/kubevela/pkg/definition/defkit"
 
-	// Import packages to trigger init() registration
+	// Import all definition packages to trigger init() registration
 	_ "github.com/oam-dev/vela-go-definitions/components"
-	_ "github.com/oam-dev/vela-go-definitions/traits"
 	_ "github.com/oam-dev/vela-go-definitions/policies"
+	_ "github.com/oam-dev/vela-go-definitions/traits"
 	_ "github.com/oam-dev/vela-go-definitions/workflowsteps"
 )
 

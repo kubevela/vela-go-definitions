@@ -1,0 +1,8 @@
+expectations:
+  - apiVersion: apps/v1
+    kind: Deployment
+    name: nginx-app
+    fields:
+      spec.template.metadata.annotations["app.example.com/owner"]: "team-platform"
+      spec.template.metadata.annotations["app.example.com/version"]: "v1.0"
+      spec.template.metadata.annotations["prometheus.io/scrape"]: "true"

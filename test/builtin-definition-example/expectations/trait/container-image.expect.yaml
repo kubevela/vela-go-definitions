@@ -1,0 +1,7 @@
+expectations:
+  - apiVersion: apps/v1
+    kind: Deployment
+    name: nginx-app
+    fields:
+      spec.template.spec.containers[0].image: "nginx:latest"
+      spec.template.spec.containers[0].imagePullPolicy: "Always"

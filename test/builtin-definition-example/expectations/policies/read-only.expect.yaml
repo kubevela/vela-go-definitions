@@ -1,0 +1,8 @@
+expectations:
+  - apiVersion: apps/v1
+    kind: Deployment
+    name: busybox
+    fields:
+      spec.replicas: 1
+      spec.template.spec.containers[0].image: "busybox"
+      spec.template.spec.containers[0].command: ["sleep", "1000000"]

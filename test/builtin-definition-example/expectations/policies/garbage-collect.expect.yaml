@@ -1,0 +1,11 @@
+expectations:
+  - apiVersion: apps/v1
+    kind: Deployment
+    name: hello-world-new
+    fields:
+      spec.template.spec.containers[0].image: "oamdev/hello-world"
+  - apiVersion: v1
+    kind: Service
+    name: hello-world-new
+    fields:
+      spec.ports[0].port: 8000

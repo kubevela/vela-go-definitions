@@ -1,0 +1,7 @@
+expectations:
+  - apiVersion: networking.k8s.io/v1
+    kind: Ingress
+    name: nginx-app
+    fields:
+      spec.rules[0].host: "example.com"
+      spec.rules[0].http.paths[0].path: "/"

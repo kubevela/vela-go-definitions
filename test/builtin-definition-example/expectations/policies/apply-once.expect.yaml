@@ -1,0 +1,7 @@
+expectations:
+  - apiVersion: apps/v1
+    kind: Deployment
+    name: hello-world
+    fields:
+      spec.replicas: 1
+      spec.template.spec.containers[0].image: "oamdev/hello-world"

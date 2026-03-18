@@ -1,0 +1,88 @@
+name: Reviewable
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+env:
+  GOLANGCI_VERSION: "v1.62.2"
+
+jobs:
+  detect-noop:
+    name: Detect No-op Changes
+    runs-on: ubuntu-latest
+    outputs:
+      noop: ${{ steps.noop.outputs.should_skip }}
+    steps:
+      - name: Detect no-op changes
+        id: noop
+        uses: fkirc/skip-duplicate-actions@v5
+        with:
+          github_token: ${{ github.token }}
+          paths_ignore: '["**.md", "**.mdx", "**.png", "**.jpg"]'
+          do_not_skip: '["workflow_dispatch", "schedule", "push"]'
+
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    needs: detect-noop
+    if: needs.detect-noop.outputs.noop != 'true'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - name: Lint
+        uses: golangci/golangci-lint-action@v6
+        with:
+          version: ${{ env.GOLANGCI_VERSION }}
+          args: --timeout=5m
+
+  check-diff:
+    name: Check Diff
+    runs-on: ubuntu-latest
+    needs: detect-noop
+    if: needs.detect-noop.outputs.noop != 'true'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - name: Download dependencies
+        run: go mod download
+
+      - name: Generate definitions
+        run: make generate
+
+      - name: Format
+        run: make fmt
+
+      - name: Vet
+        run: make vet
+
+      - name: Check diff
+        run: |
+          git --no-pager diff
+          git diff --quiet || (echo "::error::Generated files are out of date. Run 'make reviewable' and commit the changes." && exit 1)
+          echo "Branch is clean"
+
+      - name: Summary
+        if: always()
+        run: |
+          echo "## Reviewable Check" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "- **Go version:** $(go version | awk '{print $3}')" >> "$GITHUB_STEP_SUMMARY"
+          echo "- **Generated definitions:** $(find vela-templates/definitions -name '*.cue' 2>/dev/null | wc -l) CUE files" >> "$GITHUB_STEP_SUMMARY"
