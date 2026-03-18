@@ -645,12 +645,12 @@ type ExpectationFile struct {
 func loadExpectations(appYAMLPath string) *ExpectationFile {
 	// appYAMLPath: .../builtin-definition-example/applications/<type>/<name>.yaml
 	// expectPath:  .../builtin-definition-example/expectations/<type>/<name>.expect.yaml
-	dir := filepath.Dir(appYAMLPath)             // .../applications/components
-	subdir := filepath.Base(dir)                 // components
+	dir := filepath.Dir(appYAMLPath)                // .../applications/components
+	subdir := filepath.Base(dir)                    // components
 	testDataRoot := filepath.Dir(filepath.Dir(dir)) // .../builtin-definition-example
-	baseName := filepath.Base(appYAMLPath)       // webservice.yaml
-	ext := filepath.Ext(baseName)                // .yaml
-	nameNoExt := strings.TrimSuffix(baseName, ext) // webservice
+	baseName := filepath.Base(appYAMLPath)          // webservice.yaml
+	ext := filepath.Ext(baseName)                   // .yaml
+	nameNoExt := strings.TrimSuffix(baseName, ext)  // webservice
 
 	expectPath := filepath.Join(testDataRoot, "expectations", subdir, nameNoExt+".expect.yaml")
 
