@@ -25,8 +25,8 @@ template: {
 			}
 		spec: {
 				deleteResource: parameter.deleteResource
-				variable: parameter.variable
 				forceDelete: parameter.forceDelete
+				variable: parameter.variable
 				if parameter.source.path != _|_ {
 					path: parameter.source.path
 				}

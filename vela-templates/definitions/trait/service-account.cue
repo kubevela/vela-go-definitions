@@ -29,19 +29,19 @@ template: {
 				metadata: name: "\(context.namespace):\(parameter.name)"
 				rules: [
 					for v in _clusterPrivileges {
-						verbs: v.verbs
 						if v.apiGroups != _|_ {
 							apiGroups: v.apiGroups
-						}
-						if v.resources != _|_ {
-							resources: v.resources
-						}
-						if v.resourceNames != _|_ {
-							resourceNames: v.resourceNames
 						}
 						if v.nonResourceURLs != _|_ {
 							nonResourceURLs: v.nonResourceURLs
 						}
+						if v.resourceNames != _|_ {
+							resourceNames: v.resourceNames
+						}
+						if v.resources != _|_ {
+							resources: v.resources
+						}
+						verbs: v.verbs
 					},
 				]
 			}
@@ -70,19 +70,19 @@ template: {
 				metadata: name: parameter.name
 				rules: [
 					for v in _namespacePrivileges {
-						verbs: v.verbs
 						if v.apiGroups != _|_ {
 							apiGroups: v.apiGroups
-						}
-						if v.resources != _|_ {
-							resources: v.resources
-						}
-						if v.resourceNames != _|_ {
-							resourceNames: v.resourceNames
 						}
 						if v.nonResourceURLs != _|_ {
 							nonResourceURLs: v.nonResourceURLs
 						}
+						if v.resourceNames != _|_ {
+							resourceNames: v.resourceNames
+						}
+						if v.resources != _|_ {
+							resources: v.resources
+						}
+						verbs: v.verbs
 					},
 				]
 			}

@@ -74,9 +74,6 @@ template: {
 	}
 	cfg: config.#CreateConfig & {
 		$params: {
-			name: "\(context.name)-\(context.stepName)"
-			namespace: context.namespace
-			template: "terraform-\(parameter.type)"
 			config: {
 		name: parameter.name
 		if parameter.type == "alibaba" {
@@ -155,6 +152,9 @@ template: {
 			UCLOUD_REGION: parameter.region
 		}
 	}
+			name: "\(context.name)-\(context.stepName)"
+			namespace: context.namespace
+			template: "terraform-\(parameter.type)"
 		}
 	}
 	read: kube.#Read & {

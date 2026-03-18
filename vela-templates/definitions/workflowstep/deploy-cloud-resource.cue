@@ -14,10 +14,10 @@ import (
 }
 template: {
 	app: op.#DeployCloudResource & {
-		policy: parameter.policy
-		namespace: context.namespace
-		name: context.name
 		env: parameter.env
+		name: context.name
+		namespace: context.namespace
+		policy: parameter.policy
 	}
 	parameter: {
 		// +usage=Declare the name of the env-binding policy, if empty, the first env-binding policy will be used

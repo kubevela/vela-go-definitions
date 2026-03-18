@@ -28,7 +28,6 @@ template: {
 			maxReplicas: parameter.max
 			metrics: [
 				{
-					type: "Resource"
 					resource: {
 						name: "cpu"
 						target: {
@@ -41,10 +40,10 @@ template: {
 							}
 						}
 					}
+					type: "Resource"
 				},
 				if parameter["mem"] != _|_ {
 					{
-						type: "Resource"
 						resource: {
 							name: "memory"
 							target: {
@@ -57,18 +56,19 @@ template: {
 								}
 							}
 						}
+						type: "Resource"
 					}
 				},
 				if parameter["podCustomMetrics"] != _|_ for m in parameter.podCustomMetrics {
 					{
-						type: "Pods"
 						pods: {
 							metric: name: m.name
 							target: {
-								type:         "AverageValue"
 								averageValue: m.value
+								type:         "AverageValue"
 							}
 						}
+						type: "Pods"
 					}
 				},
 			]

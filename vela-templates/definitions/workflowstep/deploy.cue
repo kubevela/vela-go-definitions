@@ -24,8 +24,8 @@ template: {
 	deploy: multicluster.#Deploy & {
 		$params: {
 			ignoreTerraformComponent: parameter.ignoreTerraformComponent
-			policies: parameter.policies
 			parallelism: parameter.parallelism
+			policies: parameter.policies
 		}
 	}
 	parameter: {

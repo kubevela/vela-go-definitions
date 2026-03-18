@@ -18,7 +18,6 @@ template: {
 	req: http.#HTTPDo & {
 		$params: {
 			method: parameter.method
-			url: parameter.url
 			request: {
 		if parameter["body"] != _|_ {
 			body: json.Marshal(parameter.body)
@@ -27,6 +26,7 @@ template: {
 			header: parameter.header
 		}
 	}
+			url: parameter.url
 		}
 	}
 	wait: op.#ConditionalWait & {

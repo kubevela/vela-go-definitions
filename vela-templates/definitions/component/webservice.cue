@@ -117,42 +117,42 @@ template: {
 		},
 		if parameter.volumeMounts != _|_ && parameter.volumeMounts.configMap != _|_ for v in parameter.volumeMounts.configMap {
 		{
-			name: v.name
 			configMap: {
+				defaultMode: v.defaultMode
 				if v.items != _|_ {
 					items: v.items
 				}
 				name: v.cmName
-				defaultMode: v.defaultMode
 			}
+			name: v.name
 		}
 		},
 		if parameter.volumeMounts != _|_ && parameter.volumeMounts.secret != _|_ for v in parameter.volumeMounts.secret {
 		{
 			name: v.name
 			secret: {
-				secretName: v.secretName
 				defaultMode: v.defaultMode
 				if v.items != _|_ {
 					items: v.items
 				}
+				secretName: v.secretName
 			}
 		}
 		},
 		if parameter.volumeMounts != _|_ && parameter.volumeMounts.emptyDir != _|_ for v in parameter.volumeMounts.emptyDir {
 		{
-			name: v.name
 			emptyDir: {
 				medium: v.medium
 			}
+			name: v.name
 		}
 		},
 		if parameter.volumeMounts != _|_ && parameter.volumeMounts.hostPath != _|_ for v in parameter.volumeMounts.hostPath {
 		{
-			name: v.name
 			hostPath: {
 				path: v.path
 			}
+			name: v.name
 		}
 		}
 	]
@@ -291,20 +291,20 @@ template: {
 						if parameter["volumeMounts"] != _|_ {
 							volumeMounts: mountsArray
 						}
-						if parameter["readinessProbe"] != _|_ {
-							readinessProbe: parameter.readinessProbe
-						}
-						if parameter["imagePullPolicy"] != _|_ {
-							imagePullPolicy: parameter.imagePullPolicy
+						if parameter["args"] != _|_ {
+							args: parameter.args
 						}
 						if parameter["cmd"] != _|_ {
 							command: parameter.cmd
 						}
-						if parameter["args"] != _|_ {
-							args: parameter.args
+						if parameter["imagePullPolicy"] != _|_ {
+							imagePullPolicy: parameter.imagePullPolicy
 						}
 						if parameter["livenessProbe"] != _|_ {
 							livenessProbe: parameter.livenessProbe
+						}
+						if parameter["readinessProbe"] != _|_ {
+							readinessProbe: parameter.readinessProbe
 						}
 					}]
 					if parameter["volumes"] != _|_ && parameter["volumeMounts"] == _|_ {
@@ -319,19 +319,19 @@ template: {
 					if v.type == "configMap" {
 						configMap: {
 				defaultMode: v.defaultMode
-				name: v.cmName
 				if v.items != _|_ {
 					items: v.items
 				}
+				name: v.cmName
 			}
 					}
 					if v.type == "secret" {
 						secret: {
 				defaultMode: v.defaultMode
-				secretName: v.secretName
 				if v.items != _|_ {
 					items: v.items
 				}
+				secretName: v.secretName
 			}
 					}
 					if v.type == "emptyDir" {
@@ -345,12 +345,12 @@ template: {
 					if parameter["volumeMounts"] != _|_ {
 						volumes: deDupVolumesArray
 					}
-					if parameter["imagePullSecrets"] != _|_ {
-						imagePullSecrets: [for v in parameter.imagePullSecrets { name: v }]
-					}
 					if parameter["hostAliases"] != _|_ {
 						// +patchKey=ip
 						hostAliases: parameter.hostAliases
+					}
+					if parameter["imagePullSecrets"] != _|_ {
+						imagePullSecrets: [for v in parameter.imagePullSecrets { name: v }]
 					}
 				}
 			}

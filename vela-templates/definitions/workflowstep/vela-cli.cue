@@ -17,8 +17,8 @@ template: {
 	mountsArray: [
 		if parameter.storage != _|_ && parameter.storage.secret != _|_ for m in parameter.storage.secret {
 			{
-				name: "secret-" + m.name
 				mountPath: m.mountPath
+				name: "secret-" + m.name
 				if m.subPath != _|_ {
 					subPath: m.subPath
 				}
@@ -78,6 +78,7 @@ template: {
 				}
 			}
 		spec: {
+				backoffLimit: 3
 				template: {
 						metadata: {
 								labels: {
@@ -88,9 +89,9 @@ template: {
 								containers: [
 										{
 											command: parameter.command
-											volumeMounts: mountsArray
-											name: "\(context.name)-\(context.stepName)-\(context.stepSessionID)-job"
 											image: parameter.image
+											name: "\(context.name)-\(context.stepName)-\(context.stepSessionID)-job"
+											volumeMounts: mountsArray
 										},
 									]
 								restartPolicy: "Never"
@@ -98,7 +99,6 @@ template: {
 								volumes: deDupVolumesArray
 							}
 					}
-				backoffLimit: 3
 			}
 	}
 		}

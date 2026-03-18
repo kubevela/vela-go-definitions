@@ -17,6 +17,7 @@ template: {
 			cluster: parameter.cluster
 			value: {
 		apiVersion: "v1"
+		data: parameter.data
 		kind: "ConfigMap"
 		metadata: {
 				name: parameter.configName
@@ -27,7 +28,6 @@ template: {
 					namespace: context.namespace
 				}
 			}
-		data: parameter.data
 	}
 		}
 	}

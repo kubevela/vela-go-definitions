@@ -17,21 +17,21 @@ template: {
 	collect: query.#CollectServiceEndpoints & {
 		$params: {
 			app: {
-		name: parameter.name
-		namespace: parameter.namespace
 		filter: {
 				if parameter["components"] != _|_ {
 					components: parameter.components
 				}
 			}
+		name: parameter.name
+		namespace: parameter.namespace
 	}
 		}
 	}
 	outputs: {
 		endpoints: *[] | [...]
-		eps_port_name_filtered: *[] | [...]
-		eps_port_filtered: *[] | [...]
 		eps: eps_port_filtered
+		eps_port_filtered: *[] | [...]
+		eps_port_name_filtered: *[] | [...]
 		if parameter["portName"] == _|_ {
 			eps_port_name_filtered: collect.$returns.list
 		}

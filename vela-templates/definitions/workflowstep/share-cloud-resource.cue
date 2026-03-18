@@ -14,11 +14,11 @@ import (
 }
 template: {
 	app: op.#ShareCloudResource & {
-		policy: parameter.policy
-		placements: parameter.placements
-		namespace: context.namespace
-		name: context.name
 		env: parameter.env
+		name: context.name
+		namespace: context.namespace
+		placements: parameter.placements
+		policy: parameter.policy
 	}
 	parameter: {
 		// +usage=Declare the location to bind

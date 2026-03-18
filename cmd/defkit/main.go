@@ -14,23 +14,20 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-// Package main generates CUE files for all registered definitions (components,
-// traits, policies, workflow steps). The output directory structure mirrors
-// kubevela/vela-templates/definitions/:
+// Package main is the unified CLI for vela-go-definitions.
 //
-//	vela-templates/definitions/component/<name>.cue
-//	vela-templates/definitions/trait/<name>.cue
-//	vela-templates/definitions/policy/<name>.cue
-//	vela-templates/definitions/workflowstep/<name>.cue
+// Usage:
 //
-// Usage: go run ./cmd/generate [--output-dir <dir>]
+//	defkit generate [--output-dir <dir>]
+//	defkit register
 package main
 
 import (
-	"flag"
 	"fmt"
 	"os"
 	"path/filepath"
+
+	"github.com/spf13/cobra"
 
 	"github.com/oam-dev/kubevela/pkg/definition/defkit"
 
@@ -42,13 +39,62 @@ import (
 )
 
 func main() {
-	outputDir := flag.String("output-dir", "vela-templates/definitions", "output directory for generated CUE files")
-	flag.Parse()
+	root := &cobra.Command{
+		Use:   "defkit",
+		Short: "CLI for vela-go-definitions",
+	}
 
+	root.AddCommand(generateCmd())
+	root.AddCommand(registerCmd())
+
+	if err := root.Execute(); err != nil {
+		os.Exit(1)
+	}
+}
+
+func generateCmd() *cobra.Command {
+	var outputDir string
+
+	cmd := &cobra.Command{
+		Use:   "generate",
+		Short: "Generate CUE definition files from registered Go definitions",
+		Long: `Generate CUE files for all registered definitions (components, traits,
+policies, workflow steps). The output directory structure mirrors
+kubevela/vela-templates/definitions/:
+
+  vela-templates/definitions/component/<name>.cue
+  vela-templates/definitions/trait/<name>.cue
+  vela-templates/definitions/policy/<name>.cue
+  vela-templates/definitions/workflowstep/<name>.cue`,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return runGenerate(outputDir)
+		},
+	}
+
+	cmd.Flags().StringVar(&outputDir, "output-dir", "vela-templates/definitions", "output directory for generated CUE files")
+
+	return cmd
+}
+
+func registerCmd() *cobra.Command {
+	return &cobra.Command{
+		Use:   "register",
+		Short: "Output all registered definitions as JSON",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			output, err := defkit.ToJSON()
+			if err != nil {
+				return fmt.Errorf("failed to serialize registry: %w", err)
+			}
+			fmt.Print(string(output))
+			return nil
+		},
+	}
+}
+
+func runGenerate(outputDir string) error {
 	defs := defkit.All()
 	if len(defs) == 0 {
-		fmt.Fprintln(os.Stderr, "no definitions registered")
-		os.Exit(1)
+		return fmt.Errorf("no definitions registered")
 	}
 
 	fmt.Printf("Found %d registered definitions\n", len(defs))
@@ -59,7 +105,6 @@ func main() {
 		defType := def.DefType()
 		name := def.DefName()
 
-		// Map definition type to subdirectory
 		var subdir string
 		switch defType {
 		case defkit.DefinitionTypeComponent:
@@ -75,17 +120,15 @@ func main() {
 			continue
 		}
 
-		dir := filepath.Join(*outputDir, subdir)
+		dir := filepath.Join(outputDir, subdir)
 		if err := os.MkdirAll(dir, 0o755); err != nil {
-			fmt.Fprintf(os.Stderr, "failed to create directory %s: %v\n", dir, err)
-			os.Exit(1)
+			return fmt.Errorf("failed to create directory %s: %w", dir, err)
 		}
 
 		cueContent := def.ToCue()
 		cuePath := filepath.Join(dir, name+".cue")
 		if err := os.WriteFile(cuePath, []byte(cueContent), 0o644); err != nil {
-			fmt.Fprintf(os.Stderr, "failed to write %s: %v\n", cuePath, err)
-			os.Exit(1)
+			return fmt.Errorf("failed to write %s: %w", cuePath, err)
 		}
 
 		counts[defType]++
@@ -102,5 +145,6 @@ func main() {
 			fmt.Printf("  %s: %d\n", dt, c)
 		}
 	}
-	fmt.Printf("\nOutput written to %s/\n", *outputDir)
+	fmt.Printf("\nOutput written to %s/\n", outputDir)
+	return nil
 }

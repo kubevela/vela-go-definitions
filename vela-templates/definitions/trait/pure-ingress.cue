@@ -2,8 +2,8 @@
 	type: "trait"
 	annotations: {}
 	labels: {
-		"ui-hidden": "true"
 		deprecated:  "true"
+		"ui-hidden": "true"
 	}
 	description: "Enable public web traffic for the component without creating a Service."
 	attributes: {

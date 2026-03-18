@@ -14,37 +14,29 @@ import (
 template: {
 	cleanJobs: kube.#Delete & {
 		$params: {
+			filter: {
+		namespace: parameter.namespace
+		if parameter["labelselector"] != _|_ {
+			matchingLabels: parameter.labelselector
+		}
+		if parameter["labelselector"] == _|_ {
+			matchingLabels: {
+					"workflow.oam.dev/name": context.name
+				}
+		}
+	}
 			value: {
+		apiVersion: "batch/v1"
 		kind: "Job"
 		metadata: {
 				name: context.name
 				namespace: parameter.namespace
 			}
-		apiVersion: "batch/v1"
-	}
-			filter: {
-		namespace: parameter.namespace
-		if parameter["labelselector"] != _|_ {
-			matchingLabels: parameter.labelselector
-		}
-		if parameter["labelselector"] == _|_ {
-			matchingLabels: {
-					"workflow.oam.dev/name": context.name
-				}
-		}
 	}
 		}
 	}
 	cleanPods: kube.#Delete & {
 		$params: {
-			value: {
-		apiVersion: "v1"
-		kind: "pod"
-		metadata: {
-				namespace: parameter.namespace
-				name: context.name
-			}
-	}
 			filter: {
 		namespace: parameter.namespace
 		if parameter["labelselector"] != _|_ {
@@ -55,6 +47,14 @@ template: {
 					"workflow.oam.dev/name": context.name
 				}
 		}
+	}
+			value: {
+		apiVersion: "v1"
+		kind: "pod"
+		metadata: {
+				name: context.name
+				namespace: parameter.namespace
+			}
 	}
 		}
 	}

@@ -100,20 +100,20 @@ template: {
 	volumesList: [
 		if parameter.volumeMounts != _|_ && parameter.volumeMounts.pvc != _|_ for v in parameter.volumeMounts.pvc {
 		{
+			name: v.name
 			persistentVolumeClaim: {
 				claimName: v.claimName
 			}
-			name: v.name
 		}
 		},
 		if parameter.volumeMounts != _|_ && parameter.volumeMounts.configMap != _|_ for v in parameter.volumeMounts.configMap {
 		{
 			configMap: {
-				name: v.cmName
 				defaultMode: v.defaultMode
 				if v.items != _|_ {
 					items: v.items
 				}
+				name: v.cmName
 			}
 			name: v.name
 		}
@@ -132,18 +132,18 @@ template: {
 		},
 		if parameter.volumeMounts != _|_ && parameter.volumeMounts.emptyDir != _|_ for v in parameter.volumeMounts.emptyDir {
 		{
-			name: v.name
 			emptyDir: {
 				medium: v.medium
 			}
+			name: v.name
 		}
 		},
 		if parameter.volumeMounts != _|_ && parameter.volumeMounts.hostPath != _|_ for v in parameter.volumeMounts.hostPath {
 		{
-			name: v.name
 			hostPath: {
 				path: v.path
 			}
+			name: v.name
 		}
 		}
 	]
@@ -210,14 +210,14 @@ template: {
 						if parameter["volumeMounts"] != _|_ {
 							volumeMounts: mountsArray
 						}
-						if parameter["imagePullPolicy"] != _|_ {
-							imagePullPolicy: parameter.imagePullPolicy
-						}
 						if parameter["cmd"] != _|_ {
 							command: parameter.cmd
 						}
 						if parameter["env"] != _|_ {
 							env: parameter.env
+						}
+						if parameter["imagePullPolicy"] != _|_ {
+							imagePullPolicy: parameter.imagePullPolicy
 						}
 						if parameter["livenessProbe"] != _|_ {
 							livenessProbe: parameter.livenessProbe
@@ -238,19 +238,19 @@ template: {
 					if v.type == "configMap" {
 						configMap: {
 				defaultMode: v.defaultMode
-				name: v.cmName
 				if v.items != _|_ {
 					items: v.items
 				}
+				name: v.cmName
 			}
 					}
 					if v.type == "secret" {
 						secret: {
 				defaultMode: v.defaultMode
-				secretName: v.secretName
 				if v.items != _|_ {
 					items: v.items
 				}
+				secretName: v.secretName
 			}
 					}
 					if v.type == "emptyDir" {

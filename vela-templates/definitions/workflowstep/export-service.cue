@@ -30,14 +30,14 @@ template: {
 			kind: "Service"
 			metadata: meta
 			spec: {
-					type: "ClusterIP"
 					ports: [
 							{
-								protocol: "TCP"
 								port: parameter.port
+								protocol: "TCP"
 								targetPort: parameter.targetPort
 							},
 						]
+					type: "ClusterIP"
 				}
 		},
 		{
@@ -46,14 +46,14 @@ template: {
 			metadata: meta
 			subsets: [
 					{
-						ports: [
-								{
-									port: parameter.targetPort
-								},
-							]
 						addresses: [
 								{
 									ip: parameter.ip
+								},
+							]
+						ports: [
+								{
+									port: parameter.targetPort
 								},
 							]
 					},

@@ -19,8 +19,8 @@ template: {
 			condition: parameter.condition
 			duration: parameter.duration
 			failDuration: parameter.failDuration
-			query: parameter.query
 			metricEndpoint: parameter.metricEndpoint
+			query: parameter.query
 		}
 	}
 	fail: {

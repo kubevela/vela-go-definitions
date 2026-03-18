@@ -134,42 +134,42 @@ template: {
 		},
 		if parameter.volumeMounts != _|_ && parameter.volumeMounts.configMap != _|_ for v in parameter.volumeMounts.configMap {
 		{
-			name: v.name
 			configMap: {
+				defaultMode: v.defaultMode
 				if v.items != _|_ {
 					items: v.items
 				}
 				name: v.cmName
-				defaultMode: v.defaultMode
 			}
+			name: v.name
 		}
 		},
 		if parameter.volumeMounts != _|_ && parameter.volumeMounts.secret != _|_ for v in parameter.volumeMounts.secret {
 		{
 			name: v.name
 			secret: {
-				secretName: v.secretName
 				defaultMode: v.defaultMode
 				if v.items != _|_ {
 					items: v.items
 				}
+				secretName: v.secretName
 			}
 		}
 		},
 		if parameter.volumeMounts != _|_ && parameter.volumeMounts.emptyDir != _|_ for v in parameter.volumeMounts.emptyDir {
 		{
-			name: v.name
 			emptyDir: {
 				medium: v.medium
 			}
+			name: v.name
 		}
 		},
 		if parameter.volumeMounts != _|_ && parameter.volumeMounts.hostPath != _|_ for v in parameter.volumeMounts.hostPath {
 		{
-			name: v.name
 			hostPath: {
 				path: v.path
 			}
+			name: v.name
 		}
 		}
 	]
@@ -222,13 +222,13 @@ template: {
 						if parameter["ports"] != _|_ {
 							ports: [for v in parameter.ports {
 				{
+					containerPort: v.port
 					if v.name != _|_ {
 						name: v.name
 					}
 					if v.name == _|_ {
 						name: "port-" + strconv.FormatInt(v.port, 10)
 					}
-					containerPort: v.port
 					protocol: v.protocol
 				}
 			}]
@@ -270,11 +270,11 @@ template: {
 						if parameter["volumeMounts"] != _|_ {
 							volumeMounts: mountsArray
 						}
-						if parameter["imagePullPolicy"] != _|_ {
-							imagePullPolicy: parameter.imagePullPolicy
-						}
 						if parameter["cmd"] != _|_ {
 							command: parameter.cmd
+						}
+						if parameter["imagePullPolicy"] != _|_ {
+							imagePullPolicy: parameter.imagePullPolicy
 						}
 						if parameter["livenessProbe"] != _|_ {
 							livenessProbe: parameter.livenessProbe
@@ -295,19 +295,19 @@ template: {
 					if v.type == "configMap" {
 						configMap: {
 				defaultMode: v.defaultMode
-				name: v.cmName
 				if v.items != _|_ {
 					items: v.items
 				}
+				name: v.cmName
 			}
 					}
 					if v.type == "secret" {
 						secret: {
 				defaultMode: v.defaultMode
-				secretName: v.secretName
 				if v.items != _|_ {
 					items: v.items
 				}
+				secretName: v.secretName
 			}
 					}
 					if v.type == "emptyDir" {
@@ -334,14 +334,14 @@ template: {
 	}
 	exposePorts: [
 		if parameter["ports"] != _|_ for v in parameter.ports if v.expose == true {
-			port: v.port
-			targetPort: v.port
 			if v.name != _|_ {
 				name: v.name
 			}
 			if v.name == _|_ {
 				name: "port-" + strconv.FormatInt(v.port, 10)
 			}
+			port: v.port
+			targetPort: v.port
 		},
 	]
 	outputs: {

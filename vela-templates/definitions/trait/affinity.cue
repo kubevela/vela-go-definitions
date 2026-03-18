@@ -15,14 +15,14 @@ template: {
 				if parameter.podAffinity.required != _|_ {
 					requiredDuringSchedulingIgnoredDuringExecution: [for v in parameter.podAffinity.required {
 						{
-							if v.namespaceSelector != _|_ {
-								namespaceSelector: v.namespaceSelector
-							}
 							if v.labelSelector != _|_ {
 								labelSelector: v.labelSelector
 							}
 							if v.namespace != _|_ {
 								namespace: v.namespace
+							}
+							if v.namespaceSelector != _|_ {
+								namespaceSelector: v.namespaceSelector
 							}
 							if v.namespaces != _|_ {
 								namespaces: v.namespaces
@@ -34,8 +34,8 @@ template: {
 				if parameter.podAffinity.preferred != _|_ {
 					preferredDuringSchedulingIgnoredDuringExecution: [for v in parameter.podAffinity.preferred {
 						{
-							weight:          v.weight
 							podAffinityTerm: v.podAffinityTerm
+							weight:          v.weight
 						}
 					}]
 				}
@@ -46,27 +46,27 @@ template: {
 				if parameter.podAntiAffinity.required != _|_ {
 					requiredDuringSchedulingIgnoredDuringExecution: [for v in parameter.podAntiAffinity.required {
 						{
-							if v.namespaces != _|_ {
-								namespaces: v.namespaces
-							}
-							topologyKey: v.topologyKey
-							if v.namespaceSelector != _|_ {
-								namespaceSelector: v.namespaceSelector
-							}
 							if v.labelSelector != _|_ {
 								labelSelector: v.labelSelector
 							}
 							if v.namespace != _|_ {
 								namespace: v.namespace
 							}
+							if v.namespaceSelector != _|_ {
+								namespaceSelector: v.namespaceSelector
+							}
+							if v.namespaces != _|_ {
+								namespaces: v.namespaces
+							}
+							topologyKey: v.topologyKey
 						}
 					}]
 				}
 				if parameter.podAntiAffinity.preferred != _|_ {
 					preferredDuringSchedulingIgnoredDuringExecution: [for v in parameter.podAntiAffinity.preferred {
 						{
-							weight:          v.weight
 							podAffinityTerm: v.podAffinityTerm
+							weight:          v.weight
 						}
 					}]
 				}
@@ -89,8 +89,8 @@ template: {
 				if parameter.nodeAffinity.preferred != _|_ {
 					preferredDuringSchedulingIgnoredDuringExecution: [for v in parameter.nodeAffinity.preferred {
 						{
-							weight:     v.weight
 							preference: v.preference
+							weight:     v.weight
 						}
 					}]
 				}
@@ -99,18 +99,18 @@ template: {
 		if parameter["tolerations"] != _|_ {
 			tolerations: [for v in parameter.tolerations {
 				{
+					if v.effect != _|_ {
+						effect: v.effect
+					}
 					if v.key != _|_ {
 						key: v.key
 					}
 					operator: v.operator
-					if v.value != _|_ {
-						value: v.value
-					}
-					if v.effect != _|_ {
-						effect: v.effect
-					}
 					if v.tolerationSeconds != _|_ {
 						tolerationSeconds: v.tolerationSeconds
+					}
+					if v.value != _|_ {
+						value: v.value
 					}
 				}
 			}]

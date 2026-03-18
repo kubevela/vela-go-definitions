@@ -15,10 +15,10 @@ export2secret: {
 }
 template: {
 	secret: {
-		data: *parameter.data | {}
 		apply: kube.#Apply & {
 			$params: {
 				value:   {
+				apiVersion: "v1"
 				kind: "Secret"
 				metadata: {
 						name: parameter.secretName
@@ -30,7 +30,6 @@ template: {
 						}
 					}
 				stringData: data
-				apiVersion: "v1"
 				if parameter["type"] == _|_ && parameter.kind == "docker-registry" {
 					type: "kubernetes.io/dockerconfigjson"
 				}
@@ -41,6 +40,7 @@ template: {
 				cluster: parameter.cluster
 			}
 		}
+		data: *parameter.data | {}
 		if parameter.kind == "docker-registry" && parameter["dockerRegistry"] != _|_ {
 			registryData: {
 				auths: {

@@ -12,8 +12,8 @@ template: {
 	patch: spec: template: spec: {
 		// +patchKey=name
 		containers: [{
-			name:  parameter.name
 			image: parameter.image
+			name:  parameter.name
 			if parameter["cmd"] != _|_ {
 				command: parameter.cmd
 			}

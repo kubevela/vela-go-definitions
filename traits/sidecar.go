@@ -97,11 +97,11 @@ func healthProbeSchema() defkit.Param {
 				defkit.Field("path", defkit.ParamTypeString).Description("The endpoint, relative to the port, to which the HTTP GET request should be directed."),
 				defkit.Field("port", defkit.ParamTypeInt).Description("The TCP socket within the container to which the HTTP GET request should be directed."),
 				defkit.Field("httpHeaders", defkit.ParamTypeArray).
-				Optional().
-				Nested(defkit.Struct("httpHeaders").WithFields(
-					defkit.Field("name", defkit.ParamTypeString),
-					defkit.Field("value", defkit.ParamTypeString),
-				)),
+					Optional().
+					Nested(defkit.Struct("httpHeaders").WithFields(
+						defkit.Field("name", defkit.ParamTypeString),
+						defkit.Field("value", defkit.ParamTypeString),
+					)),
 			)),
 		defkit.Field("tcpSocket", defkit.ParamTypeStruct).Optional().
 			Description("Instructions for assessing container health by probing a TCP socket. Either this attribute or the exec attribute or the httpGet attribute MUST be specified. This attribute is mutually exclusive with both the exec attribute and the httpGet attribute.").

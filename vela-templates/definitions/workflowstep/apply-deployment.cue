@@ -17,17 +17,19 @@ template: {
 		$params: {
 			cluster: parameter.cluster
 			value: {
+		apiVersion: "apps/v1"
+		kind: "Deployment"
 		metadata: {
-				namespace: context.namespace
 				name: context.stepName
+				namespace: context.namespace
 			}
 		spec: {
+				replicas: parameter.replicas
 				selector: {
 						matchLabels: {
 								"workflow.oam.dev/step-name": "\(context.name)-\(context.stepName)"
 							}
 					}
-				replicas: parameter.replicas
 				template: {
 						metadata: {
 								labels: {
@@ -37,8 +39,8 @@ template: {
 						spec: {
 								containers: [
 										{
-											name: context.stepName
 											image: parameter.image
+											name: context.stepName
 											if parameter["cmd"] != _|_ {
 												command: parameter.cmd
 											}
@@ -47,8 +49,6 @@ template: {
 							}
 					}
 			}
-		apiVersion: "apps/v1"
-		kind: "Deployment"
 	}
 		}
 	}

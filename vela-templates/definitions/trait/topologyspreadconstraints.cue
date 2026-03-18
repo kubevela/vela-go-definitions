@@ -11,22 +11,22 @@ topologyspreadconstraints: {
 template: {
 	patch: spec: template: spec: topologySpreadConstraints: [
 		for v in parameter.constraints {
-			if v.nodeTaintsPolicy != _|_ {
-				nodeTaintsPolicy: v.nodeTaintsPolicy
-			}
-			maxSkew:           v.maxSkew
-			topologyKey:       v.topologyKey
-			whenUnsatisfiable: v.whenUnsatisfiable
-			labelSelector:     v.labelSelector
-			if v.minDomains != _|_ {
-				minDomains: v.minDomains
-			}
+			labelSelector: v.labelSelector
 			if v.matchLabelKeys != _|_ {
 				matchLabelKeys: v.matchLabelKeys
+			}
+			maxSkew: v.maxSkew
+			if v.minDomains != _|_ {
+				minDomains: v.minDomains
 			}
 			if v.nodeAffinityPolicy != _|_ {
 				nodeAffinityPolicy: v.nodeAffinityPolicy
 			}
+			if v.nodeTaintsPolicy != _|_ {
+				nodeTaintsPolicy: v.nodeTaintsPolicy
+			}
+			topologyKey:       v.topologyKey
+			whenUnsatisfiable: v.whenUnsatisfiable
 		},
 	]
 	parameter: {

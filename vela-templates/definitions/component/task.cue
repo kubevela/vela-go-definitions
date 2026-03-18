@@ -88,24 +88,27 @@ template: {
 								}
 							}
 						}
-						if parameter["imagePullPolicy"] != _|_ {
-							imagePullPolicy: parameter.imagePullPolicy
-						}
 						if parameter["cmd"] != _|_ {
 							command: parameter.cmd
 						}
 						if parameter["env"] != _|_ {
 							env: parameter.env
 						}
+						if parameter["imagePullPolicy"] != _|_ {
+							imagePullPolicy: parameter.imagePullPolicy
+						}
 						if parameter["volumes"] != _|_ {
 							volumeMounts: [for v in parameter.volumes {
 				{
-					name: v.name
 					mountPath: v.mountPath
+					name: v.name
 				}
 			}]
 						}
 					}]
+					if parameter["imagePullSecrets"] != _|_ {
+						imagePullSecrets: [for v in parameter.imagePullSecrets { name: v }]
+					}
 					if parameter["volumes"] != _|_ {
 						volumes: [for v in parameter.volumes {
 				{
@@ -118,18 +121,18 @@ template: {
 					if v.type == "configMap" {
 						configMap: {
 				defaultMode: v.defaultMode
-				name: v.cmName
 				if v.items != _|_ {
 					items: v.items
 				}
+				name: v.cmName
 			}
 					}
 					if v.type == "secret" {
 						secret: {
+				defaultMode: v.defaultMode
 				if v.items != _|_ {
 					items: v.items
 				}
-				defaultMode: v.defaultMode
 				secretName: v.secretName
 			}
 					}
@@ -140,9 +143,6 @@ template: {
 					}
 				}
 			}]
-					}
-					if parameter["imagePullSecrets"] != _|_ {
-						imagePullSecrets: [for v in parameter.imagePullSecrets { name: v }]
 					}
 				}
 			}

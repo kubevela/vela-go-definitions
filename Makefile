@@ -24,7 +24,7 @@ PROCS ?= 10
 ## Generate CUE definitions from Go into vela-templates/definitions/
 generate:
 	@echo "Generating CUE definitions..."
-	$(GOCMD) run ./cmd/generate --output-dir $(DEFINITIONS_DIR)
+	$(GOCMD) run ./cmd/defkit generate --output-dir $(DEFINITIONS_DIR)
 
 ## Format Go code
 fmt:

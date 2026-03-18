@@ -17,10 +17,10 @@ template: {
 			for v in parameter.volumeMounts.pvc {
 			{
 				mountPath: v.mountPath
+				name: v.name
 				if v.subPath != _|_ {
 					subPath: v.subPath
 				}
-				name: v.name
 			}
 			},
 		] | []
@@ -29,10 +29,10 @@ template: {
 			for v in parameter.volumeMounts.configMap {
 			{
 				mountPath: v.mountPath
+				name: v.name
 				if v.subPath != _|_ {
 					subPath: v.subPath
 				}
-				name: v.name
 			}
 			},
 		] | []
@@ -40,11 +40,11 @@ template: {
 		secret: *[
 			for v in parameter.volumeMounts.secret {
 			{
+				mountPath: v.mountPath
+				name: v.name
 				if v.subPath != _|_ {
 					subPath: v.subPath
 				}
-				name: v.name
-				mountPath: v.mountPath
 			}
 			},
 		] | []
@@ -53,10 +53,10 @@ template: {
 			for v in parameter.volumeMounts.emptyDir {
 			{
 				mountPath: v.mountPath
+				name: v.name
 				if v.subPath != _|_ {
 					subPath: v.subPath
 				}
-				name: v.name
 			}
 			},
 		] | []
@@ -65,10 +65,10 @@ template: {
 			for v in parameter.volumeMounts.hostPath {
 			{
 				mountPath: v.mountPath
+				name: v.name
 				if v.subPath != _|_ {
 					subPath: v.subPath
 				}
-				name: v.name
 			}
 			},
 		] | []
@@ -89,14 +89,14 @@ template: {
 		configMap: *[
 			for v in parameter.volumeMounts.configMap {
 			{
-				name: v.name
 				configMap: {
 					defaultMode: v.defaultMode
-					name: v.cmName
 					if v.items != _|_ {
 						items: v.items
 					}
+					name: v.cmName
 				}
+				name: v.name
 			}
 			},
 		] | []
@@ -107,10 +107,10 @@ template: {
 				name: v.name
 				secret: {
 					defaultMode: v.defaultMode
-					secretName: v.secretName
 					if v.items != _|_ {
 						items: v.items
 					}
+					secretName: v.secretName
 				}
 			}
 			},
@@ -119,10 +119,10 @@ template: {
 		emptyDir: *[
 			for v in parameter.volumeMounts.emptyDir {
 			{
-				name: v.name
 				emptyDir: {
 					medium: v.medium
 				}
+				name: v.name
 			}
 			},
 		] | []
@@ -130,10 +130,10 @@ template: {
 		hostPath: *[
 			for v in parameter.volumeMounts.hostPath {
 			{
-				name: v.name
 				hostPath: {
 					path: v.path
 				}
+				name: v.name
 			}
 			},
 		] | []
@@ -256,20 +256,20 @@ template: {
 					}
 					if v.type == "configMap" {
 						configMap: {
+				defaultMode: v.defaultMode
 				if v.items != _|_ {
 					items: v.items
 				}
-				defaultMode: v.defaultMode
 				name: v.cmName
 			}
 					}
 					if v.type == "secret" {
 						secret: {
 				defaultMode: v.defaultMode
-				secretName: v.secretName
 				if v.items != _|_ {
 					items: v.items
 				}
+				secretName: v.secretName
 			}
 					}
 					if v.type == "emptyDir" {
@@ -280,24 +280,24 @@ template: {
 				}
 			}]
 							}
-							if parameter["imagePullSecrets"] != _|_ {
-								imagePullSecrets: [for v in parameter.imagePullSecrets { name: v }]
-							}
 							if parameter["hostAliases"] != _|_ {
 								hostAliases: [for v in parameter.hostAliases {
 				{
-					ip: v.ip
 					hostnames: v.hostnames
+					ip: v.ip
 				}
 			}]
 							}
+							if parameter["imagePullSecrets"] != _|_ {
+								imagePullSecrets: [for v in parameter.imagePullSecrets { name: v }]
+							}
 						}
-					}
-					if parameter["ttlSecondsAfterFinished"] != _|_ {
-						ttlSecondsAfterFinished: parameter.ttlSecondsAfterFinished
 					}
 					if parameter["activeDeadlineSeconds"] != _|_ {
 						activeDeadlineSeconds: parameter.activeDeadlineSeconds
+					}
+					if parameter["ttlSecondsAfterFinished"] != _|_ {
+						ttlSecondsAfterFinished: parameter.ttlSecondsAfterFinished
 					}
 				}
 			}

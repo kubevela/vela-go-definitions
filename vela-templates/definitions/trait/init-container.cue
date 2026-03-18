@@ -16,16 +16,16 @@ template: {
 			// +patchKey=name
 			volumeMounts: [
 				{
-					name:      parameter.mountName
 					mountPath: parameter.appMountPath
+					name:      parameter.mountName
 				},
 			]
 		}]
 		// +patchKey=name
 		initContainers: [{
+			image:           parameter.image
 			imagePullPolicy: parameter.imagePullPolicy
 			name:            parameter.name
-			image:           parameter.image
 			if parameter["cmd"] != _|_ {
 				command: parameter.cmd
 			}
@@ -39,15 +39,15 @@ template: {
 			// +patchKey=name
 			volumeMounts: [
 				{
-					name:      parameter.mountName
 					mountPath: parameter.initMountPath
+					name:      parameter.mountName
 				},
 			] + parameter.extraVolumeMounts
 		}]
 		// +patchKey=name
 		volumes: [{
-			name: parameter.mountName
 			emptyDir: {}
+			name: parameter.mountName
 		}]
 	}
 	parameter: {

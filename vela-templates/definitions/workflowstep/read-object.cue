@@ -16,12 +16,12 @@ template: {
 		$params: {
 			cluster: parameter.cluster
 			value: {
+		apiVersion: parameter.apiVersion
+		kind: parameter.kind
 		metadata: {
 				name: parameter.name
 				namespace: parameter.namespace
 			}
-		apiVersion: parameter.apiVersion
-		kind: parameter.kind
 	}
 		}
 	}
