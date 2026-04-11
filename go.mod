@@ -3,7 +3,7 @@ module github.com/oam-dev/vela-go-definitions
 go 1.23.8
 
 require (
-	github.com/oam-dev/kubevela v1.10.5-0.20260318160037-21640b55cdb7
+	github.com/oam-dev/kubevela v1.11.0-alpha.2.0.20260409132506-012a134829bf
 	github.com/onsi/ginkgo/v2 v2.23.3
 	github.com/onsi/gomega v1.36.2
 	github.com/spf13/cobra v1.9.1
@@ -56,8 +56,8 @@ require (
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/klauspost/compress v1.17.10 // indirect
-	github.com/kubevela/pkg v1.9.3-0.20251028181209-ef6824214171 // indirect
-	github.com/kubevela/workflow v0.6.3-0.20251125110424-924e73add777 // indirect
+	github.com/kubevela/pkg v1.10.0 // indirect
+	github.com/kubevela/workflow v0.6.3 // indirect
 	github.com/kylelemons/godebug v1.1.0 // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
