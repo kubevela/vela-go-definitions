@@ -240,16 +240,6 @@ template: {
 						if context["config"] != _|_ {
 							env: context.config
 						}
-						if parameter["cpu"] != _|_ && !(parameter.limit.cpu != _|_) {
-							resources: {
-								requests: {
-									cpu: parameter.cpu
-								}
-								limits: {
-									cpu: parameter.cpu
-								}
-							}
-						}
 						if parameter["cpu"] != _|_ && parameter.limit.cpu != _|_ {
 							resources: {
 								requests: {
@@ -260,13 +250,13 @@ template: {
 								}
 							}
 						}
-						if parameter["memory"] != _|_ && !(parameter.limit.memory != _|_) {
+						if parameter["cpu"] != _|_ && parameter.limit.cpu == _|_ {
 							resources: {
 								requests: {
-									memory: parameter.memory
+									cpu: parameter.cpu
 								}
 								limits: {
-									memory: parameter.memory
+									cpu: parameter.cpu
 								}
 							}
 						}
@@ -277,6 +267,16 @@ template: {
 								}
 								limits: {
 									memory: parameter.limit.memory
+								}
+							}
+						}
+						if parameter["memory"] != _|_ && parameter.limit.memory == _|_ {
+							resources: {
+								requests: {
+									memory: parameter.memory
+								}
+								limits: {
+									memory: parameter.memory
 								}
 							}
 						}

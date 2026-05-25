@@ -1,3 +1,7 @@
+import (
+	"list"
+)
+
 "init-container": {
 	type: "trait"
 	annotations: {}
@@ -37,12 +41,12 @@ template: {
 			}
 
 			// +patchKey=name
-			volumeMounts: [
+			volumeMounts: list.Concat([[
 				{
 					mountPath: parameter.initMountPath
 					name:      parameter.mountName
 				},
-			] + parameter.extraVolumeMounts
+			], parameter.extraVolumeMounts])
 		}]
 		// +patchKey=name
 		volumes: [{
