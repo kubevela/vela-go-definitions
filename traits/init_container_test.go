@@ -59,8 +59,10 @@ var _ = Describe("InitContainer", func() {
 		Expect(cue).To(ContainSubstring(`if parameter["args"] != _|_`))
 		Expect(cue).To(ContainSubstring(`if parameter["env"] != _|_`))
 
-		// Array concatenation for volumeMounts
-		Expect(cue).To(ContainSubstring(`] + parameter.extraVolumeMounts`))
+		// Array concatenation for volumeMounts (CUE v0.11+ list.Concat)
+		Expect(cue).To(MatchRegexp(`(?s)import\s*\(\s*"list"\s*\)`))
+		Expect(cue).To(ContainSubstring(`list.Concat([`))
+		Expect(cue).To(ContainSubstring(`, parameter.extraVolumeMounts])`))
 
 		// Volumes
 		Expect(cue).To(ContainSubstring(`volumes:`))

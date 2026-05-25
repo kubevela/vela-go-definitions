@@ -60,7 +60,7 @@ template: {
 				vi
 			},
 		] if val._ignore == _|_ {
-			val
+			val,
 		},
 	]
 	job: kube.#Apply & {
